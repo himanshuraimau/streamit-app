@@ -13,6 +13,10 @@ export const auth = betterAuth({
     enabled: true,
   },
 
+  trustedOrigins: [
+    process.env.FRONTEND_URL || "http://localhost:5173",
+  ],
+
   user: {
     additionalFields: {
       age: {
@@ -37,14 +41,14 @@ export const auth = betterAuth({
       sendVerificationOnSignUp: true, // triggers OTP after signup
       async sendVerificationOTP({ email, otp, type }) {
         await resend.emails.send({
-          from: "YourApp <no-reply@yourdomain.com>", // verified sender domain
+          from: "YourApp <onboarding@resend.dev>", // verified sender domain
           to: email,
           subject:
             type === "email-verification"
               ? "Verify your email"
               : type === "sign-in"
-              ? "Sign in to YourApp"
-              : "Reset your password",
+                ? "Sign in to YourApp"
+                : "Reset your password",
           html: `<p>Your verification code is: <b>${otp}</b></p>`,
         });
       },

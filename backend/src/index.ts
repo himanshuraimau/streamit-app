@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import { prisma } from './lib/db';
 import { auth } from './lib/auth';
 import { toNodeHandler } from 'better-auth/node';
@@ -7,27 +8,36 @@ import authRoutes from './routes/auth.route';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// IMPORTANT: Mount Better Auth handler BEFORE express.json()
-app.all("/api/auth/*", toNodeHandler(auth));
+// CORS configuration - MUST be before Better Auth handler
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true, // Allow cookies to be sent
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 
-// Now mount express.json() for other routes
+// Mount express.json() BEFORE custom routes
 app.use(express.json());
 
-// Mount auth routes
+// Mount custom auth routes FIRST (more specific routes)
 app.use('/api/auth', authRoutes);
+
+// IMPORTANT: Mount Better Auth handler LAST (catch-all for remaining auth routes)
+// Express v5 uses new wildcard syntax: /{*any} instead of /*
+app.all("/api/auth/{*all}", toNodeHandler(auth));
 
 // Health check
 app.get('/health', async (req, res) => {
   try {
     await prisma.$connect();
-    res.json({ 
-      status: 'ok', 
+    res.json({
+      status: 'ok',
       database: 'connected',
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    res.status(500).json({ 
-      status: 'error', 
+    res.status(500).json({
+      status: 'error',
       database: 'disconnected',
       error: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -40,11 +50,11 @@ app.get('/api/user/me', async (req, res) => {
     const session = await auth.api.getSession({
       headers: req.headers as any,
     });
-    
+
     if (!session) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    
+
     res.json({ user: session.user });
   } catch (error) {
     res.status(401).json({ error: 'Unauthorized' });

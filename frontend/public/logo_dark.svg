@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title2 desc2">
+  <title id="title2">StreamIt mark (dark)</title>
+  <desc id="desc2">White circular mark with play triangle and streaming waves, plus a soft red/blue glow for dark backgrounds.</desc>
+
+  <defs>
+    <!-- red + blue glows using two blurred strokes -->
+    <filter id="glowR" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feFlood flood-color="#FF3B30" flood-opacity="0.55" result="f"/>
+      <feComposite in="f" in2="b" operator="in" result="c"/>
+      <feMerge>
+        <feMergeNode in="c"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="glowB" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="14" result="b2"/>
+      <feFlood flood-color="#1E90FF" flood-opacity="0.35" result="f2"/>
+      <feComposite in="f2" in2="b2" operator="in" result="c2"/>
+      <feMerge>
+        <feMergeNode in="c2"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- subtle white inner highlight -->
+    <radialGradient id="whiteHighlight" cx="0.35" cy="0.3" r="0.8">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Note: background is transparent — place this SVG on a dark surface (e.g., #000) -->
+  <!-- soft blue glow layer -->
+  <g filter="url(#glowB)" opacity="0.9">
+    <circle cx="100" cy="100" r="90" fill="transparent"/>
+  </g>
+
+  <!-- soft red glow layer -->
+  <g filter="url(#glowR)" opacity="0.7">
+    <circle cx="100" cy="100" r="90" fill="transparent"/>
+  </g>
+
+  <!-- white circular base (solid for legibility on dark) -->
+  <circle cx="100" cy="100" r="78" fill="#FFFFFF"/>
+
+  <!-- white highlight -->
+  <ellipse cx="85" cy="70" rx="40" ry="22" fill="url(#whiteHighlight)" opacity="0.9"/>
+
+  <!-- play triangle (cutout-style: dark cut) -->
+  <polygon points="88,70 88,130 140,100" fill="#000000" opacity="0.92"/>
+
+  <!-- streaming waves (dark) -->
+  <g fill="none" stroke="#000000" stroke-linecap="round" stroke-width="6" stroke-opacity="0.9">
+    <path d="M148 80 C168 92, 168 108, 148 120" />
+    <path d="M156 68 C182 86, 182 114, 156 132" stroke-opacity="0.6" stroke-width="4"/>
+  </g>
+
+  <!-- spark (small diamond) in dark to contrast -->
+  <g transform="translate(56,36) rotate(20)">
+    <rect x="-6" y="-6" width="12" height="12" rx="2" ry="2" fill="#000000" opacity="0.95"/>
+    <circle cx="0" cy="0" r="10" fill="#000000" opacity="0.06"/>
+  </g>
+</svg>
