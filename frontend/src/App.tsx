@@ -9,6 +9,7 @@ import SignInOTP from '@/pages/auth/signin-otp';
 import VerifyEmail from '@/pages/auth/verify-email';
 import ForgotPassword from '@/pages/auth/forgot-password';
 import ResetPassword from '@/pages/auth/reset-password';
+import CreatorApplication from '@/pages/creator-application';
 
 function App() {
   return (
@@ -24,6 +25,9 @@ function App() {
       <Route path="/auth/verify-email" element={<VerifyEmail />} />
       <Route path="/auth/forgot-password" element={<ForgotPassword />} />
       <Route path="/auth/reset-password" element={<ResetPassword />} />
+      
+      {/* Creator routes */}
+      <Route path="/creator-application" element={<CreatorApplication />} />
       
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
