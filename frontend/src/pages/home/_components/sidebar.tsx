@@ -54,7 +54,7 @@ export function HomeSidebar() {
     : subscriptions.slice(0, 4)
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-zinc-800 !top-16 !h-[calc(100vh-4rem)]">
+    <Sidebar collapsible="icon" className="border-r border-zinc-800 !top-20 !h-[calc(100vh-4rem)]">
       <SidebarContent className="bg-black">
         {/* Primary Navigation */}
         <SidebarGroup>

@@ -221,6 +221,6 @@ body {
 
 /* Fix sidebar positioning below navbar */
 [data-slot="sidebar-container"] {
-  top: 4rem !important;
-  height: calc(100vh - 4rem) !important;
+  top: 5rem !important;
+  height: calc(100vh - 5rem) !important;
 }

@@ -30,7 +30,7 @@ export default function Home() {
         <Navbar />
 
         {/* Sidebar and main content below navbar */}
-        <div className="flex flex-1 pt-16">
+        <div className="flex flex-1 pt-20">
           <HomeSidebar />
 
           {/* Main Content */}
