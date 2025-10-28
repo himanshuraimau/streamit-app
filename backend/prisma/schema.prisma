@@ -21,6 +21,9 @@ model User {
   updatedAt     DateTime  @default(now()) @updatedAt
   sessions      Session[]
   accounts      Account[]
+  
+  // Creator application relationship
+  creatorApplication CreatorApplication?
 
   @@unique([email])
   @@map("user")
@@ -69,4 +72,140 @@ model Verification {
   updatedAt  DateTime @default(now()) @updatedAt
 
   @@map("verification")
+}
+
+// Creator Application Models
+model CreatorApplication {
+  id          String                @id @default(cuid())
+  userId      String                @unique
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Application status and metadata
+  status      ApplicationStatus     @default(DRAFT)
+  submittedAt DateTime?
+  reviewedAt  DateTime?
+  reviewedBy  String?               // Admin user ID who reviewed
+  rejectionReason String?           // Reason for rejection if applicable
+  
+  // Identity verification data
+  identity    IdentityVerification?
+  
+  // Financial information
+  financial   FinancialDetails?
+  
+  // Profile information
+  profile     CreatorProfile?
+  
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  @@map("creator_application")
+}
+
+model IdentityVerification {
+  id                    String              @id @default(cuid())
+  creatorApplicationId  String              @unique
+  creatorApplication    CreatorApplication  @relation(fields: [creatorApplicationId], references: [id], onDelete: Cascade)
+  
+  idType                IDType
+  idDocumentUrl         String              // URL to uploaded ID document
+  selfiePhotoUrl        String              // URL to uploaded selfie photo
+  
+  // Verification status
+  isVerified            Boolean             @default(false)
+  verifiedAt            DateTime?
+  verifiedBy            String?             // Admin user ID who verified
+  
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@map("identity_verification")
+}
+
+model FinancialDetails {
+  id                    String              @id @default(cuid())
+  creatorApplicationId  String              @unique
+  creatorApplication    CreatorApplication  @relation(fields: [creatorApplicationId], references: [id], onDelete: Cascade)
+  
+  accountHolderName     String
+  accountNumber         String              // Encrypted in application
+  ifscCode              String
+  panNumber             String              // Encrypted in application
+  
+  // Verification status
+  isVerified            Boolean             @default(false)
+  verifiedAt            DateTime?
+  verifiedBy            String?             // Admin user ID who verified
+  
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@map("financial_details")
+}
+
+model CreatorProfile {
+  id                    String              @id @default(cuid())
+  creatorApplicationId  String              @unique
+  creatorApplication    CreatorApplication  @relation(fields: [creatorApplicationId], references: [id], onDelete: Cascade)
+  
+  profilePictureUrl     String              // URL to uploaded profile picture
+  bio                   String
+  categories            ContentCategory[]   // Array of content categories
+  
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@map("creator_profile")
+}
+
+// File upload tracking for better management
+model FileUpload {
+  id            String      @id @default(cuid())
+  fileName      String
+  originalName  String
+  mimeType      String
+  size          Int
+  url           String
+  uploadedBy    String      // User ID who uploaded
+  purpose       FilePurpose // What the file is used for
+  
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("file_upload")
+}
+
+// Enums
+enum ApplicationStatus {
+  DRAFT
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum IDType {
+  AADHAAR
+  PASSPORT
+  DRIVERS_LICENSE
+}
+
+enum ContentCategory {
+  EDUCATION
+  ENTERTAINMENT
+  LIFESTYLE
+  GAMING
+  MUSIC
+  SPORTS
+  TECHNOLOGY
+  COOKING
+  ART
+  FITNESS
+}
+
+enum FilePurpose {
+  ID_DOCUMENT
+  SELFIE_PHOTO
+  PROFILE_PICTURE
+  OTHER
 }
