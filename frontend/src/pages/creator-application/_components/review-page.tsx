@@ -8,6 +8,7 @@ interface ReviewPageProps {
   onEdit: (step: ApplicationStep) => void;
   onSubmit: () => void;
   onBack: () => void;
+  loading?: boolean;
 }
 
 const ID_TYPE_LABELS = {
@@ -16,7 +17,7 @@ const ID_TYPE_LABELS = {
   'drivers-license': "Driver's License",
 };
 
-export function ReviewPage({ data, onEdit, onSubmit, onBack }: ReviewPageProps) {
+export function ReviewPage({ data, onEdit, onSubmit, onBack, loading = false }: ReviewPageProps) {
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl">
       <div className="mb-8">
@@ -54,16 +55,16 @@ export function ReviewPage({ data, onEdit, onSubmit, onBack }: ReviewPageProps) 
             </div>
             <div className="flex justify-between">
               <span className="text-zinc-400">ID Document:</span>
-              <span className="text-green-400 flex items-center gap-1">
+              <span className={`flex items-center gap-1 ${data.identity.idDocument ? 'text-green-400' : 'text-red-400'}`}>
                 <CheckCircle className="w-4 h-4" />
-                Uploaded
+                {data.identity.idDocument ? 'Uploaded' : 'Not uploaded'}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-zinc-400">Selfie Photo:</span>
-              <span className="text-green-400 flex items-center gap-1">
+              <span className={`flex items-center gap-1 ${data.identity.selfiePhoto ? 'text-green-400' : 'text-red-400'}`}>
                 <CheckCircle className="w-4 h-4" />
-                Uploaded
+                {data.identity.selfiePhoto ? 'Uploaded' : 'Not uploaded'}
               </span>
             </div>
           </div>
@@ -141,9 +142,9 @@ export function ReviewPage({ data, onEdit, onSubmit, onBack }: ReviewPageProps) 
           <div className="space-y-3 text-sm">
             <div className="flex justify-between items-center">
               <span className="text-zinc-400">Profile Picture:</span>
-              <span className="text-green-400 flex items-center gap-1">
+              <span className={`flex items-center gap-1 ${data.profile.profilePicture ? 'text-green-400' : 'text-red-400'}`}>
                 <CheckCircle className="w-4 h-4" />
-                Uploaded
+                {data.profile.profilePicture ? 'Uploaded' : 'Not uploaded'}
               </span>
             </div>
             <div>
@@ -186,9 +187,10 @@ export function ReviewPage({ data, onEdit, onSubmit, onBack }: ReviewPageProps) 
           </Button>
           <Button
             onClick={onSubmit}
-            className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+            disabled={loading}
+            className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 disabled:opacity-50"
           >
-            Submit Application
+            {loading ? 'Submitting...' : 'Submit Application'}
           </Button>
         </div>
       </div>

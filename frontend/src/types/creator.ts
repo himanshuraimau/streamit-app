@@ -18,8 +18,8 @@ export type ContentCategory =
 
 export interface IdentityData {
   idType: IDType;
-  idDocument: File | null;
-  selfiePhoto: File | null;
+  idDocument: string | null; // Now stores URL instead of File
+  selfiePhoto: string | null; // Now stores URL instead of File
 }
 
 export interface FinancialData {
@@ -30,7 +30,7 @@ export interface FinancialData {
 }
 
 export interface ProfileData {
-  profilePicture: File | null;
+  profilePicture: string | null; // Now stores URL instead of File
   categories: ContentCategory[];
   bio: string;
 }

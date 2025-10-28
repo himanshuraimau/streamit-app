@@ -5,14 +5,14 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Upload, FileText, Camera, ChevronLeft } from 'lucide-react';
+import { FileUpload } from '@/components/ui/file-upload';
+import { ChevronLeft } from 'lucide-react';
 import type { IdentityData } from '@/types/creator';
 
 const identitySchema = z.object({
   idType: z.enum(['aadhaar', 'passport', 'drivers-license']),
-  idDocument: z.instanceof(File).nullable().refine((file) => file !== null, 'ID document is required'),
-  selfiePhoto: z.instanceof(File).nullable().refine((file) => file !== null, 'Selfie photo is required'),
+  idDocument: z.string().min(1, 'ID document is required').nullable(),
+  selfiePhoto: z.string().min(1, 'Selfie photo is required').nullable(),
 });
 
 interface IdentityPageProps {
@@ -22,27 +22,17 @@ interface IdentityPageProps {
 }
 
 export function IdentityPage({ data, onNext, onBack }: IdentityPageProps) {
-  const [idPreview, setIdPreview] = useState<string | null>(null);
-  const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
+  const [idDocumentUrl, setIdDocumentUrl] = useState<string | null>(null);
+  const [selfiePhotoUrl, setSelfiePhotoUrl] = useState<string | null>(null);
 
   const form = useForm<IdentityData>({
     resolver: zodResolver(identitySchema),
-    defaultValues: data,
+    defaultValues: {
+      ...data,
+      idDocument: idDocumentUrl,
+      selfiePhoto: selfiePhotoUrl,
+    },
   });
-
-  const handleFileChange = (file: File | null, type: 'id' | 'selfie') => {
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (type === 'id') {
-          setIdPreview(reader.result as string);
-        } else {
-          setSelfiePreview(reader.result as string);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   const onSubmit = (values: IdentityData) => {
     onNext(values);
@@ -82,34 +72,23 @@ export function IdentityPage({ data, onNext, onBack }: IdentityPageProps) {
             <FormField
               control={form.control}
               name="idDocument"
-              render={({ field: { onChange, value, ...field } }) => (
+              render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-white">Government ID Document</FormLabel>
                   <FormControl>
-                    <div className="space-y-4">
-                      <Input
-                        {...field}
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0] || null;
-                          onChange(file);
-                          handleFileChange(file, 'id');
-                        }}
-                        className="bg-zinc-800 border-zinc-700 text-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-purple-500 file:text-white hover:file:bg-purple-600"
-                      />
-                      {idPreview && (
-                        <div className="relative w-full h-48 rounded-lg overflow-hidden bg-zinc-800">
-                          <img src={idPreview} alt="ID Preview" className="w-full h-full object-contain" />
-                        </div>
-                      )}
-                      {!idPreview && (
-                        <div className="border-2 border-dashed border-zinc-700 rounded-lg p-8 text-center">
-                          <FileText className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-                          <p className="text-zinc-400 text-sm">Upload a clear photo of your ID document</p>
-                        </div>
-                      )}
-                    </div>
+                    <FileUpload
+                      accept="image/*,.pdf"
+                      purpose="ID_DOCUMENT"
+                      placeholder="Upload a clear photo of your ID document"
+                      onUploadComplete={(url) => {
+                        setIdDocumentUrl(url);
+                        field.onChange(url);
+                      }}
+                      onUploadError={(error) => {
+                        console.error('ID document upload error:', error);
+                      }}
+                      currentFile={field.value}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -119,34 +98,23 @@ export function IdentityPage({ data, onNext, onBack }: IdentityPageProps) {
             <FormField
               control={form.control}
               name="selfiePhoto"
-              render={({ field: { onChange, value, ...field } }) => (
+              render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-white">Selfie Photo</FormLabel>
                   <FormControl>
-                    <div className="space-y-4">
-                      <Input
-                        {...field}
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0] || null;
-                          onChange(file);
-                          handleFileChange(file, 'selfie');
-                        }}
-                        className="bg-zinc-800 border-zinc-700 text-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-purple-500 file:text-white hover:file:bg-purple-600"
-                      />
-                      {selfiePreview && (
-                        <div className="relative w-full h-48 rounded-lg overflow-hidden bg-zinc-800">
-                          <img src={selfiePreview} alt="Selfie Preview" className="w-full h-full object-contain" />
-                        </div>
-                      )}
-                      {!selfiePreview && (
-                        <div className="border-2 border-dashed border-zinc-700 rounded-lg p-8 text-center">
-                          <Camera className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-                          <p className="text-zinc-400 text-sm">Upload a clear selfie photo</p>
-                        </div>
-                      )}
-                    </div>
+                    <FileUpload
+                      accept="image/*"
+                      purpose="SELFIE_PHOTO"
+                      placeholder="Upload a clear selfie photo"
+                      onUploadComplete={(url) => {
+                        setSelfiePhotoUrl(url);
+                        field.onChange(url);
+                      }}
+                      onUploadError={(error) => {
+                        console.error('Selfie upload error:', error);
+                      }}
+                      currentFile={field.value}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

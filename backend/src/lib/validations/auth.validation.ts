@@ -28,22 +28,22 @@ export const SendVerificationOTPSchema = z.object({
 });
 
 export const CheckVerificationOTPSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: z.email("Invalid email address"),
   type: z.enum(["sign-in", "email-verification", "forget-password"]),
   otp: z.string().length(6, "OTP must be 6 digits"),
 });
 
 export const SignInEmailOTPSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: z.email("Invalid email address"),
   otp: z.string().length(6, "OTP must be 6 digits"),
 });
 
 export const ForgetPasswordEmailOTPSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: z.email("Invalid email address"),
 });
 
 export const ResetPasswordEmailOTPSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: z.email("Invalid email address"),
   otp: z.string().length(6, "OTP must be 6 digits"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });

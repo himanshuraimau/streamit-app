@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { authClient } from '@/lib/auth-client';
 import { ApplicationNavbar } from './_components/application-navbar';
@@ -9,10 +9,17 @@ import { ProfilePage } from './_components/profile-page';
 import { ReviewPage } from './_components/review-page';
 import { ConfirmationPage } from './_components/confirmation-page';
 import { ProgressIndicator } from './_components/progress-indicator';
+import { useCreatorApplication } from '@/hooks/useCreatorApplication';
 import type { ApplicationStep, CreatorApplicationData } from '@/types/creator';
 
 export default function CreatorApplication() {
     const { data: session, isPending } = authClient.useSession();
+    const { 
+        status, 
+        loading, 
+        createApplication
+    } = useCreatorApplication();
+    
     const [currentStep, setCurrentStep] = useState<ApplicationStep>('welcome');
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [applicationData, setApplicationData] = useState<CreatorApplicationData>({
@@ -22,8 +29,20 @@ export default function CreatorApplication() {
         status: 'draft',
     });
 
-    // Show loading state while checking session
-    if (isPending) {
+    // Check existing application status
+    useEffect(() => {
+        if (status?.hasApplication && status.status === 'APPROVED') {
+            // Redirect approved users away from application
+            // You might want to redirect to a creator dashboard instead
+            setIsSubmitted(true);
+        } else if (status?.hasApplication && status.status === 'PENDING') {
+            // Show confirmation page for pending applications
+            setIsSubmitted(true);
+        }
+    }, [status]);
+
+    // Show loading state while checking session or application
+    if (isPending || loading) {
         return (
             <div className="min-h-screen bg-black flex items-center justify-center">
                 <div className="text-white">Loading...</div>
@@ -89,16 +108,32 @@ export default function CreatorApplication() {
                     <ReviewPage
                         data={applicationData}
                         onEdit={(step) => setCurrentStep(step)}
-                        onSubmit={() => {
-                            // TODO: Submit to backend
-                            setApplicationData((prev) => ({
-                                ...prev,
-                                status: 'pending',
-                                submittedAt: new Date().toISOString(),
-                            }));
-                            setIsSubmitted(true);
+                        onSubmit={async () => {
+                            try {
+                                // Convert frontend data to API format
+                                const apiData = {
+                                    identity: {
+                                        idType: applicationData.identity.idType.toUpperCase() as 'AADHAAR' | 'PASSPORT' | 'DRIVERS_LICENSE',
+                                        idDocumentUrl: applicationData.identity.idDocument ? 'temp-url' : '', // Will be replaced with actual upload
+                                        selfiePhotoUrl: applicationData.identity.selfiePhoto ? 'temp-url' : '', // Will be replaced with actual upload
+                                    },
+                                    financial: applicationData.financial,
+                                    profile: {
+                                        profilePictureUrl: applicationData.profile.profilePicture ? 'temp-url' : '', // Will be replaced with actual upload
+                                        categories: applicationData.profile.categories,
+                                        bio: applicationData.profile.bio,
+                                    },
+                                };
+
+                                await createApplication(apiData);
+                                setIsSubmitted(true);
+                            } catch (error) {
+                                console.error('Failed to submit application:', error);
+                                // Error is already handled by the hook with toast
+                            }
                         }}
                         onBack={() => setCurrentStep('profile')}
+                        loading={loading}
                     />
                 );
             default:

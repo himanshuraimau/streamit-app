@@ -5,12 +5,12 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { ChevronLeft, User, Check } from 'lucide-react';
+import { FileUpload } from '@/components/ui/file-upload';
+import { ChevronLeft, Check } from 'lucide-react';
 import type { ProfileData, ContentCategory } from '@/types/creator';
 
 const profileSchema = z.object({
-    profilePicture: z.instanceof(File).nullable().refine((file) => file !== null, 'Profile picture is required'),
+    profilePicture: z.string().min(1, 'Profile picture is required').nullable(),
     categories: z.array(z.enum(['education', 'entertainment', 'lifestyle', 'gaming', 'music', 'sports', 'technology', 'cooking', 'art', 'fitness'])).min(1, 'Select at least one category').max(3, 'Maximum 3 categories allowed'),
     bio: z.string().min(50, 'Bio must be at least 50 characters').max(500, 'Bio must not exceed 500 characters'),
 }) satisfies z.ZodType<ProfileData>;
@@ -35,11 +35,14 @@ interface ProfilePageProps {
 }
 
 export function ProfilePage({ data, onNext, onBack }: ProfilePageProps) {
-    const [preview, setPreview] = useState<string | null>(null);
+    const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
 
     const form = useForm<ProfileData>({
         resolver: zodResolver(profileSchema),
-        defaultValues: data,
+        defaultValues: {
+            ...data,
+            profilePicture: profilePictureUrl,
+        },
     });
 
     const selectedCategories = form.watch('categories');
@@ -51,16 +54,6 @@ export function ProfilePage({ data, onNext, onBack }: ProfilePageProps) {
             form.setValue('categories', current.filter((c) => c !== category));
         } else if (current.length < 3) {
             form.setValue('categories', [...current, category]);
-        }
-    };
-
-    const handleFileChange = (file: File | null) => {
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
         }
     };
 
@@ -81,32 +74,24 @@ export function ProfilePage({ data, onNext, onBack }: ProfilePageProps) {
                         <FormField
                             control={form.control}
                             name="profilePicture"
-                            render={({ field: { onChange, value, ...field } }) => (
+                            render={({ field }) => (
                                 <FormItem>
                                     <FormLabel className="text-white">Profile Picture</FormLabel>
                                     <FormControl>
-                                        <div className="flex items-center gap-6">
-                                            <div className="w-24 h-24 rounded-full bg-zinc-800 overflow-hidden flex items-center justify-center">
-                                                {preview ? (
-                                                    <img src={preview} alt="Profile" className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <User className="w-12 h-12 text-zinc-600" />
-                                                )}
-                                            </div>
-                                            <div className="flex-1">
-                                                <Input
-                                                    {...field}
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onChange={(e) => {
-                                                        const file = e.target.files?.[0] || null;
-                                                        onChange(file);
-                                                        handleFileChange(file);
-                                                    }}
-                                                    className="bg-zinc-800 border-zinc-700 text-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-purple-500 file:text-white hover:file:bg-purple-600"
-                                                />
-                                            </div>
-                                        </div>
+                                        <FileUpload
+                                            accept="image/*"
+                                            purpose="PROFILE_PICTURE"
+                                            placeholder="Upload your profile picture"
+                                            onUploadComplete={(url) => {
+                                                setProfilePictureUrl(url);
+                                                field.onChange(url);
+                                            }}
+                                            onUploadError={(error) => {
+                                                console.error('Profile picture upload error:', error);
+                                            }}
+                                            currentFile={field.value}
+                                            className="max-w-md"
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
