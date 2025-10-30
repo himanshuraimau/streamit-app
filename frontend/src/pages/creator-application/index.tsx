@@ -14,16 +14,16 @@ import type { ApplicationStep, CreatorApplicationData } from '@/types/creator';
 
 export default function CreatorApplication() {
     const { data: session, isPending } = authClient.useSession();
-    const { 
-        status, 
-        loading, 
+    const {
+        status,
+        loading,
         createApplication
     } = useCreatorApplication();
-    
+
     const [currentStep, setCurrentStep] = useState<ApplicationStep>('welcome');
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [applicationData, setApplicationData] = useState<CreatorApplicationData>({
-        identity: { idType: 'aadhaar', idDocument: null, selfiePhoto: null },
+        identity: { idType: 'AADHAAR', idDocument: null, selfiePhoto: null },
         financial: { accountHolderName: '', accountNumber: '', ifscCode: '', panNumber: '' },
         profile: { profilePicture: null, categories: [], bio: '' },
         status: 'draft',
@@ -110,16 +110,21 @@ export default function CreatorApplication() {
                         onEdit={(step) => setCurrentStep(step)}
                         onSubmit={async () => {
                             try {
+                                // Validate that all required files are uploaded
+                                if (!applicationData.identity.idDocument || !applicationData.identity.selfiePhoto || !applicationData.profile.profilePicture) {
+                                    throw new Error('Please upload all required files');
+                                }
+
                                 // Convert frontend data to API format
                                 const apiData = {
                                     identity: {
-                                        idType: applicationData.identity.idType.toUpperCase() as 'AADHAAR' | 'PASSPORT' | 'DRIVERS_LICENSE',
-                                        idDocumentUrl: applicationData.identity.idDocument ? 'temp-url' : '', // Will be replaced with actual upload
-                                        selfiePhotoUrl: applicationData.identity.selfiePhoto ? 'temp-url' : '', // Will be replaced with actual upload
+                                        idType: applicationData.identity.idType,
+                                        idDocumentUrl: applicationData.identity.idDocument,
+                                        selfiePhotoUrl: applicationData.identity.selfiePhoto,
                                     },
                                     financial: applicationData.financial,
                                     profile: {
-                                        profilePictureUrl: applicationData.profile.profilePicture ? 'temp-url' : '', // Will be replaced with actual upload
+                                        profilePictureUrl: applicationData.profile.profilePicture,
                                         categories: applicationData.profile.categories,
                                         bio: applicationData.profile.bio,
                                     },

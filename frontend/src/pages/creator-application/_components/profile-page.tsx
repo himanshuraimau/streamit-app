@@ -11,21 +11,21 @@ import type { ProfileData, ContentCategory } from '@/types/creator';
 
 const profileSchema = z.object({
     profilePicture: z.string().min(1, 'Profile picture is required').nullable(),
-    categories: z.array(z.enum(['education', 'entertainment', 'lifestyle', 'gaming', 'music', 'sports', 'technology', 'cooking', 'art', 'fitness'])).min(1, 'Select at least one category').max(3, 'Maximum 3 categories allowed'),
+    categories: z.array(z.enum(['EDUCATION', 'ENTERTAINMENT', 'LIFESTYLE', 'GAMING', 'MUSIC', 'SPORTS', 'TECHNOLOGY', 'COOKING', 'ART', 'FITNESS'])).min(1, 'Select at least one category').max(3, 'Maximum 3 categories allowed'),
     bio: z.string().min(50, 'Bio must be at least 50 characters').max(500, 'Bio must not exceed 500 characters'),
 }) satisfies z.ZodType<ProfileData>;
 
 const CATEGORIES: { value: ContentCategory; label: string }[] = [
-    { value: 'education', label: 'Education' },
-    { value: 'entertainment', label: 'Entertainment' },
-    { value: 'lifestyle', label: 'Lifestyle' },
-    { value: 'gaming', label: 'Gaming' },
-    { value: 'music', label: 'Music' },
-    { value: 'sports', label: 'Sports' },
-    { value: 'technology', label: 'Technology' },
-    { value: 'cooking', label: 'Cooking' },
-    { value: 'art', label: 'Art' },
-    { value: 'fitness', label: 'Fitness' },
+    { value: 'EDUCATION', label: 'Education' },
+    { value: 'ENTERTAINMENT', label: 'Entertainment' },
+    { value: 'LIFESTYLE', label: 'Lifestyle' },
+    { value: 'GAMING', label: 'Gaming' },
+    { value: 'MUSIC', label: 'Music' },
+    { value: 'SPORTS', label: 'Sports' },
+    { value: 'TECHNOLOGY', label: 'Technology' },
+    { value: 'COOKING', label: 'Cooking' },
+    { value: 'ART', label: 'Art' },
+    { value: 'FITNESS', label: 'Fitness' },
 ];
 
 interface ProfilePageProps {

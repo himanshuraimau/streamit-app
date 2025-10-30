@@ -12,9 +12,9 @@ interface ReviewPageProps {
 }
 
 const ID_TYPE_LABELS = {
-  aadhaar: 'Aadhaar Card',
-  passport: 'Passport',
-  'drivers-license': "Driver's License",
+  AADHAAR: 'Aadhaar Card',
+  PASSPORT: 'Passport',
+  DRIVERS_LICENSE: "Driver's License",
 };
 
 export function ReviewPage({ data, onEdit, onSubmit, onBack, loading = false }: ReviewPageProps) {

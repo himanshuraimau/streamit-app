@@ -2,19 +2,19 @@ export type ApplicationStep = 'welcome' | 'identity' | 'financial' | 'profile' |
 
 export type ApplicationStatus = 'pending' | 'approved' | 'rejected' | 'draft';
 
-export type IDType = 'aadhaar' | 'passport' | 'drivers-license';
+export type IDType = 'AADHAAR' | 'PASSPORT' | 'DRIVERS_LICENSE';
 
 export type ContentCategory = 
-  | 'education'
-  | 'entertainment'
-  | 'lifestyle'
-  | 'gaming'
-  | 'music'
-  | 'sports'
-  | 'technology'
-  | 'cooking'
-  | 'art'
-  | 'fitness';
+  | 'EDUCATION'
+  | 'ENTERTAINMENT'
+  | 'LIFESTYLE'
+  | 'GAMING'
+  | 'MUSIC'
+  | 'SPORTS'
+  | 'TECHNOLOGY'
+  | 'COOKING'
+  | 'ART'
+  | 'FITNESS';
 
 export interface IdentityData {
   idType: IDType;

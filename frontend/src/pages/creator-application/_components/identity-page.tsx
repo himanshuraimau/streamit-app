@@ -10,7 +10,7 @@ import { ChevronLeft } from 'lucide-react';
 import type { IdentityData } from '@/types/creator';
 
 const identitySchema = z.object({
-  idType: z.enum(['aadhaar', 'passport', 'drivers-license']),
+  idType: z.enum(['AADHAAR', 'PASSPORT', 'DRIVERS_LICENSE']),
   idDocument: z.string().min(1, 'ID document is required').nullable(),
   selfiePhoto: z.string().min(1, 'Selfie photo is required').nullable(),
 });
@@ -59,9 +59,9 @@ export function IdentityPage({ data, onNext, onBack }: IdentityPageProps) {
                       {...field}
                       className="w-full rounded-md bg-zinc-800 border-zinc-700 text-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     >
-                      <option value="aadhaar">Aadhaar Card</option>
-                      <option value="passport">Passport</option>
-                      <option value="drivers-license">Driver's License</option>
+                      <option value="AADHAAR">Aadhaar Card</option>
+                      <option value="PASSPORT">Passport</option>
+                      <option value="DRIVERS_LICENSE">Driver's License</option>
                     </select>
                   </FormControl>
                   <FormMessage />
