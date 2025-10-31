@@ -24,6 +24,21 @@ model User {
   
   // Creator application relationship
   creatorApplication CreatorApplication?
+  
+  // Streaming relationships (only for approved creators)
+  stream        Stream?
+  
+  // Social relationships
+  following     Follow[] @relation("Following")
+  followedBy    Follow[] @relation("FollowedBy")
+  blocking      Block[]  @relation("Blocking")
+  blockedBy     Block[]  @relation("BlockedBy")
+  
+  // Content relationships
+  posts         Post[]
+  likes         Like[]
+  comments      Comment[]
+  commentLikes  CommentLike[]
 
   @@unique([email])
   @@map("user")
@@ -175,6 +190,198 @@ model FileUpload {
   @@map("file_upload")
 }
 
+// Streaming Models (for approved creators only)
+model Stream {
+  id                    String   @id @default(cuid())
+  title                 String   @db.Text
+  thumbnail             String?  @db.Text
+  
+  // Streaming infrastructure
+  ingressId             String?  @unique
+  serverUrl             String?  @db.Text
+  streamKey             String?  @db.Text
+  
+  // Stream status
+  isLive                Boolean  @default(false)
+  
+  // Chat settings
+  isChatEnabled         Boolean  @default(true)
+  isChatDelayed         Boolean  @default(false)
+  isChatFollowersOnly   Boolean  @default(false)
+  
+  // Creator relationship
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([userId])
+  @@index([ingressId])
+  @@index([title])
+  @@index([isLive])
+  @@map("stream")
+}
+
+// Social following system
+model Follow {
+  id          String @id @default(cuid())
+  followerId  String
+  followingId String
+
+  follower    User @relation(name: "Following", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User @relation(name: "FollowedBy", fields: [followingId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("follow")
+}
+
+// User blocking system
+model Block {
+  id        String @id @default(cuid())
+  blockerId String
+  blockedId String
+
+  blocker   User @relation("Blocking", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked   User @relation("BlockedBy", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
+  @@map("block")
+}
+
+// Social Media Content Models
+model Post {
+  id          String    @id @default(cuid())
+  content     String?   @db.Text  // Text content (optional for media-only posts)
+  type        PostType  @default(TEXT)
+  
+  // Media attachments
+  media       PostMedia[]
+  
+  // Engagement
+  likes       Like[]
+  comments    Comment[]
+  likesCount  Int       @default(0)
+  commentsCount Int     @default(0)
+  
+  // Visibility and settings
+  isPublic    Boolean   @default(true)
+  allowComments Boolean @default(true)
+  
+  // Author
+  authorId    String
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([type])
+  @@index([isPublic])
+  @@map("post")
+}
+
+// Media attachments for posts
+model PostMedia {
+  id        String    @id @default(cuid())
+  url       String    @db.Text
+  type      MediaType
+  mimeType  String
+  size      Int?
+  width     Int?
+  height    Int?
+  duration  Int?      // For videos, in seconds
+  
+  // Thumbnail for videos
+  thumbnailUrl String? @db.Text
+  
+  // Post relationship
+  postId    String
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([postId])
+  @@index([type])
+  @@map("post_media")
+}
+
+// Likes system
+model Like {
+  id     String   @id @default(cuid())
+  userId String
+  postId String
+  
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post   Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@index([userId])
+  @@index([postId])
+  @@index([createdAt])
+  @@map("like")
+}
+
+// Comments system
+model Comment {
+  id        String    @id @default(cuid())
+  content   String    @db.Text
+  
+  // Relationships
+  userId    String
+  postId    String
+  parentId  String?   // For nested comments/replies
+  
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
+  
+  // Engagement
+  likes     CommentLike[]
+  likesCount Int       @default(0)
+  
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([postId])
+  @@index([parentId])
+  @@index([createdAt])
+  @@map("comment")
+}
+
+// Comment likes (separate from post likes)
+model CommentLike {
+  id        String  @id @default(cuid())
+  userId    String
+  commentId String
+  
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment   Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+
+  @@unique([userId, commentId])
+  @@index([userId])
+  @@index([commentId])
+  @@map("comment_like")
+}
+
 // Enums
 enum ApplicationStatus {
   DRAFT
@@ -207,5 +414,21 @@ enum FilePurpose {
   ID_DOCUMENT
   SELFIE_PHOTO
   PROFILE_PICTURE
+  STREAM_THUMBNAIL
+  STREAM_OVERLAY
+  POST_MEDIA
   OTHER
+}
+
+enum PostType {
+  TEXT
+  IMAGE
+  VIDEO
+  MIXED     // Text + Media
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  GIF
 }
