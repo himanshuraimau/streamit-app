@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import { authClient } from '@/lib/auth-client';
 import { useSignOut } from '@/utils/queries/auth';
+import { useCreatorApplication } from '@/hooks/useCreatorApplication';
 import { Button } from '@/components/ui/button';
-import { Search, User, LogOut, Menu, UserCircle, Settings, Video } from 'lucide-react';
+import { Search, User, LogOut, Menu, UserCircle, Settings, Video, BarChart3, CheckCircle } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
 import {
   DropdownMenu,
@@ -17,6 +18,7 @@ export default function Navbar() {
   const session = authClient.useSession();
   const { signOut } = useSignOut();
   const { toggleSidebar } = useSidebar();
+  const { status } = useCreatorApplication();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-[100] w-full border-b border-zinc-800 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/60">
@@ -54,16 +56,51 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           {session.data ? (
             <>
-              <Link to="/creator-application">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="hidden md:flex items-center gap-2 border-purple-500/50 text-purple-400 hover:bg-purple-500/10 hover:text-purple-300 hover:border-purple-400 transition-all"
-                >
-                  <Video className="h-4 w-4" />
-                  <span>Apply for Creator</span>
-                </Button>
-              </Link>
+              {/* Show Creator Dashboard button if approved, otherwise show Apply for Creator */}
+              {status?.hasApplication && status.status === 'APPROVED' ? (
+                <Link to="/creator-dashboard">
+                  <Button
+                    size="sm"
+                    className="hidden md:flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white transition-all"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                    <span>Creator Dashboard</span>
+                  </Button>
+                </Link>
+              ) : status?.hasApplication && status.status === 'PENDING' ? (
+                <Link to="/creator-application">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="hidden md:flex items-center gap-2 border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 hover:text-yellow-300 hover:border-yellow-400 transition-all"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Application Pending</span>
+                  </Button>
+                </Link>
+              ) : status?.hasApplication && status.status === 'REJECTED' ? (
+                <Link to="/creator-application">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="hidden md:flex items-center gap-2 border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300 hover:border-red-400 transition-all"
+                  >
+                    <Video className="h-4 w-4" />
+                    <span>Reapply for Creator</span>
+                  </Button>
+                </Link>
+              ) : (
+                <Link to="/creator-application">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="hidden md:flex items-center gap-2 border-purple-500/50 text-purple-400 hover:bg-purple-500/10 hover:text-purple-300 hover:border-purple-400 transition-all"
+                  >
+                    <Video className="h-4 w-4" />
+                    <span>Apply for Creator</span>
+                  </Button>
+                </Link>
+              )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-black">
