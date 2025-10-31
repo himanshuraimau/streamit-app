@@ -18,7 +18,7 @@ export default function Navbar() {
   const session = authClient.useSession();
   const { signOut } = useSignOut();
   const { toggleSidebar } = useSidebar();
-  const { status } = useCreatorApplication();
+  const { status, initialized } = useCreatorApplication();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-[100] w-full border-b border-zinc-800 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/60">
@@ -57,7 +57,7 @@ export default function Navbar() {
           {session.data ? (
             <>
               {/* Show Creator Dashboard button if approved, otherwise show Apply for Creator */}
-              {status?.hasApplication && status.status === 'APPROVED' ? (
+              {initialized && status?.hasApplication && status.status === 'APPROVED' ? (
                 <Link to="/creator-dashboard">
                   <Button
                     size="sm"
@@ -67,7 +67,7 @@ export default function Navbar() {
                     <span>Creator Dashboard</span>
                   </Button>
                 </Link>
-              ) : status?.hasApplication && status.status === 'PENDING' ? (
+              ) : initialized && status?.hasApplication && status.status === 'PENDING' ? (
                 <Link to="/creator-application">
                   <Button
                     size="sm"
@@ -78,7 +78,7 @@ export default function Navbar() {
                     <span>Application Pending</span>
                   </Button>
                 </Link>
-              ) : status?.hasApplication && status.status === 'REJECTED' ? (
+              ) : initialized && status?.hasApplication && status.status === 'REJECTED' ? (
                 <Link to="/creator-application">
                   <Button
                     size="sm"

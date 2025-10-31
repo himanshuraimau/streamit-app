@@ -17,6 +17,7 @@ export default function CreatorApplication() {
     const {
         status,
         loading,
+        initialized,
         createApplication
     } = useCreatorApplication();
 
@@ -32,17 +33,17 @@ export default function CreatorApplication() {
     // Check existing application status
     useEffect(() => {
         if (status?.hasApplication && status.status === 'APPROVED') {
-            // Redirect approved users away from application
-            // You might want to redirect to a creator dashboard instead
-            setIsSubmitted(true);
+            // Redirect approved users to creator dashboard - handled by redirect below
         } else if (status?.hasApplication && status.status === 'PENDING') {
             // Show confirmation page for pending applications
             setIsSubmitted(true);
+        } else if (status?.hasApplication && status.status === 'REJECTED') {
+            // Allow rejected users to reapply
         }
     }, [status]);
 
     // Show loading state while checking session or application
-    if (isPending || loading) {
+    if (isPending || !initialized) {
         return (
             <div className="min-h-screen bg-black flex items-center justify-center">
                 <div className="text-white">Loading...</div>
@@ -53,6 +54,11 @@ export default function CreatorApplication() {
     // Redirect to signin if not authenticated
     if (!session) {
         return <Navigate to="/auth/signin" replace />;
+    }
+
+    // Redirect approved creators to dashboard
+    if (status?.hasApplication && status.status === 'APPROVED') {
+        return <Navigate to="/creator-dashboard" replace />;
     }
 
     if (isSubmitted) {

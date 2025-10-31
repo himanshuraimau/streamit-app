@@ -1,9 +1,59 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { CheckCircle, Clock, Mail, Home } from 'lucide-react';
+import { CheckCircle, Clock, Mail, Home, BarChart3 } from 'lucide-react';
+import { useCreatorApplication } from '@/hooks/useCreatorApplication';
 
 export function ConfirmationPage() {
+  const { status } = useCreatorApplication();
+
+  // If somehow an approved creator reaches this page, show different content
+  if (status?.hasApplication && status.status === 'APPROVED') {
+    return (
+      <div className="container mx-auto px-4 py-12 max-w-3xl">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-500/10 mb-6">
+            <CheckCircle className="w-10 h-10 text-green-400" />
+          </div>
+          <h1 className="text-4xl font-bold text-white mb-4">You're Already a Creator!</h1>
+          <p className="text-zinc-400 text-lg">
+            Your application has been approved. Access your creator dashboard to manage your content.
+          </p>
+        </div>
+
+        <Card className="bg-green-500/10 border-green-500/20 p-8 mb-6">
+          <div className="text-center">
+            <h3 className="text-green-300 font-semibold mb-2">Congratulations!</h3>
+            <p className="text-green-400/80 text-sm">
+              You're now a verified StreamIt creator. Start streaming, engage with your audience, and grow your community.
+            </p>
+          </div>
+        </Card>
+
+        <div className="flex justify-center gap-4">
+          <Link to="/creator-dashboard">
+            <Button
+              size="lg"
+              className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+            >
+              <BarChart3 className="w-5 h-5 mr-2" />
+              Go to Dashboard
+            </Button>
+          </Link>
+          <Link to="/">
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+            >
+              <Home className="w-5 h-5 mr-2" />
+              Return to Home
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="container mx-auto px-4 py-12 max-w-3xl">
       <div className="text-center mb-8">
