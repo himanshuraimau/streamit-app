@@ -5,6 +5,7 @@ import { auth } from './lib/auth';
 import { toNodeHandler } from 'better-auth/node';
 import authRoutes from './routes/auth.route';
 import creatorRoutes from './routes/creator';
+import contentRoutes from './routes/content';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,6 +26,9 @@ app.use('/api/auth', authRoutes);
 
 // Mount creator routes
 app.use('/api/creator', creatorRoutes);
+
+// Mount content routes
+app.use('/api/content', contentRoutes);
 
 // IMPORTANT: Mount Better Auth handler LAST (catch-all for remaining auth routes)
 // Express v5 uses new wildcard syntax: /{*any} instead of /*
