@@ -72,7 +72,7 @@ export function PostCard({ post, onEdit, showComments = false }: PostCardProps) 
               {post.author.name}
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              @{post.author.username} • {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+              @{post.author.email?.split('@')[0] || 'user'} • {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
             </p>
           </div>
         </div>

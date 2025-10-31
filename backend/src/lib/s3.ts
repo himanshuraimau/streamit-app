@@ -35,8 +35,16 @@ const getFolderByPurpose = (purpose: string): string => {
       return 'creator-applications/identity/selfies';
     case 'PROFILE_PICTURE':
       return 'creator-applications/profiles';
+    case 'POST_MEDIA':
+      return 'posts/media';
+    case 'POST_IMAGE':
+      return 'posts/images';
+    case 'POST_VIDEO':
+      return 'posts/videos';
+    case 'POST_GIF':
+      return 'posts/gifs';
     default:
-      return 'creator-applications/misc';
+      return 'misc';
   }
 };
 

@@ -7,7 +7,7 @@ export class MediaService {
   // Process and upload image
   static async processImage(
     file: Express.Multer.File,
-    purpose: string = 'POST_MEDIA'
+    purpose: string = 'POST_IMAGE'
   ): Promise<MediaProcessingResult> {
     try {
       // Get image metadata
@@ -51,7 +51,7 @@ export class MediaService {
   static async processVideo(
     file: Express.Multer.File,
     thumbnailFile?: Express.Multer.File,
-    purpose: string = 'POST_MEDIA'
+    purpose: string = 'POST_VIDEO'
   ): Promise<MediaProcessingResult> {
     try {
       // Generate unique filename for video
@@ -68,7 +68,7 @@ export class MediaService {
       
       // Process thumbnail if provided
       if (thumbnailFile) {
-        const thumbnailResult = await this.processImage(thumbnailFile, purpose);
+        const thumbnailResult = await this.processImage(thumbnailFile, 'POST_IMAGE');
         thumbnailUrl = thumbnailResult.url;
       }
       
@@ -91,7 +91,7 @@ export class MediaService {
   // Process GIF
   static async processGif(
     file: Express.Multer.File,
-    purpose: string = 'POST_MEDIA'
+    purpose: string = 'POST_GIF'
   ): Promise<MediaProcessingResult> {
     try {
       // For GIFs, we'll just upload as-is for now
