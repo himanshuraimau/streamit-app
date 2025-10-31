@@ -5,6 +5,7 @@ import { HomeTabs, type TabType } from './_components/home-tabs';
 import { LiveNowTab } from './_components/live-now-tab';
 import { FollowingTab } from './_components/following-tab';
 import { TrendingTab } from './_components/trending-tab';
+import { PostsTab } from './_components/posts-tab';
 import { SidebarProvider } from '@/components/ui/sidebar';
 
 export default function Home() {
@@ -18,6 +19,8 @@ export default function Home() {
         return <FollowingTab />;
       case 'trending':
         return <TrendingTab />;
+      case 'posts':
+        return <PostsTab />;
       default:
         return <LiveNowTab />;
     }

@@ -19,13 +19,17 @@ import Keys from '@/pages/creator-dashboard/keys';
 import Chat from '@/pages/creator-dashboard/chat';
 import Community from '@/pages/creator-dashboard/community';
 import ContentUpload from '@/pages/creator-dashboard/content-upload';
+import Posts from '@/pages/creator-dashboard/posts';
+
+// Content Pages
+import ContentPage from '@/pages/content/index';
 
 function App() {
   return (
     <Routes>
       {/* Public routes */}
       <Route path="/" element={<Home />} />
-      
+
       {/* Auth routes */}
       <Route path="/auth/login-options" element={<LoginOptions />} />
       <Route path="/auth/signup" element={<SignUp />} />
@@ -34,10 +38,10 @@ function App() {
       <Route path="/auth/verify-email" element={<VerifyEmail />} />
       <Route path="/auth/forgot-password" element={<ForgotPassword />} />
       <Route path="/auth/reset-password" element={<ResetPassword />} />
-      
+
       {/* Creator routes */}
       <Route path="/creator-application" element={<CreatorApplication />} />
-      
+
       {/* Creator Dashboard routes */}
       <Route path="/creator-dashboard" element={<CreatorDashboard />}>
         <Route index element={<Navigate to="/creator-dashboard/overview" replace />} />
@@ -47,8 +51,12 @@ function App() {
         <Route path="chat" element={<Chat />} />
         <Route path="community" element={<Community />} />
         <Route path="content-upload" element={<ContentUpload />} />
+        <Route path="posts" element={<Posts />} />
       </Route>
-      
+
+      {/* Content routes */}
+      <Route path="/content" element={<ContentPage />} />
+
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

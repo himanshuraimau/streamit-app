@@ -1,6 +1,6 @@
-import { Radio, Users, TrendingUp } from 'lucide-react';
+import { Radio, Users, TrendingUp, MessageSquare } from 'lucide-react';
 
-type TabType = 'live' | 'following' | 'trending';
+type TabType = 'live' | 'following' | 'trending' | 'posts';
 
 interface HomeTabsProps {
     activeTab: TabType;
@@ -49,6 +49,20 @@ export function HomeTabs({ activeTab, onTabChange }: HomeTabsProps) {
                     <TrendingUp className="size-4" />
                     <span>Trending</span>
                     {activeTab === 'trending' && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-pink-500 to-purple-600" />
+                    )}
+                </button>
+
+                <button
+                    onClick={() => onTabChange('posts')}
+                    className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors relative ${activeTab === 'posts'
+                        ? 'text-white'
+                        : 'text-zinc-400 hover:text-white'
+                        }`}
+                >
+                    <MessageSquare className="size-4" />
+                    <span>Posts</span>
+                    {activeTab === 'posts' && (
                         <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-pink-500 to-purple-600" />
                     )}
                 </button>

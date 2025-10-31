@@ -7,6 +7,7 @@ import {
   Upload,
   CheckCircle,
   BarChart3,
+  FileText,
 } from "lucide-react";
 import { useCreatorApplication } from '@/hooks/useCreatorApplication';
 import { Card } from '@/components/ui/card';
@@ -29,6 +30,7 @@ const creatorNavItems = [
   { title: "Chat", icon: MessageCircle, url: "/creator-dashboard/chat" },
   { title: "Community", icon: Users, url: "/creator-dashboard/community" },
   { title: "Content Upload", icon: Upload, url: "/creator-dashboard/content-upload" },
+  { title: "Posts", icon: FileText, url: "/creator-dashboard/posts" },
 ];
 
 export function CreatorSidebar() {
