@@ -23,7 +23,7 @@ interface CreatorApplicationState {
   fetchApplication: () => Promise<void>;
   createApplication: (data: CreateApplicationRequest) => Promise<FullApplicationResponse>;
   updateApplication: (data: Partial<CreateApplicationRequest>) => Promise<FullApplicationResponse>;
-  uploadFile: (file: File, purpose?: string) => Promise<any>;
+  uploadFile: (file: File, purpose?: string) => Promise<{ url: string; key: string }>;
   deleteFile: (fileUrl: string) => Promise<boolean>;
   getPresignedUrl: (fileUrl: string) => Promise<string>;
   
@@ -73,11 +73,11 @@ export const useCreatorApplicationStore = create<CreatorApplicationState>()(
           } else {
             set({ error: response.error || 'Failed to fetch application status' });
           }
-        } catch (err: any) {
+        } catch (err) {
           // Don't set error if request was aborted
-          if (err.name !== 'AbortError') {
+          if (err instanceof Error && err.name !== 'AbortError') {
             // If error is "No authentication token", user is not logged in - this is expected
-            if (err.message?.includes('No authentication token')) {
+            if (err.message.includes('No authentication token')) {
               console.log('[CreatorApplication] User not authenticated, skipping status fetch');
               set({ status: null, error: null });
             } else {
@@ -137,8 +137,8 @@ export const useCreatorApplicationStore = create<CreatorApplicationState>()(
             toast.error(errorMsg);
             throw new Error(errorMsg);
           }
-        } catch (err: any) {
-          const errorMsg = err.message || 'Network error occurred';
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : 'Network error occurred';
           set({ error: errorMsg });
           toast.error(errorMsg);
           throw err;
@@ -163,8 +163,8 @@ export const useCreatorApplicationStore = create<CreatorApplicationState>()(
             toast.error(errorMsg);
             throw new Error(errorMsg);
           }
-        } catch (err: any) {
-          const errorMsg = err.message || 'Network error occurred';
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : 'Network error occurred';
           set({ error: errorMsg });
           toast.error(errorMsg);
           throw err;
@@ -188,8 +188,8 @@ export const useCreatorApplicationStore = create<CreatorApplicationState>()(
             toast.error(errorMsg);
             throw new Error(errorMsg);
           }
-        } catch (err: any) {
-          const errorMsg = err.message || 'Network error occurred';
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : 'Network error occurred';
           set({ error: errorMsg });
           toast.error(errorMsg);
           throw err;
@@ -213,8 +213,8 @@ export const useCreatorApplicationStore = create<CreatorApplicationState>()(
             toast.error(errorMsg);
             return false;
           }
-        } catch (err: any) {
-          const errorMsg = err.message || 'Network error occurred';
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : 'Network error occurred';
           set({ error: errorMsg });
           toast.error(errorMsg);
           return false;
@@ -233,7 +233,7 @@ export const useCreatorApplicationStore = create<CreatorApplicationState>()(
           } else {
             throw new Error(response.error || 'Failed to get file access URL');
           }
-        } catch (err: any) {
+        } catch (err) {
           console.error('Error getting presigned URL:', err);
           toast.error('Failed to access file');
           throw err;

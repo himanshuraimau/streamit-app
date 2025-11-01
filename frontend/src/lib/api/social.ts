@@ -30,8 +30,23 @@ export interface CreatorProfile {
   isFollowing: boolean;
 }
 
+export interface CreatorProfileResponse {
+  success: boolean;
+  data?: CreatorProfile;
+  error?: string;
+}
+
+export interface FollowResponse {
+  success: boolean;
+  message?: string;
+  data?: {
+    followerId: string;
+    followingId: string;
+  };
+}
+
 export const socialApi = {
-  async getCreatorProfile(username: string): Promise<any> {
+  async getCreatorProfile(username: string): Promise<CreatorProfileResponse> {
     try {
       const response = await fetch(`${API_BASE_URL}/api/social/creator/${username}`, {
         method: 'GET',
@@ -44,7 +59,7 @@ export const socialApi = {
     }
   },
 
-  async followUser(userId: string): Promise<any> {
+  async followUser(userId: string): Promise<FollowResponse> {
     try {
       const headers = await getAuthHeaders();
       const response = await fetch(`${API_BASE_URL}/api/social/follow/${userId}`, {
@@ -58,7 +73,7 @@ export const socialApi = {
     }
   },
 
-  async unfollowUser(userId: string): Promise<any> {
+  async unfollowUser(userId: string): Promise<FollowResponse> {
     try {
       const headers = await getAuthHeaders();
       const response = await fetch(`${API_BASE_URL}/api/social/follow/${userId}`, {

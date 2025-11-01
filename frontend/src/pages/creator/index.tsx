@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Navbar from '@/pages/home/_components/navbar';
 import { HomeSidebar } from '@/pages/home/_components/sidebar';
-import { socialApi } from '@/lib/api/social';
+import { socialApi, type CreatorProfile } from '@/lib/api/social';
 import { useUserPosts } from '@/hooks/useContent';
 import { PostCard } from '@/pages/creator-dashboard/content-upload/_components/PostCard';
 import type { PostResponse } from '@/types/content';
@@ -14,24 +14,6 @@ import { socialApi as socialApiClient } from '@/lib/api/social';
 import { SidebarProvider } from '@/components/ui/sidebar';
 
 type TabType = 'livestreams' | 'posts' | 'about';
-
-interface CreatorProfile {
-  id: string;
-  username: string;
-  name: string | null;
-  image: string | null;
-  bio: string | null;
-  categories: string[] | null;
-  profilePicture: string | null;
-  isLive: boolean;
-  streamTitle: string | null;
-  streamThumbnail: string | null;
-  isChatEnabled: boolean;
-  isChatFollowersOnly: boolean;
-  followerCount: number;
-  followingCount: number;
-  isFollowing: boolean;
-}
 
 export default function CreatorPage() {
   const { username } = useParams<{ username: string }>();
