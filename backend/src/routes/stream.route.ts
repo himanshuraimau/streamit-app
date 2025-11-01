@@ -10,7 +10,23 @@ const router = Router();
  * All routes require authentication and creator approval
  */
 
-// Ingress management (stream key)
+// NEW FLOW: Create stream with metadata
+router.post(
+  '/create',
+  requireAuth,
+  requireCreator,
+  StreamController.createStreamWithMetadata
+);
+
+// Get past streams
+router.get(
+  '/past',
+  requireAuth,
+  requireCreator,
+  StreamController.getPastStreams
+);
+
+// Ingress management (stream key) - OLD FLOW (keeping for backward compatibility)
 router.post(
   '/ingress',
   requireAuth,
@@ -61,6 +77,14 @@ router.get(
   requireAuth,
   requireCreator,
   StreamController.getStreamStatus
+);
+
+// Get creator token for viewing own stream
+router.post(
+  '/creator-token',
+  requireAuth,
+  requireCreator,
+  StreamController.getCreatorToken
 );
 
 export default router;

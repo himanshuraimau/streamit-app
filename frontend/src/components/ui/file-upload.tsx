@@ -69,8 +69,9 @@ export function FileUpload({
     try {
       const result = await uploadFile(file, purpose);
       onUploadComplete?.(result.url);
-    } catch (error: any) {
-      onUploadError?.(error.message || 'Upload failed');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Upload failed';
+      onUploadError?.(message);
       setUploadedFile(null);
       setPreview(null);
     }
@@ -98,12 +99,15 @@ export function FileUpload({
   };
 
   // Handle click to select file
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     fileInputRef.current?.click();
   };
 
   // Handle file input change
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
       handleFileSelect(files[0]);

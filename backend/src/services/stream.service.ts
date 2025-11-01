@@ -416,4 +416,149 @@ export class StreamService {
   ): Promise<boolean> {
     return userId === streamUserId;
   }
+
+  /**
+   * Create stream with metadata (NEW FLOW)
+   * @param userId - Creator's user ID
+   * @param data - Stream metadata
+   * @returns Created stream
+   */
+  static async createStreamWithMetadata(
+    userId: string,
+    data: {
+      title: string;
+      description?: string;
+      thumbnail?: string;
+      isChatEnabled?: boolean;
+      isChatDelayed?: boolean;
+      isChatFollowersOnly?: boolean;
+    }
+  ): Promise<Stream> {
+    try {
+      // Validate user is approved creator
+      await this.validateCreatorApproved(userId);
+
+      console.log(`[StreamService] Creating stream with metadata for user: ${userId}`);
+
+      // Create or update stream with metadata (no ingress yet)
+      const stream = await prisma.stream.upsert({
+        where: { userId },
+        update: {
+          title: data.title,
+          description: data.description,
+          thumbnail: data.thumbnail,
+          isChatEnabled: data.isChatEnabled ?? true,
+          isChatDelayed: data.isChatDelayed ?? false,
+          isChatFollowersOnly: data.isChatFollowersOnly ?? false,
+        },
+        create: {
+          userId,
+          title: data.title,
+          description: data.description,
+          thumbnail: data.thumbnail,
+          isChatEnabled: data.isChatEnabled ?? true,
+          isChatDelayed: data.isChatDelayed ?? false,
+          isChatFollowersOnly: data.isChatFollowersOnly ?? false,
+          isLive: false,
+        },
+      });
+
+      console.log(`[StreamService] Stream created with metadata for user: ${userId}`);
+      return stream;
+    } catch (error) {
+      console.error('[StreamService] Error creating stream with metadata:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update stream with ingress details after metadata is set
+   * @param userId - Creator's user ID
+   * @param ingressType - Type of ingress (RTMP or WHIP)
+   * @returns Updated stream with ingress details
+   */
+  static async addIngressToStream(
+    userId: string,
+    ingressType: 'RTMP' | 'WHIP' = 'RTMP'
+  ): Promise<Stream> {
+    try {
+      console.log(`[StreamService] Adding ingress to stream for user: ${userId}`);
+
+      // Get existing stream
+      const stream = await this.getCreatorStream(userId);
+      if (!stream) {
+        throw new Error('Stream not found. Create stream metadata first.');
+      }
+
+      // If stream exists with ingress, reset it first
+      if (stream.ingressId) {
+        console.log(`[StreamService] Existing ingress found, resetting...`);
+        await LiveKitService.resetUserIngresses(userId);
+      }
+
+      // Create new ingress in LiveKit
+      const ingress = await LiveKitService.createIngress(userId, ingressType);
+
+      // Update stream with ingress details
+      const updatedStream = await prisma.stream.update({
+        where: { userId },
+        data: {
+          ingressId: ingress.ingressId,
+          serverUrl: ingress.url,
+          streamKey: ingress.streamKey,
+        },
+      });
+
+      console.log(`[StreamService] Ingress added to stream for user: ${userId}`);
+      return updatedStream;
+    } catch (error) {
+      console.error('[StreamService] Error adding ingress to stream:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get past streams for a creator
+   * Note: Current schema only supports one stream per user
+   * This returns the stream if it exists and was live before
+   * TODO: Add StreamSession model for proper stream history
+   * @param userId - Creator's user ID
+   * @param limit - Number of streams to return
+   * @param offset - Offset for pagination
+   * @returns Past streams with metadata
+   */
+  static async getPastStreams(
+    userId: string,
+    limit: number = 10,
+    offset: number = 0
+  ) {
+    try {
+      // For now, return current stream if it exists and is not live
+      const stream = await prisma.stream.findUnique({
+        where: { userId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+      });
+
+      if (!stream || stream.isLive) {
+        return { streams: [], total: 0 };
+      }
+
+      return {
+        streams: [stream],
+        total: 1,
+      };
+    } catch (error) {
+      console.error('[StreamService] Error getting past streams:', error);
+      throw error;
+    }
+  }
 }

@@ -66,6 +66,40 @@ export interface UpdateChatSettingsRequest {
   isChatFollowersOnly?: boolean;
 }
 
+export interface CreateStreamRequest {
+  title: string;
+  description?: string;
+  thumbnail?: string;
+  chatSettings?: {
+    isChatEnabled?: boolean;
+    isChatDelayed?: boolean;
+    isChatFollowersOnly?: boolean;
+  };
+  streamMethod: 'browser' | 'obs';
+}
+
+export interface CreateStreamResponse {
+  stream: {
+    id: string;
+    title: string;
+    description: string | null;
+    thumbnail: string | null;
+    isChatEnabled: boolean;
+    isChatDelayed: boolean;
+    isChatFollowersOnly: boolean;
+  };
+  credentials: {
+    serverUrl: string;
+    streamKey: string;
+  };
+  streamMethod: 'browser' | 'obs';
+}
+
+export interface PastStreamsResponse {
+  streams: StreamInfo[];
+  total: number;
+}
+
 export interface ViewerTokenRequest {
   hostId: string;
   guestName?: string;
@@ -79,7 +113,40 @@ export interface ViewerTokenResponse {
 }
 
 export const streamApi = {
-  // Create stream ingress (generate stream key)
+  // NEW FLOW: Create stream with metadata
+  async createStreamWithMetadata(data: CreateStreamRequest): Promise<ApiResponse<CreateStreamResponse>> {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${API_BASE_URL}/api/stream/create`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(data),
+      });
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating stream:', error);
+      throw error;
+    }
+  },
+
+  // Get past streams
+  async getPastStreams(limit = 10, offset = 0): Promise<ApiResponse<PastStreamsResponse>> {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(
+        `${API_BASE_URL}/api/stream/past?limit=${limit}&offset=${offset}`,
+        { method: 'GET', headers }
+      );
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching past streams:', error);
+      throw error;
+    }
+  },
+
+  // Create stream ingress (generate stream key) - OLD FLOW
   async createIngress(ingressType: 'RTMP' | 'WHIP' = 'RTMP'): Promise<ApiResponse<StreamIngress>> {
     try {
       const headers = await getAuthHeaders();
@@ -219,6 +286,22 @@ export const streamApi = {
       return await response.json();
     } catch (error) {
       console.error('Error getting viewer token:', error);
+      throw error;
+    }
+  },
+
+  // Get creator's own stream token (for viewing own stream as creator)
+  async getCreatorViewToken(): Promise<ApiResponse<ViewerTokenResponse>> {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${API_BASE_URL}/api/stream/creator-token`, {
+        method: 'POST',
+        headers,
+      });
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting creator view token:', error);
       throw error;
     }
   },

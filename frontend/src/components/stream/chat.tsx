@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { useChat, useRoomContext } from '@livekit/components-react';
+import { useChat, useConnectionState } from '@livekit/components-react';
+import { ConnectionState } from 'livekit-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, MessageSquare, Lock } from 'lucide-react';
@@ -23,7 +24,10 @@ export function Chat({
   const [message, setMessage] = useState('');
   const { chatMessages, send } = useChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const room = useRoomContext();
+  const connectionState = useConnectionState();
+
+  // Check if room is connected
+  const isConnected = connectionState === ConnectionState.Connected;
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -31,7 +35,7 @@ export function Chat({
   }, [chatMessages]);
 
   const handleSendMessage = async () => {
-    if (!message.trim() || !send) return;
+    if (!message.trim() || !send || !isConnected) return;
 
     try {
       await send(message);
@@ -120,13 +124,18 @@ export function Chat({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={`Send a message to ${hostName}...`}
+              placeholder={
+                isConnected 
+                  ? `Send a message to ${hostName}...` 
+                  : 'Connecting to chat...'
+              }
               className="flex-1 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
               maxLength={500}
+              disabled={!isConnected}
             />
             <Button
               onClick={handleSendMessage}
-              disabled={!message.trim() || !send || !room}
+              disabled={!message.trim() || !send || !isConnected}
               className="bg-purple-600 hover:bg-purple-700"
             >
               <Send className="w-4 h-4" />

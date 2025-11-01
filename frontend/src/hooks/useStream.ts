@@ -16,13 +16,10 @@ export function useStream() {
       setLoading(true);
       const response = await streamApi.getStreamInfo();
       
-      console.log('[useStream] fetchStreamInfo response:', response);
-      
       if (response.success && response.data) {
         // Preserve existing credentials when updating stream info
         setStreamInfo(prev => {
           if (prev?.streamKey && prev?.serverUrl) {
-            console.log('[useStream] Preserving credentials in fetchStreamInfo');
             // Keep existing credentials, only update other fields
             return {
               ...response.data!,
@@ -47,15 +44,12 @@ export function useStream() {
     try {
       const response = await streamApi.getStreamStatus();
       
-      console.log('[useStream] fetchStreamStatus response:', response);
-      
       if (response.success && response.data) {
         setStreamStatus(response.data);
         
         // Preserve existing credentials when updating from status
         setStreamInfo(prev => {
           if (prev?.streamKey && prev?.serverUrl) {
-            console.log('[useStream] Preserving credentials in fetchStreamStatus');
             // Keep existing credentials, only update other fields
             return {
               ...response.data!.stream,
@@ -79,15 +73,11 @@ export function useStream() {
       setError(null);
       const response = await streamApi.createIngress(ingressType);
       
-      console.log('[useStream] createIngress response:', response);
-      
       if (response.success && response.data) {
         setIngress(response.data);
-        console.log('[useStream] Set ingress data:', response.data);
         
         // Fetch the latest stream info first
         const infoResponse = await streamApi.getStreamInfo();
-        console.log('[useStream] getStreamInfo response:', infoResponse);
         
         // Merge the credentials with the stream info
         if (infoResponse.success && infoResponse.data) {
@@ -97,11 +87,9 @@ export function useStream() {
             serverUrl: response.data.serverUrl,
             ingressId: response.data.ingressId,
           };
-          console.log('[useStream] Setting merged streamInfo:', mergedData);
           setStreamInfo(mergedData);
         } else {
           // If fetching info fails, create minimal stream info with credentials
-          console.log('[useStream] getStreamInfo failed, setting minimal data');
           setStreamInfo(prev => ({
             id: prev?.id || '',
             title: prev?.title || 'My Stream',
@@ -223,21 +211,6 @@ export function useStream() {
   useEffect(() => {
     fetchStreamInfo();
   }, [fetchStreamInfo]);
-
-  // Poll stream status every 5 seconds if stream exists
-  useEffect(() => {
-    if (!streamInfo?.id) return;
-
-    console.log('[useStream] Starting status polling');
-    const interval = setInterval(() => {
-      fetchStreamStatus();
-    }, 5000);
-
-    return () => {
-      console.log('[useStream] Stopping status polling');
-      clearInterval(interval);
-    };
-  }, [streamInfo?.id, fetchStreamStatus]);
 
   return {
     ingress,

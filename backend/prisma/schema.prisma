@@ -194,6 +194,7 @@ model FileUpload {
 model Stream {
   id                    String   @id @default(cuid())
   title                 String   @db.Text
+  description           String?  @db.Text
   thumbnail             String?  @db.Text
   
   // Streaming infrastructure
