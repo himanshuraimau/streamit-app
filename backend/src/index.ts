@@ -6,6 +6,10 @@ import { toNodeHandler } from 'better-auth/node';
 import authRoutes from './routes/auth.route';
 import creatorRoutes from './routes/creator';
 import contentRoutes from './routes/content';
+import streamRoutes from './routes/stream.route';
+import webhookRoutes from './routes/webhook.route';
+import viewerRoutes from './routes/viewer.route';
+import socialRoutes from './routes/social.route';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,6 +33,18 @@ app.use('/api/creator', creatorRoutes);
 
 // Mount content routes
 app.use('/api/content', contentRoutes);
+
+// Mount stream routes
+app.use('/api/stream', streamRoutes);
+
+// Mount webhook routes
+app.use('/api/webhook', webhookRoutes);
+
+// Mount viewer routes
+app.use('/api/viewer', viewerRoutes);
+
+// Mount social routes
+app.use('/api/social', socialRoutes);
 
 // IMPORTANT: Mount Better Auth handler LAST (catch-all for remaining auth routes)
 // Express v5 uses new wildcard syntax: /{*any} instead of /*
