@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useCreatePost } from '@/hooks/useContent';
-import { useAuthSession, getUsernameFromSession } from '@/hooks/useAuthSession';
+import { useAuthSession } from '@/hooks/useAuthSession';
 import type { CreatePostInput, PostType } from '@/types/content';
 
 interface CreatePostFormProps {
@@ -143,7 +143,7 @@ export function CreatePostForm({ onSuccess }: CreatePostFormProps) {
                 {session?.user?.name}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                @{getUsernameFromSession(session?.user)}
+                @{session?.user?.username || 'user'}
               </p>
             </div>
           </div>

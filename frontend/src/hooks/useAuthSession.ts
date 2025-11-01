@@ -13,19 +13,3 @@ export function useAuthSession() {
     } : null,
   };
 }
-
-// Helper function to get username from session
-export function getUsernameFromSession(user: any): string {
-  // First try to get the username field
-  if (user?.username) {
-    return user.username;
-  }
-  
-  // Fallback to email prefix if username is not available
-  if (user?.email) {
-    return user.email.split('@')[0];
-  }
-  
-  // Final fallback
-  return 'user';
-}
