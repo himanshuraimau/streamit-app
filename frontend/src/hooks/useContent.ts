@@ -23,7 +23,7 @@ export const contentKeys = {
 // Hooks for posts
 export const useCreatePost = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (data: CreatePostInput) => contentApi.createPost(data),
     onSuccess: () => {
@@ -37,7 +37,7 @@ export const useCreatePost = () => {
 
 export const useUpdatePost = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: ({ postId, data }: { postId: string; data: UpdatePostInput }) =>
       contentApi.updatePost(postId, data),
@@ -53,7 +53,7 @@ export const useUpdatePost = () => {
 
 export const useDeletePost = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (postId: string) => contentApi.deletePost(postId),
     onSuccess: (_, postId) => {
@@ -136,7 +136,7 @@ export const usePublicFeed = (query: FeedQuery = {}) => {
 // Hooks for likes
 export const useTogglePostLike = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (postId: string) => contentApi.togglePostLike(postId),
     onSuccess: (response, postId) => {
@@ -209,13 +209,13 @@ export const usePostComments = (postId: string) => {
 
 export const useAddComment = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (data: CreateCommentInput) => contentApi.addComment(data),
     onSuccess: (_, { postId }) => {
       // Invalidate comments for this post
       queryClient.invalidateQueries({ queryKey: contentKeys.comments(postId) });
-      
+
       // Update post comment count in cache
       const updatePostCommentCount = (post: PostResponse) => ({
         ...post,

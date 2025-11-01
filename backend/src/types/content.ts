@@ -46,7 +46,7 @@ export interface PostResponse {
   author: {
     id: string;
     name: string;
-    email: string;
+    username: string;
     image: string | null;
   };
   media: MediaResponse[];
@@ -88,7 +88,7 @@ export interface CommentResponse {
   user: {
     id: string;
     name: string;
-    email: string;
+    username: string;
     image: string | null;
   };
   replies?: CommentResponse[];

@@ -52,7 +52,7 @@ export class ContentService {
                             select: {
                                 id: true,
                                 name: true,
-                                email: true,
+                                username: true,
                                 image: true,
                             }
                         },
@@ -84,7 +84,7 @@ export class ContentService {
                                 select: {
                                     id: true,
                                     name: true,
-                                    email: true,
+                                    username: true,
                                     image: true,
                                 }
                             },
@@ -137,7 +137,7 @@ export class ContentService {
                     select: {
                         id: true,
                         name: true,
-                        email: true,
+                        username: true,
                         image: true,
                     }
                 },
@@ -196,7 +196,7 @@ export class ContentService {
                     select: {
                         id: true,
                         name: true,
-                        email: true,
+                        username: true,
                         image: true,
                     }
                 },
@@ -241,7 +241,7 @@ export class ContentService {
                     select: {
                         id: true,
                         name: true,
-                        email: true,
+                        username: true,
                         image: true,
                     }
                 },
@@ -290,7 +290,7 @@ export class ContentService {
                     select: {
                         id: true,
                         name: true,
-                        email: true,
+                        username: true,
                         image: true,
                     }
                 },
@@ -414,7 +414,7 @@ export class ContentService {
                         select: {
                             id: true,
                             name: true,
-                            email: true,
+                            username: true,
                             image: true,
                         }
                     }
@@ -460,7 +460,7 @@ export class ContentService {
                     select: {
                         id: true,
                         name: true,
-                        email: true,
+                        username: true,
                         image: true,
                     }
                 },
@@ -470,7 +470,7 @@ export class ContentService {
                             select: {
                                 id: true,
                                 name: true,
-                                email: true,
+                                username: true,
                                 image: true,
                             }
                         },

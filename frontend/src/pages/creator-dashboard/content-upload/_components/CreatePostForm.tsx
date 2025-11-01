@@ -11,10 +11,9 @@ import type { CreatePostInput, PostType } from '@/types/content';
 
 interface CreatePostFormProps {
   onSuccess?: () => void;
-  onCancel?: () => void;
 }
 
-export function CreatePostForm({ onSuccess, onCancel }: CreatePostFormProps) {
+export function CreatePostForm({ onSuccess }: CreatePostFormProps) {
   const [content, setContent] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isPublic, setIsPublic] = useState(true);
@@ -25,9 +24,8 @@ export function CreatePostForm({ onSuccess, onCancel }: CreatePostFormProps) {
   const { data: session } = useSession();
   const createPost = useCreatePost();
 
-  // For now, assume all authenticated users in creator dashboard are creators
-  // You can adjust this logic based on your actual user role structure
-  const isCreator = true; // Since this is in creator dashboard, user should be a creator
+
+  const isCreator = true;
 
   const handleFileSelect = (files: FileList | null) => {
     if (!files) return;
@@ -269,23 +267,22 @@ export function CreatePostForm({ onSuccess, onCancel }: CreatePostFormProps) {
 
           {/* Actions */}
           <div className="flex justify-end space-x-3 pt-4">
-            {onCancel && (
-              <Button variant="outline" onClick={onCancel}>
-                Cancel
-              </Button>
-            )}
             <Button
               onClick={handleSubmit}
               disabled={createPost.isPending || (!content.trim() && selectedFiles.length === 0)}
               className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+              size="lg"
             >
               {createPost.isPending ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Posting...
+                  Creating Post...
                 </>
               ) : (
-                'Post'
+                <>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Create Post
+                </>
               )}
             </Button>
           </div>

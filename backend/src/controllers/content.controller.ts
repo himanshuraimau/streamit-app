@@ -1,11 +1,11 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { ContentService } from '../services/content.service';
-import { 
-  createPostSchema, 
-  updatePostSchema, 
-  createCommentSchema, 
-  feedQuerySchema 
+import {
+  createPostSchema,
+  updatePostSchema,
+  createCommentSchema,
+  feedQuerySchema
 } from '../lib/validations/content.validation';
 
 export class ContentController {
@@ -33,7 +33,7 @@ export class ContentController {
       });
     } catch (error) {
       console.error('Error creating post:', error);
-      
+
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           success: false,
@@ -71,7 +71,7 @@ export class ContentController {
       });
     } catch (error) {
       console.error('Error fetching user posts:', error);
-      
+
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           success: false,
@@ -101,7 +101,7 @@ export class ContentController {
       });
     } catch (error) {
       console.error('Error fetching public feed:', error);
-      
+
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           success: false,
@@ -174,7 +174,7 @@ export class ContentController {
       });
     } catch (error) {
       console.error('Error updating post:', error);
-      
+
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           success: false,
@@ -259,7 +259,7 @@ export class ContentController {
       });
     } catch (error) {
       console.error('Error adding comment:', error);
-      
+
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           success: false,
@@ -316,7 +316,7 @@ export class ContentController {
       });
     } catch (error) {
       console.error('Error fetching my posts:', error);
-      
+
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           success: false,
@@ -348,7 +348,7 @@ export class ContentController {
       });
     } catch (error) {
       console.error('Error fetching feed:', error);
-      
+
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           success: false,

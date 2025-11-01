@@ -150,7 +150,7 @@ function CommentItem({
                 {comment.user.name}
               </span>
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                @{comment.user.email?.split('@')[0] || 'user'}
+                @{comment.user.username}
               </span>
               <span className="text-xs text-gray-500 dark:text-gray-400">
                 {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}

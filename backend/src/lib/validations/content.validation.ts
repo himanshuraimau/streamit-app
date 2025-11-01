@@ -5,8 +5,8 @@ import { PostType, MediaType } from '@prisma/client';
 export const createPostSchema = z.object({
   content: z.string().max(2000, 'Content cannot exceed 2000 characters').optional(),
   type: z.enum([PostType.TEXT, PostType.IMAGE, PostType.VIDEO, PostType.MIXED]),
-  isPublic: z.boolean().default(true),
-  allowComments: z.boolean().default(true),
+  isPublic: z.coerce.boolean().default(true),
+  allowComments: z.coerce.boolean().default(true),
 }).refine((data) => {
   // Text posts must have content
   if (data.type === PostType.TEXT && (!data.content || data.content.trim().length === 0)) {
@@ -20,8 +20,8 @@ export const createPostSchema = z.object({
 
 export const updatePostSchema = z.object({
   content: z.string().max(2000, 'Content cannot exceed 2000 characters').optional(),
-  isPublic: z.boolean().optional(),
-  allowComments: z.boolean().optional(),
+  isPublic: z.coerce.boolean().optional(),
+  allowComments: z.coerce.boolean().optional(),
 });
 
 // Comment validation schemas
@@ -39,10 +39,10 @@ export const mediaUploadSchema = z.object({
 // Feed query validation
 export const feedQuerySchema = z.object({
   cursor: z.string().optional(),
-  limit: z.number().min(1).max(50).default(20),
+  limit: z.coerce.number().min(1).max(50).default(20),
   userId: z.string().cuid().optional(),
   type: z.enum([PostType.TEXT, PostType.IMAGE, PostType.VIDEO, PostType.MIXED]).optional(),
-  isPublic: z.boolean().optional(),
+  isPublic: z.coerce.boolean().optional(),
 });
 
 // File validation constants
