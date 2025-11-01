@@ -14,20 +14,40 @@ export class LiveKitService {
   private static roomClient: RoomServiceClient | null = null;
 
   /**
+   * Validate LiveKit configuration
+   */
+  private static validateConfig(): void {
+    const livekitUrl = process.env.LIVEKIT_URL;
+    const apiKey = process.env.LIVEKIT_API_KEY;
+    const apiSecret = process.env.LIVEKIT_API_SECRET;
+
+    if (!livekitUrl || !apiKey || !apiSecret) {
+      console.error('[LiveKit] Configuration missing:');
+      console.error(`  LIVEKIT_URL: ${livekitUrl ? '✓' : '✗ MISSING'}`);
+      console.error(`  LIVEKIT_API_KEY: ${apiKey ? '✓' : '✗ MISSING'}`);
+      console.error(`  LIVEKIT_API_SECRET: ${apiSecret ? '✓' : '✗ MISSING'}`);
+      throw new Error(
+        'Missing LiveKit configuration. Please set LIVEKIT_URL, LIVEKIT_API_KEY, and LIVEKIT_API_SECRET in your environment variables.'
+      );
+    }
+
+    console.log('[LiveKit] Configuration validated:');
+    console.log(`  URL: ${livekitUrl}`);
+    console.log(`  API Key: ${apiKey.substring(0, 10)}...`);
+  }
+
+  /**
    * Get or create IngressClient instance (singleton pattern)
    */
   private static getIngressClient(): IngressClient {
     if (!this.ingressClient) {
-      const livekitUrl = process.env.LIVEKIT_URL;
-      const apiKey = process.env.LIVEKIT_API_KEY;
-      const apiSecret = process.env.LIVEKIT_API_SECRET;
+      this.validateConfig();
+      
+      const livekitUrl = process.env.LIVEKIT_URL!;
+      const apiKey = process.env.LIVEKIT_API_KEY!;
+      const apiSecret = process.env.LIVEKIT_API_SECRET!;
 
-      if (!livekitUrl || !apiKey || !apiSecret) {
-        throw new Error(
-          'Missing LiveKit configuration. Please set LIVEKIT_URL, LIVEKIT_API_KEY, and LIVEKIT_API_SECRET in your environment variables.'
-        );
-      }
-
+      console.log('[LiveKit] Initializing IngressClient...');
       this.ingressClient = new IngressClient(livekitUrl, apiKey, apiSecret);
       console.log('[LiveKit] IngressClient initialized');
     }
@@ -93,8 +113,20 @@ export class LiveKitService {
         url: ingress.url,
         streamKey: ingress.streamKey,
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('[LiveKit] Error creating ingress:', error);
+      
+      // Handle specific error types
+      if (error?.code === 'deadline_exceeded' || 
+          (error instanceof Error && error.message.includes('timed out'))) {
+        throw new Error(
+          'LiveKit server connection timeout. Please check:\n' +
+          '1. LIVEKIT_URL is correct and accessible\n' +
+          '2. Network connectivity to LiveKit server\n' +
+          '3. LiveKit server is running and healthy'
+        );
+      }
+      
       throw new Error(
         `Failed to create ingress: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -147,9 +179,11 @@ export class LiveKitService {
       console.log(`[LiveKit] Deleting room: ${roomName}`);
       await roomClient.deleteRoom(roomName);
       console.log(`[LiveKit] Room deleted successfully: ${roomName}`);
-    } catch (error) {
+    } catch (error: any) {
       // Room might not exist, which is fine
-      if (error instanceof Error && error.message.includes('not found')) {
+      if (error?.code === 'not_found' || 
+          (error instanceof Error && error.message.includes('not found')) ||
+          (error instanceof Error && error.message.includes('does not exist'))) {
         console.log(`[LiveKit] Room ${roomName} does not exist, skipping deletion`);
         return;
       }
