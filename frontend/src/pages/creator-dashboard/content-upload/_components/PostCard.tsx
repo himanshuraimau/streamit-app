@@ -18,9 +18,10 @@ interface PostCardProps {
   post: PostResponse;
   onEdit?: (post: PostResponse) => void;
   showComments?: boolean;
+  compact?: boolean;
 }
 
-export function PostCard({ post, onEdit, showComments = false }: PostCardProps) {
+export function PostCard({ post, onEdit, showComments = false, compact = false }: PostCardProps) {
   const [showCommentsSection, setShowCommentsSection] = useState(showComments);
   const { data: session } = useAuthSession();
   const toggleLike = useTogglePostLike();
@@ -48,7 +49,7 @@ export function PostCard({ post, onEdit, showComments = false }: PostCardProps) 
           text: post.content || 'Check out this post',
           url: window.location.origin + `/posts/${post.id}`,
         });
-      } catch (error) {
+      } catch {
         // User cancelled sharing
       }
     } else {
@@ -58,7 +59,7 @@ export function PostCard({ post, onEdit, showComments = false }: PostCardProps) 
   };
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+    <div className={`bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden ${compact ? 'max-w-2xl' : ''}`}>
       {/* Header */}
       <div className="flex items-center justify-between p-3">
         <div className="flex items-center space-x-3">
@@ -112,7 +113,7 @@ export function PostCard({ post, onEdit, showComments = false }: PostCardProps) 
       {/* Media */}
       {post.media && post.media.length > 0 && (
         <div className="px-3 pb-2">
-          <MediaGrid media={post.media} />
+          <MediaGrid media={post.media} compact={compact} />
         </div>
       )}
 

@@ -26,6 +26,7 @@ import ContentPage from '@/pages/content/index';
 
 // Watch Stream Page
 import WatchStream from '@/pages/watch';
+import CreatorPage from '@/pages/creator';
 
 function App() {
   return (
@@ -35,6 +36,9 @@ function App() {
       
       {/* Watch stream route */}
       <Route path="/u/:username" element={<WatchStream />} />
+
+  {/* Public creator profile */}
+  <Route path="/creator/:username" element={<CreatorPage />} />
 
       {/* Auth routes */}
       <Route path="/auth/login-options" element={<LoginOptions />} />

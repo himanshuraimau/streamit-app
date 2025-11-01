@@ -4,9 +4,10 @@ import type { MediaResponse } from '@/types/content';
 
 interface MediaGridProps {
   media: MediaResponse[];
+  compact?: boolean;
 }
 
-export function MediaGrid({ media }: MediaGridProps) {
+export function MediaGrid({ media, compact = false }: MediaGridProps) {
   const [selectedMedia, setSelectedMedia] = useState<MediaResponse | null>(null);
 
   if (media.length === 0) return null;
@@ -76,7 +77,7 @@ export function MediaGrid({ media }: MediaGridProps) {
             className={`
               ${media.length === 3 && index === 0 ? 'row-span-2' : ''}
               ${media.length > 4 && index === 3 ? 'relative' : ''}
-              aspect-square
+              ${compact ? 'aspect-video h-48' : 'aspect-square'}
             `}
           >
             {renderMedia(item, index)}
