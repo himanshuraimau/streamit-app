@@ -152,6 +152,50 @@ export class WebhookService {
   }
 
   /**
+   * Handle track published event
+   * Called when a participant publishes a track (audio/video)
+   * @param event - Webhook event
+   */
+  static async handleTrackPublished(event: any): Promise<void> {
+    try {
+      const roomName = event.room?.name;
+      const participantIdentity = event.participant?.identity;
+      const trackSid = event.track?.sid;
+      const trackType = event.track?.type; // 'AUDIO' or 'VIDEO'
+      
+      console.log(
+        `[WebhookService] Track published - Room: ${roomName}, Participant: ${participantIdentity}, Type: ${trackType}, SID: ${trackSid}`
+      );
+      // Can add analytics tracking here
+    } catch (error) {
+      console.error('[WebhookService] Error handling track_published:', error);
+      // Don't throw error for non-critical events
+    }
+  }
+
+  /**
+   * Handle track unpublished event
+   * Called when a participant unpublishes a track
+   * @param event - Webhook event
+   */
+  static async handleTrackUnpublished(event: any): Promise<void> {
+    try {
+      const roomName = event.room?.name;
+      const participantIdentity = event.participant?.identity;
+      const trackSid = event.track?.sid;
+      const trackType = event.track?.type;
+      
+      console.log(
+        `[WebhookService] Track unpublished - Room: ${roomName}, Participant: ${participantIdentity}, Type: ${trackType}, SID: ${trackSid}`
+      );
+      // Can add analytics tracking here
+    } catch (error) {
+      console.error('[WebhookService] Error handling track_unpublished:', error);
+      // Don't throw error for non-critical events
+    }
+  }
+
+  /**
    * Process webhook event
    * Routes event to appropriate handler based on event type
    * @param event - Validated webhook event
@@ -180,6 +224,14 @@ export class WebhookService {
         
         case 'participant_left':
           await this.handleParticipantLeft(event);
+          break;
+        
+        case 'track_published':
+          await this.handleTrackPublished(event);
+          break;
+        
+        case 'track_unpublished':
+          await this.handleTrackUnpublished(event);
           break;
         
         default:

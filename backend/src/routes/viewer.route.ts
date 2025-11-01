@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireAuth } from '../middleware/auth';
+import { requireAuth, optionalAuth } from '../middleware/auth';
 import { ViewerController } from '../controllers/viewer.controller';
 
 const router = Router();
@@ -18,6 +18,7 @@ router.get(
 // Get viewer token for joining a stream (public, but better with auth)
 router.post(
   '/token',
+  optionalAuth,
   ViewerController.getViewerToken
 );
 

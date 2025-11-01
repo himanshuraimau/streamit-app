@@ -29,6 +29,12 @@ export interface StreamIngress {
   userId: string;
 }
 
+export interface StreamCredentials {
+  ingressId: string | null;
+  serverUrl: string | null;
+  streamKey: string | null;
+}
+
 export interface StreamInfo {
   id: string;
   title: string;
@@ -122,6 +128,22 @@ export const streamApi = {
     }
   },
 
+  // Get stream credentials (including stream key)
+  async getStreamCredentials(): Promise<ApiResponse<StreamCredentials>> {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${API_BASE_URL}/api/stream/credentials`, {
+        method: 'GET',
+        headers,
+      });
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching stream credentials:', error);
+      throw error;
+    }
+  },
+
   // Update stream info (title, thumbnail)
   async updateStreamInfo(data: UpdateStreamInfoRequest): Promise<ApiResponse<StreamInfo>> {
     try {
@@ -175,7 +197,19 @@ export const streamApi = {
   // Get viewer token (for viewing own stream)
   async getViewerToken(hostId: string, guestName?: string): Promise<ApiResponse<ViewerTokenResponse>> {
     try {
-      const headers = await getAuthHeaders();
+      // Try to get auth headers, but don't throw if not authenticated
+      let headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      try {
+        const authHeaders = await getAuthHeaders();
+        headers = authHeaders;
+      } catch {
+        // Not authenticated - will use guest mode with guestName
+        console.log('[streamApi] No session found, using guest mode');
+      }
+      
       const response = await fetch(`${API_BASE_URL}/api/viewer/token`, {
         method: 'POST',
         headers,
@@ -185,6 +219,79 @@ export const streamApi = {
       return await response.json();
     } catch (error) {
       console.error('Error getting viewer token:', error);
+      throw error;
+    }
+  },
+};
+
+// Viewer API - Public endpoints for watching streams
+export interface LiveStream {
+  id: string;
+  title: string;
+  thumbnail: string | null;
+  isLive: boolean;
+  isChatEnabled: boolean;
+  isChatDelayed: boolean;
+  isChatFollowersOnly: boolean;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    username: string;
+    name: string | null;
+    image: string | null;
+  };
+}
+
+export interface StreamByUsername {
+  id: string;
+  title: string;
+  thumbnail: string | null;
+  isLive: boolean;
+  isChatEnabled: boolean;
+  isChatDelayed: boolean;
+  isChatFollowersOnly: boolean;
+  userId: string;
+  user: {
+    id: string;
+    username: string;
+    name: string | null;
+    image: string | null;
+  };
+}
+
+export const viewerApi = {
+  // Get all live streams (public)
+  async getLiveStreams(): Promise<ApiResponse<LiveStream[]>> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/viewer/live`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching live streams:', error);
+      throw error;
+    }
+  },
+
+  // Get stream by username (public)
+  async getStreamByUsername(username: string): Promise<ApiResponse<StreamByUsername>> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/viewer/stream/${username}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching stream by username:', error);
       throw error;
     }
   },

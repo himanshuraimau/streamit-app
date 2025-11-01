@@ -68,11 +68,16 @@ export class ViewerController {
         });
       }
 
-      // Check if user is authenticated
+      // Check if user is authenticated (via optionalAuth middleware)
       const viewerId = req.user?.id;
       const viewerName = req.user?.name || req.user?.username || guestName;
 
+      console.log(
+        `[ViewerController] Token request - viewerId: ${viewerId || 'none'}, viewerName: ${viewerName || 'none'}, hostId: ${hostId}, guestName: ${guestName || 'none'}`
+      );
+
       if (!viewerId && !guestName) {
+        console.warn('[ViewerController] Neither authenticated user nor guest name provided');
         return res.status(400).json({
           success: false,
           error: 'Guest name is required for anonymous viewers',
@@ -80,7 +85,7 @@ export class ViewerController {
       }
 
       console.log(
-        `[ViewerController] Generating token for ${viewerId ? 'user' : 'guest'} to view ${hostId}`
+        `[ViewerController] Generating token for ${viewerId ? `user ${viewerId}` : `guest ${guestName}`} to view ${hostId}`
       );
 
       // Validate token request (check blocks, restrictions, etc.)

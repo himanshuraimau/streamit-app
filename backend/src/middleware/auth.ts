@@ -53,3 +53,46 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+/**
+ * Optional auth middleware - attaches user if authenticated, but doesn't block if not
+ * Useful for endpoints that work for both authenticated and anonymous users
+ */
+export const optionalAuth = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      // No auth provided, continue without user
+      return next();
+    }
+
+    const token = authHeader.substring(7);
+
+    // Find session by token
+    const session = await prisma.session.findUnique({
+      where: { token },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            username: true,
+          },
+        },
+      },
+    });
+
+    if (session && session.expiresAt > new Date()) {
+      req.user = session.user;
+    }
+    
+    // Continue regardless of auth status
+    next();
+  } catch (error) {
+    console.error('Optional auth middleware error:', error);
+    // Continue even if there's an error
+    next();
+  }
+};

@@ -22,7 +22,12 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Mount express.json() BEFORE custom routes
+// Mount webhook routes FIRST with raw body parser (before express.json())
+// LiveKit webhook requires raw body for signature verification
+app.use('/api/webhook', express.raw({ type: 'application/webhook+json' }));
+app.use('/api/webhook', webhookRoutes);
+
+// Mount express.json() for all other routes
 app.use(express.json());
 
 // Mount custom auth routes FIRST (more specific routes)
@@ -36,9 +41,6 @@ app.use('/api/content', contentRoutes);
 
 // Mount stream routes
 app.use('/api/stream', streamRoutes);
-
-// Mount webhook routes
-app.use('/api/webhook', webhookRoutes);
 
 // Mount viewer routes
 app.use('/api/viewer', viewerRoutes);

@@ -5,6 +5,7 @@ import { Chat } from './chat';
 import { Card } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { streamApi } from '@/lib/api/stream';
+import { authClient } from '@/lib/auth-client';
 import type { ViewerTokenResponse } from '@/lib/api/stream';
 
 interface StreamPlayerProps {
@@ -19,6 +20,16 @@ interface StreamPlayerProps {
   isFollowing?: boolean;
 }
 
+// Generate a random guest name
+const generateGuestName = () => {
+  const adjectives = ['Happy', 'Lucky', 'Clever', 'Swift', 'Brave', 'Bright', 'Cool', 'Epic', 'Noble', 'Wise'];
+  const nouns = ['Panda', 'Tiger', 'Eagle', 'Fox', 'Wolf', 'Lion', 'Bear', 'Hawk', 'Dragon', 'Phoenix'];
+  const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+  const randomNumber = Math.floor(Math.random() * 1000);
+  return `${randomAdjective}${randomNoun}${randomNumber}`;
+};
+
 export function StreamPlayer({ 
   hostId, 
   hostName, 
@@ -28,28 +39,40 @@ export function StreamPlayer({
   const [token, setToken] = useState<ViewerTokenResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const session = authClient.useSession();
 
   useEffect(() => {
     const fetchToken = async () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await streamApi.getViewerToken(hostId);
+        
+        // If not authenticated, generate a guest name
+        const isAuthenticated = session.data?.user != null;
+        const guestName = !isAuthenticated ? generateGuestName() : undefined;
+        
+        console.log('[StreamPlayer] Fetching token - authenticated:', isAuthenticated, 'hostId:', hostId, 'guestName:', guestName);
+        const response = await streamApi.getViewerToken(hostId, guestName);
+        console.log('[StreamPlayer] Token response:', response);
         
         if (response.success && response.data) {
           setToken(response.data);
         } else {
-          setError(response.error || 'Failed to get viewer token');
+          const errorMsg = response.error || 'Failed to get viewer token';
+          console.error('[StreamPlayer] Token error:', errorMsg);
+          setError(errorMsg);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to connect to stream');
+        const errorMsg = err instanceof Error ? err.message : 'Failed to connect to stream';
+        console.error('[StreamPlayer] Fetch error:', err);
+        setError(errorMsg);
       } finally {
         setLoading(false);
       }
     };
 
     fetchToken();
-  }, [hostId]);
+  }, [hostId, session.data]);
 
   if (loading) {
     return (
@@ -90,7 +113,7 @@ export function StreamPlayer({
         {/* Video Player - Takes 2 columns on large screens */}
         <div className="lg:col-span-2">
           <VideoPlayer 
-            hostIdentity={token.identity} 
+            hostIdentity={hostId} 
             hostName={hostName} 
           />
         </div>

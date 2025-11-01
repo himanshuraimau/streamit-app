@@ -33,6 +33,13 @@ router.get(
   StreamController.getStreamInfo
 );
 
+router.get(
+  '/credentials',
+  requireAuth,
+  requireCreator,
+  StreamController.getStreamCredentials
+);
+
 router.put(
   '/info',
   requireAuth,

@@ -24,11 +24,17 @@ import Posts from '@/pages/creator-dashboard/posts';
 // Content Pages
 import ContentPage from '@/pages/content/index';
 
+// Watch Stream Page
+import WatchStream from '@/pages/watch';
+
 function App() {
   return (
     <Routes>
       {/* Public routes */}
       <Route path="/" element={<Home />} />
+      
+      {/* Watch stream route */}
+      <Route path="/u/:username" element={<WatchStream />} />
 
       {/* Auth routes */}
       <Route path="/auth/login-options" element={<LoginOptions />} />

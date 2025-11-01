@@ -1,14 +1,38 @@
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Key, Eye, EyeOff, Copy, RefreshCw, AlertCircle } from 'lucide-react';
-import { useState } from 'react';
-import { useStream } from '@/hooks/useStream';
+import { useState, useEffect } from 'react';
+import { streamApi } from '@/lib/api/stream';
+import type { StreamCredentials } from '@/lib/api/stream';
 import { toast } from 'sonner';
 
 export default function Keys() {
   const [showKey, setShowKey] = useState(false);
   const [showServerUrl, setShowServerUrl] = useState(false);
-  const { streamInfo, loading, createIngress, deleteIngress } = useStream();
+  const [credentials, setCredentials] = useState<StreamCredentials | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch credentials on mount
+  useEffect(() => {
+    fetchCredentials();
+  }, []);
+
+  const fetchCredentials = async () => {
+    try {
+      setLoading(true);
+      const response = await streamApi.getStreamCredentials();
+      if (response.success && response.data) {
+        setCredentials(response.data);
+      } else {
+        setCredentials(null);
+      }
+    } catch (error) {
+      console.error('Error fetching credentials:', error);
+      setCredentials(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
@@ -20,23 +44,51 @@ export default function Keys() {
   };
 
   const handleGenerateKey = async () => {
-    if (streamInfo?.streamKey) {
-      // Show confirmation dialog
+    if (credentials?.streamKey) {
       if (!window.confirm('Generating a new key will invalidate your current stream key. Are you sure?')) {
         return;
       }
     }
-    await createIngress('RTMP');
+    
+    try {
+      setLoading(true);
+      const response = await streamApi.createIngress('RTMP');
+      if (response.success) {
+        toast.success('Stream key generated successfully!');
+        // Fetch updated credentials
+        await fetchCredentials();
+      } else {
+        toast.error(response.error || 'Failed to generate stream key');
+      }
+    } catch {
+      toast.error('Failed to generate stream key');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleResetKey = async () => {
     if (!window.confirm('This will delete your current stream key. You will need to generate a new one. Are you sure?')) {
       return;
     }
-    await deleteIngress();
+    
+    try {
+      setLoading(true);
+      const response = await streamApi.deleteIngress();
+      if (response.success) {
+        toast.success('Stream key deleted successfully');
+        setCredentials(null);
+      } else {
+        toast.error(response.error || 'Failed to delete stream key');
+      }
+    } catch {
+      toast.error('Failed to delete stream key');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const hasStreamKey = streamInfo?.streamKey && streamInfo?.serverUrl;
+  const hasStreamKey = credentials?.streamKey && credentials?.serverUrl;
 
   return (
     <div className="space-y-6">
@@ -102,7 +154,7 @@ export default function Keys() {
                 <label className="text-sm font-medium text-zinc-300 block mb-2">Server URL</label>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-300 overflow-x-auto">
-                    {showServerUrl ? streamInfo.serverUrl : '••••••••••••••••••••••••••••••••••••'}
+                    {showServerUrl ? credentials.serverUrl : '••••••••••••••••••••••••••••••••••••'}
                   </code>
                   <Button 
                     size="sm" 
@@ -116,7 +168,7 @@ export default function Keys() {
                     size="sm" 
                     variant="outline" 
                     className="border-zinc-700"
-                    onClick={() => copyToClipboard(streamInfo.serverUrl || '', 'Server URL')}
+                    onClick={() => copyToClipboard(credentials.serverUrl || '', 'Server URL')}
                   >
                     <Copy className="w-4 h-4" />
                   </Button>
@@ -127,7 +179,7 @@ export default function Keys() {
                 <label className="text-sm font-medium text-zinc-300 block mb-2">Stream Key</label>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-300 overflow-x-auto">
-                    {showKey ? streamInfo.streamKey : '••••••••••••••••••••'}
+                    {showKey ? credentials.streamKey : '••••••••••••••••••••'}
                   </code>
                   <Button 
                     size="sm" 
@@ -141,7 +193,7 @@ export default function Keys() {
                     size="sm" 
                     variant="outline" 
                     className="border-zinc-700"
-                    onClick={() => copyToClipboard(streamInfo.streamKey || '', 'Stream Key')}
+                    onClick={() => copyToClipboard(credentials.streamKey || '', 'Stream Key')}
                   >
                     <Copy className="w-4 h-4" />
                   </Button>

@@ -23,12 +23,25 @@ export const verifyLiveKitWebhook = async (
     }
 
     // Get raw body as string for signature verification
-    // Note: We need to preserve the raw body for webhook verification
-    const rawBody = JSON.stringify(req.body);
+    // The body is a Buffer when using express.raw()
+    let rawBody: string;
+    if (Buffer.isBuffer(req.body)) {
+      rawBody = req.body.toString('utf-8');
+    } else if (typeof req.body === 'string') {
+      rawBody = req.body;
+    } else {
+      // Fallback: body was already parsed as JSON
+      rawBody = JSON.stringify(req.body);
+    }
+
+    console.log('[WebhookMiddleware] Received webhook, signature:', signature.substring(0, 20) + '...');
+    console.log('[WebhookMiddleware] Body length:', rawBody.length);
 
     try {
       // Validate and parse the webhook event
       const event = await WebhookService.validateAndParse(rawBody, signature);
+      
+      console.log('[WebhookMiddleware] Webhook validated successfully:', event.event);
       
       // Attach validated event to request for use in controller
       (req as any).webhookEvent = event;

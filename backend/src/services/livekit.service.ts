@@ -221,7 +221,13 @@ export class LiveKitService {
       console.log(`[LiveKit] Listing participants for room: ${roomName}`);
       const participants = await roomClient.listParticipants(roomName);
       return participants;
-    } catch (error) {
+    } catch (error: any) {
+      // Room not existing is expected when no one has joined yet
+      if (error?.code === 'not_found' || error?.message?.includes('does not exist')) {
+        console.log(`[LiveKit] Room ${roomName} does not exist yet (no participants have joined)`);
+        return [];
+      }
+      
       console.error('[LiveKit] Error listing participants:', error);
       throw new Error(
         `Failed to list participants: ${error instanceof Error ? error.message : 'Unknown error'}`

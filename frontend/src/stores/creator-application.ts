@@ -76,8 +76,14 @@ export const useCreatorApplicationStore = create<CreatorApplicationState>()(
         } catch (err: any) {
           // Don't set error if request was aborted
           if (err.name !== 'AbortError') {
-            set({ error: 'Network error occurred' });
-            console.error('Error fetching status:', err);
+            // If error is "No authentication token", user is not logged in - this is expected
+            if (err.message?.includes('No authentication token')) {
+              console.log('[CreatorApplication] User not authenticated, skipping status fetch');
+              set({ status: null, error: null });
+            } else {
+              set({ error: 'Network error occurred' });
+              console.error('Error fetching status:', err);
+            }
           }
         } finally {
           set({ loading: false, initialized: true });

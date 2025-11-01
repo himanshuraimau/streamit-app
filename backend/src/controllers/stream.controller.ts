@@ -142,6 +142,45 @@ export class StreamController {
   }
 
   /**
+   * Get creator's stream credentials (including stream key)
+   * GET /api/stream/credentials
+   */
+  static async getStreamCredentials(req: Request, res: Response) {
+    try {
+      const userId = req.user!.id;
+
+      console.log(`[StreamController] Getting stream credentials for user: ${userId}`);
+
+      const stream = await StreamService.getCreatorStream(userId);
+
+      if (!stream) {
+        return res.status(404).json({
+          success: false,
+          error: 'Stream not found',
+          message: 'Please create a stream key first',
+        });
+      }
+
+      // Return credentials including streamKey
+      res.json({
+        success: true,
+        data: {
+          ingressId: stream.ingressId,
+          serverUrl: stream.serverUrl,
+          streamKey: stream.streamKey,
+        },
+      });
+    } catch (error) {
+      console.error('[StreamController] Error getting stream credentials:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get stream credentials',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  /**
    * Update stream info (title, thumbnail)
    * PUT /api/stream/info
    */
