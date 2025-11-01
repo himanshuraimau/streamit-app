@@ -4,7 +4,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { usePostComments, useAddComment } from '@/hooks/useContent';
-import { useSession } from '@/lib/auth-client';
+import { useAuthSession } from '@/hooks/useAuthSession';
 import type { CommentResponse } from '@/types/content';
 
 interface CommentSectionProps {
@@ -14,7 +14,7 @@ interface CommentSectionProps {
 export function CommentSection({ postId }: CommentSectionProps) {
   const [newComment, setNewComment] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
-  const { data: session } = useSession();
+  const { data: session } = useAuthSession();
   const { data: commentsResponse, isLoading } = usePostComments(postId);
   const addComment = useAddComment();
 
@@ -55,29 +55,30 @@ export function CommentSection({ postId }: CommentSectionProps) {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-3 space-y-3">
       {/* Add Comment Form */}
       {session?.user && (
-        <div className="flex space-x-3">
+        <div className="flex space-x-2">
           <img
             src={session.user.image || '/default-avatar.png'}
             alt={session.user.name || 'User'}
-            className="w-8 h-8 rounded-full object-cover"
+            className="w-6 h-6 rounded-full object-cover"
           />
           <div className="flex-1">
             <Textarea
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Write a comment..."
-              className="min-h-[80px] resize-none"
+              className="min-h-[60px] resize-none text-sm bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-400"
             />
             <div className="flex justify-end mt-2">
               <Button
                 onClick={() => handleSubmitComment()}
                 disabled={!newComment.trim() || addComment.isPending}
                 size="sm"
+                className="h-7 px-3 text-xs"
               >
-                <Send className="w-4 h-4 mr-2" />
+                <Send className="w-3 h-3 mr-1" />
                 Comment
               </Button>
             </div>
@@ -86,7 +87,7 @@ export function CommentSection({ postId }: CommentSectionProps) {
       )}
 
       {/* Comments List */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {comments.map((comment) => (
           <CommentItem
             key={comment.id}
@@ -103,7 +104,7 @@ export function CommentSection({ postId }: CommentSectionProps) {
       </div>
 
       {comments.length === 0 && (
-        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+        <div className="text-center py-6 text-zinc-400 text-sm">
           No comments yet. Be the first to comment!
         </div>
       )}
@@ -132,42 +133,42 @@ function CommentItem({
   setNewComment,
   isSubmitting,
 }: CommentItemProps) {
-  const { data: session } = useSession();
+  const { data: session } = useAuthSession();
   const isReplying = replyingTo === comment.id;
 
   return (
-    <div className="space-y-3">
-      <div className="flex space-x-3">
+    <div className="space-y-2">
+      <div className="flex space-x-2">
         <img
           src={comment.user.image || '/default-avatar.png'}
           alt={comment.user.name}
-          className="w-8 h-8 rounded-full object-cover"
+          className="w-6 h-6 rounded-full object-cover"
         />
         <div className="flex-1">
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+          <div className="bg-zinc-800 rounded-lg p-2">
             <div className="flex items-center space-x-2 mb-1">
-              <span className="font-semibold text-sm text-gray-900 dark:text-white">
+              <span className="font-medium text-xs text-white">
                 {comment.user.name}
               </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+              <span className="text-xs text-zinc-400">
                 @{comment.user.username}
               </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+              <span className="text-xs text-zinc-500">
                 {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
               </span>
             </div>
-            <p className="text-gray-900 dark:text-white text-sm">
+            <p className="text-white text-xs leading-relaxed">
               {comment.content}
             </p>
           </div>
           
-          <div className="flex items-center space-x-4 mt-2">
+          <div className="flex items-center space-x-3 mt-1">
             <Button
               variant="ghost"
               size="sm"
-              className="text-xs text-gray-500 hover:text-red-500 p-0 h-auto"
+              className="text-xs text-zinc-400 hover:text-red-400 p-0 h-auto"
             >
-              <Heart className={`w-3 h-3 mr-1 ${comment.isLiked ? 'fill-current text-red-500' : ''}`} />
+              <Heart className={`w-3 h-3 mr-1 ${comment.isLiked ? 'fill-current text-red-400' : ''}`} />
               {comment.likesCount}
             </Button>
             
@@ -176,7 +177,7 @@ function CommentItem({
                 variant="ghost"
                 size="sm"
                 onClick={() => onReply(comment.id)}
-                className="text-xs text-gray-500 hover:text-blue-500 p-0 h-auto"
+                className="text-xs text-zinc-400 hover:text-blue-400 p-0 h-auto"
               >
                 <Reply className="w-3 h-3 mr-1" />
                 Reply

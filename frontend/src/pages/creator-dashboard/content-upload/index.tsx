@@ -34,56 +34,7 @@ export default function ContentUpload() {
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-zinc-900 border-zinc-800 p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center">
-              <MessageSquare className="w-5 h-5 text-purple-400" />
-            </div>
-            <div>
-              <p className="text-zinc-400 text-sm">Total Posts</p>
-              <p className="text-white text-xl font-semibold">12</p>
-            </div>
-          </div>
-        </Card>
 
-        <Card className="bg-zinc-900 border-zinc-800 p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-              <Image className="w-5 h-5 text-blue-400" />
-            </div>
-            <div>
-              <p className="text-zinc-400 text-sm">Images</p>
-              <p className="text-white text-xl font-semibold">8</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="bg-zinc-900 border-zinc-800 p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
-              <Video className="w-5 h-5 text-red-400" />
-            </div>
-            <div>
-              <p className="text-zinc-400 text-sm">Videos</p>
-              <p className="text-white text-xl font-semibold">4</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="bg-zinc-900 border-zinc-800 p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
-              <Upload className="w-5 h-5 text-green-400" />
-            </div>
-            <div>
-              <p className="text-zinc-400 text-sm">Files</p>
-              <p className="text-white text-xl font-semibold">24</p>
-            </div>
-          </div>
-        </Card>
-      </div>
 
       {/* Content Sections */}
       {activeSection === 'create-post' && (
@@ -109,37 +60,37 @@ function FileUploadSection() {
 
   const handleFileSelect = (files: FileList | null) => {
     if (!files) return;
-    
+
     const fileArray = Array.from(files);
     const validFiles: File[] = [];
     const errors: string[] = [];
-    
+
     fileArray.forEach(file => {
       // Check file size (100MB limit)
       if (file.size > 100 * 1024 * 1024) {
         errors.push(`${file.name} is too large (max 100MB)`);
         return;
       }
-      
+
       // Check file type
       const validTypes = [
         'video/mp4', 'video/webm', 'video/quicktime',
         'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
         'application/pdf', 'text/plain'
       ];
-      
+
       if (!validTypes.includes(file.type)) {
         errors.push(`${file.name} has unsupported file type`);
         return;
       }
-      
+
       validFiles.push(file);
     });
-    
+
     if (errors.length > 0) {
       alert('Some files were skipped:\n' + errors.join('\n'));
     }
-    
+
     if (validFiles.length > 0) {
       setSelectedFiles(prev => [...prev, ...validFiles]);
     }
@@ -153,14 +104,14 @@ function FileUploadSection() {
 
   const handleUpload = async () => {
     if (selectedFiles.length === 0) return;
-    
+
     setUploading(true);
     try {
       // Here you would implement the actual upload logic using the creator API
       // For now, we'll just simulate an upload
       await new Promise(resolve => setTimeout(resolve, 2000));
       console.log('Files uploaded:', selectedFiles);
-      
+
       // Show success message
       alert(`Successfully uploaded ${selectedFiles.length} file(s)!`);
       setSelectedFiles([]);
@@ -189,10 +140,9 @@ function FileUploadSection() {
       />
 
       {/* Main Upload Area */}
-      <Card 
-        className={`bg-zinc-900 border-zinc-800 border-dashed border-2 p-12 transition-colors cursor-pointer ${
-          dragOver ? 'border-blue-400 bg-blue-900/20' : 'hover:border-zinc-600'
-        }`}
+      <Card
+        className={`bg-zinc-900 border-zinc-800 border-dashed border-2 p-12 transition-colors cursor-pointer ${dragOver ? 'border-blue-400 bg-blue-900/20' : 'hover:border-zinc-600'
+          }`}
         onDrop={handleDrop}
         onDragOver={(e) => {
           e.preventDefault();
@@ -207,8 +157,8 @@ function FileUploadSection() {
           <p className="text-zinc-400 mb-6 text-lg">
             Drag & drop files here, or click to browse
           </p>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="lg"
             className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
             onClick={(e) => {
@@ -265,7 +215,7 @@ function FileUploadSection() {
               </Button>
             </div>
           </div>
-          
+
           <div className="space-y-2 max-h-60 overflow-y-auto">
             {selectedFiles.map((file, index) => (
               <div key={index} className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg">

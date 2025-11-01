@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useCreatePost } from '@/hooks/useContent';
-import { useSession } from '@/lib/auth-client';
+import { useAuthSession, getUsernameFromSession } from '@/hooks/useAuthSession';
 import type { CreatePostInput, PostType } from '@/types/content';
 
 interface CreatePostFormProps {
@@ -21,7 +21,7 @@ export function CreatePostForm({ onSuccess }: CreatePostFormProps) {
   const [dragOver, setDragOver] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { data: session } = useSession();
+  const { data: session } = useAuthSession();
   const createPost = useCreatePost();
 
 
@@ -139,11 +139,11 @@ export function CreatePostForm({ onSuccess }: CreatePostFormProps) {
               className="w-10 h-10 rounded-full object-cover"
             />
             <div>
-              <p className="font-semibold text-gray-900 dark:text-white">
+              <p className="font-semibold text-gray-100 dark:text-white">
                 {session?.user?.name}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                @{session?.user?.email?.split('@')[0] || 'user'}
+                @{getUsernameFromSession(session?.user)}
               </p>
             </div>
           </div>

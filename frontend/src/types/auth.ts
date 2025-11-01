@@ -1,55 +1,30 @@
-/**
- * Auth-related TypeScript types
- */
-
+// Better Auth types with custom fields
 export interface User {
   id: string;
-  email: string;
   name: string;
-  username: string;
-  image?: string;
-  age?: number;
-  phone?: string;
+  email: string;
   emailVerified: boolean;
+  image?: string | null;
   createdAt: Date;
   updatedAt: Date;
+  // Additional fields from Better Auth config
+  username: string;
+  age?: number | null;
+  phone?: string | null;
 }
 
 export interface Session {
+  id: string;
+  userId: string;
+  token: string;
+  createdAt: Date;
+  updatedAt: Date;
+  ipAddress?: string | null;
+  userAgent?: string | null;
   user: User;
-  session: {
-    id: string;
-    userId: string;
-    expiresAt: Date;
-    token: string;
-    ipAddress?: string;
-    userAgent?: string;
-  };
 }
 
-export interface SignUpData {
-  name: string;
-  username: string;
-  email: string;
-  password: string;
-  phone?: string;
-  age: number;
+export interface AuthSession {
+  user: User;
+  session: Session;
 }
-
-export interface SignInData {
-  email: string;
-  password: string;
-}
-
-export interface OTPData {
-  email: string;
-  otp: string;
-}
-
-export interface ResetPasswordData {
-  email: string;
-  otp: string;
-  password: string;
-}
-
-export type OTPType = 'sign-in' | 'email-verification' | 'forget-password';
