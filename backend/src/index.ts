@@ -25,7 +25,7 @@ app.use(cors({
 
 // IMPORTANT: Mount Better Auth handler FIRST (before express.json())
 // Better Auth needs to handle raw request body
-app.all("/api/auth/*", toNodeHandler(auth));
+app.all("/api/auth/{*any}", toNodeHandler(auth)); // ✅ Fixed for Express v5
 
 // Mount webhook routes with raw body parser (before express.json())
 // LiveKit webhook requires raw body for signature verification
