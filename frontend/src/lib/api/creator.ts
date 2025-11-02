@@ -127,7 +127,10 @@ export const creatorApi = {
 
       return await response.json();
     } catch (error) {
-      console.error('Error fetching application status:', error);
+      // Don't log errors for missing auth tokens - this is handled by the caller
+      if (error instanceof Error && !error.message.includes('No authentication token')) {
+        console.error('Error fetching application status:', error);
+      }
       throw error;
     }
   },

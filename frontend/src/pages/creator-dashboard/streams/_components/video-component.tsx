@@ -1,35 +1,42 @@
 import { useEffect, useRef, useState } from 'react';
 import { Track } from 'livekit-client';
 import { 
-  useRemoteParticipant, 
   useTracks,
   VideoTrack,
   AudioTrack,
+  useRoomContext,
 } from '@livekit/components-react';
-import { Loader2, Video as VideoIcon, Signal } from 'lucide-react';
+import { Loader2, Signal, VideoOff } from 'lucide-react';
 
 interface VideoComponentProps {
-  hostIdentity: string;
   hostName: string;
   showControls?: boolean;
 }
 
 export function VideoComponent({ 
-  hostIdentity, 
   hostName,
   showControls = true 
 }: VideoComponentProps) {
-  const participant = useRemoteParticipant(hostIdentity);
   const [isLoading, setIsLoading] = useState(true);
   const timeoutRef = useRef<number | null>(null);
+  const room = useRoomContext();
 
+  // Get all video and audio tracks in the room (from OBS/ingress)
   const tracks = useTracks([
     Track.Source.Camera,
     Track.Source.Microphone,
-  ]).filter(track => track.participant.identity === hostIdentity);
+  ]);
+
+  useEffect(() => {
+    console.log('[VideoComponent] Room state:', room.state);
+    console.log('[VideoComponent] Room name:', room.name);
+    console.log('[VideoComponent] Local participant:', room.localParticipant?.identity);
+    console.log('[VideoComponent] Remote participants:', Array.from(room.remoteParticipants.keys()));
+  }, [room]);
 
   useEffect(() => {
     timeoutRef.current = window.setTimeout(() => {
+      console.log('[VideoComponent] Timeout reached - stopping loading state');
       setIsLoading(false);
     }, 10000);
 
@@ -41,7 +48,16 @@ export function VideoComponent({
   }, []);
 
   useEffect(() => {
+    console.log('[VideoComponent] Tracks detected:', tracks.length);
     if (tracks.length > 0) {
+      tracks.forEach((track, index) => {
+        console.log(`[VideoComponent] Track ${index}:`, {
+          source: track.source,
+          participantIdentity: track.participant.identity,
+          participantName: track.participant.name,
+          isLocal: track.participant.isLocal,
+        });
+      });
       setIsLoading(false);
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -49,25 +65,8 @@ export function VideoComponent({
     }
   }, [tracks]);
 
-  if (!participant) {
-    return (
-      <div className="aspect-video bg-zinc-900 rounded-lg flex items-center justify-center">
-        <div className="text-center space-y-4 px-4">
-          <div className="w-20 h-20 rounded-full bg-zinc-800/50 flex items-center justify-center mx-auto">
-            <VideoIcon className="w-10 h-10 text-zinc-600" />
-          </div>
-          <div>
-            <h3 className="text-xl font-semibold text-white mb-2">Stream Offline</h3>
-            <p className="text-zinc-400 text-sm">
-              {hostName} is not currently streaming
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isLoading || tracks.length === 0) {
+  // Show loading state while waiting for tracks
+  if (isLoading && tracks.length === 0) {
     return (
       <div className="aspect-video bg-zinc-900 rounded-lg flex items-center justify-center">
         <div className="text-center space-y-4 px-4">
@@ -75,7 +74,29 @@ export function VideoComponent({
           <div>
             <h3 className="text-xl font-semibold text-white mb-2">Connecting...</h3>
             <p className="text-zinc-400 text-sm">
-              Establishing connection to {hostName}'s stream
+              Waiting for stream to start from OBS...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If loading finished but still no tracks, show offline state
+  if (!isLoading && tracks.length === 0) {
+    return (
+      <div className="aspect-video bg-zinc-900 rounded-lg flex items-center justify-center">
+        <div className="text-center space-y-4 px-4">
+          <div className="w-20 h-20 rounded-full bg-zinc-800/50 flex items-center justify-center mx-auto">
+            <VideoOff className="w-10 h-10 text-zinc-600" />
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold text-white mb-2">No Stream Detected</h3>
+            <p className="text-zinc-400 text-sm">
+              Start streaming from OBS to see your video preview
+            </p>
+            <p className="text-zinc-500 text-xs mt-2">
+              Use your stream key in OBS to begin broadcasting
             </p>
           </div>
         </div>

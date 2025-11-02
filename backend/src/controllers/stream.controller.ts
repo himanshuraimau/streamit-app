@@ -433,7 +433,7 @@ export class StreamController {
     try {
       const userId = req.user!.id;
 
-      console.log(`[StreamController] Getting creator token for user: ${userId}`);
+      console.log(`[StreamController] Getting creator view token for user: ${userId}`);
 
       // Get user info
       const user = await prisma.user.findUnique({
@@ -457,14 +457,15 @@ export class StreamController {
         });
       }
 
-      // Generate creator token (has both publish and subscribe permissions)
-      const token = await TokenService.generateCreatorToken(userId, userId);
+      // Generate viewer token for creator (subscribe-only, different identity)
+      // This allows creator to view their OBS stream without identity conflicts
+      const token = await TokenService.generateCreatorViewerToken(userId, userId);
 
       res.json({
         success: true,
         data: {
           token,
-          identity: userId,
+          identity: `Host-${userId}`, // Different identity to avoid conflicts with OBS
           name: user.name || user.username,
           wsUrl: process.env.LIVEKIT_URL,
         },

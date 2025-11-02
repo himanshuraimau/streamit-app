@@ -76,6 +76,9 @@ export class ViewerController {
         `[ViewerController] Token request - viewerId: ${viewerId || 'none'}, viewerName: ${viewerName || 'none'}, hostId: ${hostId}, guestName: ${guestName || 'none'}`
       );
 
+      // Check if viewer IS the host (creator watching own stream)
+      const isCreator = viewerId && viewerId === hostId;
+
       if (!viewerId && !guestName) {
         console.warn('[ViewerController] Neither authenticated user nor guest name provided');
         return res.status(400).json({
@@ -85,29 +88,34 @@ export class ViewerController {
       }
 
       console.log(
-        `[ViewerController] Generating token for ${viewerId ? `user ${viewerId}` : `guest ${guestName}`} to view ${hostId}`
+        `[ViewerController] Generating token for ${viewerId ? `user ${viewerId}` : `guest ${guestName}`} to view ${hostId}${isCreator ? ' (creator self-view)' : ''}`
       );
-
-      // Validate token request (check blocks, restrictions, etc.)
-      const validation = await TokenService.validateTokenRequest(
-        hostId,
-        viewerId
-      );
-
-      if (!validation.valid) {
-        return res.status(403).json({
-          success: false,
-          error: validation.reason || 'Access denied',
-        });
-      }
 
       // Generate appropriate token
       let token: string;
       let identity: string;
       let name: string;
 
-      if (viewerId && viewerName) {
-        // Authenticated user
+      if (isCreator) {
+        // Creator watching their own stream - use special token with Host- prefix
+        console.log(`[ViewerController] Detected creator self-view for ${viewerName}`);
+        token = await TokenService.generateCreatorViewerToken(viewerId!, hostId);
+        identity = `Host-${viewerId}`;
+        name = viewerName!;
+      } else if (viewerId && viewerName) {
+        // Regular authenticated viewer - validate access
+        const validation = await TokenService.validateTokenRequest(
+          hostId,
+          viewerId
+        );
+
+        if (!validation.valid) {
+          return res.status(403).json({
+            success: false,
+            error: validation.reason || 'Access denied',
+          });
+        }
+
         token = await TokenService.generateViewerToken(
           viewerId,
           hostId,
@@ -116,7 +124,16 @@ export class ViewerController {
         identity = viewerId;
         name = viewerName;
       } else {
-        // Guest viewer
+        // Guest viewer - validate access
+        const validation = await TokenService.validateTokenRequest(hostId);
+
+        if (!validation.valid) {
+          return res.status(403).json({
+            success: false,
+            error: validation.reason || 'Access denied',
+          });
+        }
+
         token = await TokenService.generateGuestToken(hostId, guestName!);
         identity = `guest-${Date.now()}`;
         name = guestName!;

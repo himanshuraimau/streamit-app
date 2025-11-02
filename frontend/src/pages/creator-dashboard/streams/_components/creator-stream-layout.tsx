@@ -73,13 +73,20 @@ export function CreatorStreamLayout({
       serverUrl={token.wsUrl}
       connect={true}
       className="w-full h-full"
+      onConnected={() => {
+        console.log('[CreatorStreamLayout] Connected to LiveKit room');
+        console.log('[CreatorStreamLayout] Room identity:', token.identity);
+        console.log('[CreatorStreamLayout] Room name:', token.identity.replace('Host-', ''));
+      }}
+      onDisconnected={() => {
+        console.log('[CreatorStreamLayout] Disconnected from LiveKit room');
+      }}
     >
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Video Preview - 2 columns */}
         <div className="lg:col-span-2 space-y-4">
           <Card className="bg-zinc-900 border-zinc-800 overflow-hidden">
             <VideoComponent 
-              hostIdentity={token.identity}
               hostName={token.name}
             />
           </Card>

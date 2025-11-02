@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { creatorApi, type CreateApplicationRequest, type FullApplicationResponse, type ApplicationStatusResponse } from '@/lib/api/creator';
 import { toast } from 'sonner';
+import { authClient } from '@/lib/auth-client';
 
 interface CreatorApplicationState {
   // State
@@ -58,6 +59,14 @@ export const useCreatorApplicationStore = create<CreatorApplicationState>()(
         if (loading) return;
         
         try {
+          // Check if user is authenticated first
+          const session = await authClient.getSession();
+          if (!session?.data?.user) {
+            // User not logged in - silently skip
+            set({ status: null, error: null, initialized: true, loading: false });
+            return;
+          }
+          
           // Cancel any ongoing request
           if (abortController) {
             abortController.abort();
@@ -76,14 +85,8 @@ export const useCreatorApplicationStore = create<CreatorApplicationState>()(
         } catch (err) {
           // Don't set error if request was aborted
           if (err instanceof Error && err.name !== 'AbortError') {
-            // If error is "No authentication token", user is not logged in - this is expected
-            if (err.message.includes('No authentication token')) {
-              // Silently handle - this is expected for non-authenticated users
-              set({ status: null, error: null });
-            } else {
-              set({ error: 'Network error occurred' });
-              console.error('Error fetching status:', err);
-            }
+            set({ error: 'Network error occurred' });
+            console.error('Error fetching status:', err);
           }
         } finally {
           set({ loading: false, initialized: true });

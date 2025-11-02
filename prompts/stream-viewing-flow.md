@@ -294,7 +294,19 @@ export const LiveVideo = ({ participant }: LiveVideoProps) => {
 
 ---
 
-### Step 5: Chat Component
+### Step 5: Chat System (Real-time Messaging)
+
+The chat system uses **LiveKit's data channel** for real-time messaging between all participants in the room.
+
+#### Chat Architecture
+
+```
+Viewer → LiveKit Data Channel → All Participants (including Creator)
+```
+
+---
+
+#### 5.1 Main Chat Component
 
 **File:** `src/components/stream-player/chat.tsx`
 
@@ -315,37 +327,261 @@ export const Chat = ({
   const isOnline = participant && connectionState === ConnectionState.Connected;
   const isHidden = !isChatEnabled || !isOnline;
 
-  // LiveKit chat hook
+  const [value, setValue] = useState("");
+  
+  // LiveKit's useChat hook - handles data channel messaging
   const { chatMessages: messages, send } = useChat();
+
+  // Sort messages by timestamp (newest first for reverse display)
+  const reversedMessages = useMemo(() => {
+    return messages.sort((a, b) => b.timestamp - a.timestamp);
+  }, [messages]);
 
   const onSubmit = () => {
     if (!send) return;
-    send(value);
+    send(value);  // Send via LiveKit data channel
     setValue("");
   };
 
+  const onChange = (value: string) => {
+    setValue(value);
+  };
+
   return (
-    <div className="flex flex-col bg-background border-l">
+    <div className="flex flex-col bg-background border-l border-b pt-0 h-[calc(100vh-80px)]">
       <ChatHeader />
-      <ChatList messages={messages} isHidden={isHidden} />
-      <ChatForm
-        onSubmit={onSubmit}
-        isHidden={isHidden}
-        isFollowersOnly={isChatFollowersOnly}
-        isDelayed={isChatDelayed}
-        isFollowing={isFollowing}
-      />
+      {variant === ChatVariant.CHAT && (
+        <>
+          <ChatList messages={reversedMessages} isHidden={isHidden} />
+          <ChatForm
+            onSubmit={onSubmit}
+            value={value}
+            onChange={onChange}
+            isHidden={isHidden}
+            isFollowersOnly={isChatFollowersOnly}
+            isDelayed={isChatDelayed}
+            isFollowing={isFollowing}
+          />
+        </>
+      )}
+      {variant === ChatVariant.COMMUNITY && (
+        <ChatCommunity viewerName={viewerName} hostName={hostName} />
+      )}
     </div>
   );
 };
 ```
 
-**Chat Features:**
-- Real-time messaging via LiveKit data channel
-- **Chat disabled** if `isChatEnabled: false` or host offline
-- **Followers-only** mode: Non-followers cannot send messages
-- **Delayed mode**: Messages appear after delay
-- Guest users can view but typically cannot send messages
+**Key Points:**
+- `useChat()` from `@livekit/components-react` provides `chatMessages` and `send()` function
+- Chat is **disabled** when:
+  - `isChatEnabled: false` (host disabled it)
+  - Host is offline (`!isOnline`)
+- Messages are broadcast to **all participants** in the room via data channel
+- Supports two variants: **CHAT** (messages) and **COMMUNITY** (participant list)
+
+---
+
+#### 5.2 Chat Form (Message Input)
+
+**File:** `src/components/stream-player/chat-form.tsx`
+
+```typescript
+export const ChatForm = ({
+  onSubmit,
+  value,
+  onChange,
+  isHidden,
+  isFollowersOnly,
+  isFollowing,
+  isDelayed,
+}: ChatFormProps) => {
+  const [isDelayBlocked, setIsDelayBlocked] = useState(false);
+
+  // Check permissions
+  const isFollowersOnlyAndNotFollowing = isFollowersOnly && !isFollowing;
+  const isDisabled = isHidden || isDelayBlocked || isFollowersOnlyAndNotFollowing;
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!value || isDisabled) return;
+
+    // Delayed chat mode - 3 second cooldown
+    if (isDelayed && !isDelayBlocked) {
+      setIsDelayBlocked(true);
+      setTimeout(() => {
+        setIsDelayBlocked(false);
+        onSubmit();
+      }, 3000);
+    } else {
+      onSubmit();
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col items-center gap-y-4 p-3">
+      <div className="w-full">
+        <ChatInfo isDelayed={isDelayed} isFollowersOnly={isFollowersOnly} />
+        <Input
+          onChange={(e) => onChange(e.target.value)}
+          value={value}
+          disabled={isDisabled}
+          placeholder="Send a message"
+        />
+      </div>
+      <Button type="submit" variant="primary" size="sm" disabled={isDisabled}>
+        Chat
+      </Button>
+    </form>
+  );
+};
+```
+
+**Chat Restrictions:**
+- **Followers-only mode:** Non-followers cannot send messages (`isFollowersOnly && !isFollowing`)
+- **Delayed mode:** 3-second cooldown between messages (`isDelayed`)
+- **Chat disabled:** Input is hidden if chat is off or host offline
+
+---
+
+#### 5.3 Message Display
+
+**File:** `src/components/stream-player/chat-list.tsx`
+
+```typescript
+export const ChatList = ({ messages, isHidden }: ChatListProps) => {
+  if (isHidden || !messages || messages.length === 0) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <p className="text-sm text-muted-foreground">
+          {isHidden ? "Chat is disabled" : "Welcome to the chat!"}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-1 flex-col-reverse overflow-y-auto p-3 h-full">
+      {messages.map((message) => (
+        <ChatMessage key={message.timestamp} data={message} />
+      ))}
+    </div>
+  );
+};
+```
+
+**File:** `src/components/stream-player/chat-message.tsx`
+
+```typescript
+export const ChatMessage = ({ data }: ChatMessageProps) => {
+  const color = stringToColor(data.from?.name || "");
+
+  return (
+    <div className="flex gap-2 p-2 rounded-md hover:bg-white/5">
+      <p className="text-sm text-white/40">
+        {moment(data.timestamp).format("HH:mm")}
+      </p>
+      <div className="flex flex-wrap items-baseline gap-1 grow">
+        <p className="text-sm font-semibold whitespace-nowrap">
+          <span className="truncate" style={{ color: color }}>
+            {data.from?.name}
+          </span>:
+        </p>
+        <p className="text-sm break-all">{data.message}</p>
+      </div>
+    </div>
+  );
+};
+```
+
+**Message Structure:**
+```typescript
+interface ReceivedChatMessage {
+  timestamp: number;          // Unix timestamp
+  from?: {
+    name: string;             // Username (from JWT token)
+    identity: string;         // User ID or guest ID
+  };
+  message: string;            // Message content
+}
+```
+
+**Message Display Features:**
+- Timestamp in `HH:mm` format
+- Color-coded usernames (generated from name hash)
+- Scrollable list (newest at bottom)
+- Empty state when no messages
+
+---
+
+#### 5.4 How Chat Messages Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      CHAT MESSAGE FLOW                          │
+└─────────────────────────────────────────────────────────────────┘
+
+User types message
+    ↓
+ChatForm validates (followers-only, delay, etc.)
+    ↓
+onSubmit() called
+    ↓
+send(value) - LiveKit useChat hook
+    ↓
+Message sent via LiveKit Data Channel
+    ↓
+LiveKit server broadcasts to all participants
+    ↓
+All clients receive via useChat() hook
+    ↓
+messages array updates automatically
+    ↓
+ChatList re-renders with new message
+    ↓
+ChatMessage displays formatted message
+```
+
+**Key Technical Details:**
+
+1. **Data Channel Communication:**
+   - LiveKit uses WebRTC data channels (not WebSockets) for chat
+   - Messages are sent peer-to-server-to-peers
+   - Server handles broadcast to all room participants
+
+2. **Token Permission:**
+   ```typescript
+   token.addGrant({
+     canPublishData: true,  // Required for sending chat messages
+   });
+   ```
+
+3. **Message Broadcasting:**
+   - When ANY participant sends a message, ALL participants receive it
+   - This includes the creator watching their dashboard
+   - Messages are not persisted (lost on page refresh)
+
+4. **Real-time Updates:**
+   - `useChat()` hook automatically updates `chatMessages` array
+   - React re-renders components when new messages arrive
+   - No manual WebSocket handling needed
+
+---
+
+#### 5.5 Chat Features Summary
+
+| Feature | Description | Implementation |
+|---------|-------------|----------------|
+| **Real-time messaging** | Instant message delivery | LiveKit data channel |
+| **Followers-only** | Only followers can chat | Client-side validation in `ChatForm` |
+| **Delayed mode** | 3-second cooldown | `setTimeout` + state in `ChatForm` |
+| **Guest viewing** | Guests can see chat | Token generated for guests |
+| **Guest sending** | Guests typically blocked | Checked via `isFollowing` logic |
+| **Chat toggle** | Enable/disable chat | `isChatEnabled` flag from database |
+| **Offline handling** | Chat hidden when offline | Checks `isOnline` status |
+| **Color-coded names** | Unique colors per user | `stringToColor()` hash function |
+| **Timestamps** | Message time display | Unix timestamp → formatted time |
+| **Community view** | Show participant list | `ChatVariant.COMMUNITY` mode |
 
 ---
 
@@ -704,5 +940,279 @@ Creator                          LiveKit                    Viewers
 
 ---
 
+## 7. Deep Dive: Chat System Architecture
+
+### How LiveKit Chat Works
+
+**LiveKit provides a built-in chat system** via WebRTC data channels, wrapped in React hooks for easy integration.
+
+#### Core Hook: `useChat()`
+
+```typescript
+import { useChat } from '@livekit/components-react';
+
+const { chatMessages, send } = useChat();
+```
+
+**What it provides:**
+- `chatMessages: ReceivedChatMessage[]` - Array of all received messages
+- `send: (message: string) => void` - Function to send messages
+
+**Under the hood:**
+- Uses WebRTC data channels (not HTTP or WebSockets)
+- Messages sent via `send()` are broadcast to all room participants
+- Automatically updates `chatMessages` when new messages arrive
+- No manual connection management needed
+
+---
+
+### Chat Flow Detailed
+
+#### Sending a Message
+
+```typescript
+// Step 1: User types in input
+<Input value={value} onChange={(e) => setValue(e.target.value)} />
+
+// Step 2: User submits form
+const handleSubmit = () => {
+  send(value);  // Sends via LiveKit data channel
+  setValue("");
+};
+
+// Step 3: LiveKit handles the rest
+// - Message encoded and sent via WebRTC data channel
+// - LiveKit server receives and broadcasts to all participants
+// - All clients' useChat() hooks receive the message
+```
+
+#### Receiving Messages
+
+```typescript
+// useChat() automatically provides updated messages
+const { chatMessages } = useChat();
+
+// React re-renders when messages update
+<ChatList messages={chatMessages} />
+
+// Each message rendered individually
+{messages.map(message => (
+  <ChatMessage key={message.timestamp} data={message} />
+))}
+```
+
+---
+
+### Chat Permissions & Validation
+
+**All validation is CLIENT-SIDE** (not enforced by LiveKit server):
+
+```typescript
+// 1. Chat enabled check
+const isHidden = !isChatEnabled || !isOnline;
+if (isHidden) return null;
+
+// 2. Followers-only check
+const isFollowersOnlyAndNotFollowing = isFollowersOnly && !isFollowing;
+
+// 3. Delay check (cooldown)
+if (isDelayed && !isDelayBlocked) {
+  setIsDelayBlocked(true);
+  setTimeout(() => {
+    setIsDelayBlocked(false);
+    onSubmit();
+  }, 3000);
+}
+
+// 4. Disable input if any restriction applies
+const isDisabled = isHidden || isDelayBlocked || isFollowersOnlyAndNotFollowing;
+```
+
+**Important:** These are UI-level restrictions. A determined user could bypass them by modifying client code. For production, consider server-side validation via LiveKit webhooks or custom server logic.
+
+---
+
+### Chat vs Video Tracks
+
+**Key Distinction:**
+
+| Aspect | Video/Audio Tracks | Chat Messages |
+|--------|-------------------|---------------|
+| **Protocol** | WebRTC media tracks | WebRTC data channel |
+| **Permission** | `canPublish: false` (viewers) | `canPublishData: true` |
+| **Direction** | Unidirectional (host → viewers) | Bidirectional (all participants) |
+| **Bandwidth** | High (video streaming) | Low (text messages) |
+| **Hook** | `useTracks()`, `useRemoteParticipant()` | `useChat()` |
+| **Source** | OBS via ingress | Browser via `send()` |
+
+**Why viewers can't publish video but can chat:**
+```typescript
+token.addGrant({
+  canPublish: false,      // Cannot publish video/audio tracks
+  canPublishData: true,   // CAN publish data (chat messages)
+});
+```
+
+---
+
+### Message Structure
+
+**What LiveKit provides in each message:**
+
+```typescript
+interface ReceivedChatMessage {
+  timestamp: number;       // When message was sent (Unix ms)
+  from?: {
+    name: string;          // From JWT token.name
+    identity: string;      // From JWT token.identity (user ID)
+  };
+  message: string;         // The actual message content
+}
+```
+
+**Where the data comes from:**
+- `timestamp` - Generated by LiveKit when message received
+- `from.name` - From JWT token (`name: self.username`)
+- `from.identity` - From JWT token (`identity: tokenIdentity`)
+- `message` - The string passed to `send(message)`
+
+---
+
+### Why Chat Works Without Database
+
+**Chat is entirely in-memory:**
+1. No database writes when messages sent
+2. Messages only exist in LiveKit room state
+3. When all participants leave, messages are gone
+4. Page refresh = lose all chat history
+
+**If you need persistent chat:**
+- Use LiveKit webhooks to capture `data_received` events
+- Store messages in database
+- Load historical messages on page load
+- Merge with live messages from `useChat()`
+
+---
+
+### Guest Users & Chat
+
+**Guest flow:**
+```typescript
+// In createViewerToken()
+try {
+  self = await getSelf();  // Try to get authenticated user
+} catch {
+  // No auth, create guest
+  const id = v4();
+  const username = `guest-${Math.floor(Math.random() * 100000)}`;
+  self = { id, username };
+}
+```
+
+**Guest in chat:**
+- Name appears as `guest-12345`
+- Can view messages (always)
+- Can send messages if NOT `isFollowersOnly` (guest can't be following)
+- Identity is random UUID (not linked to any account)
+
+---
+
+### Chat Variants
+
+The app supports two chat views:
+
+**1. CHAT Variant (default):**
+```typescript
+{variant === ChatVariant.CHAT && (
+  <>
+    <ChatList messages={reversedMessages} />
+    <ChatForm onSubmit={onSubmit} />
+  </>
+)}
+```
+Shows message list and input form.
+
+**2. COMMUNITY Variant:**
+```typescript
+{variant === ChatVariant.COMMUNITY && (
+  <ChatCommunity viewerName={viewerName} hostName={hostName} />
+)}
+```
+Shows list of participants in the room (not implemented in detail here).
+
+Users can toggle between views via `ChatHeader` controls.
+
+---
+
+### Performance Considerations
+
+**Message Sorting:**
+```typescript
+const reversedMessages = useMemo(() => {
+  return messages.sort((a, b) => b.timestamp - a.timestamp);
+}, [messages]);
+```
+- Uses `useMemo` to avoid re-sorting on every render
+- Sorts newest-first for reverse flex display (newest at bottom visually)
+
+**Color Generation:**
+```typescript
+const color = stringToColor(data.from?.name || "");
+```
+- Deterministic color from username hash
+- Same user = same color across sessions
+- Helps identify users visually
+
+**Virtual Scrolling:**
+- Not implemented in this codebase
+- For high-traffic streams, consider `react-window` or `react-virtualized`
+- Current implementation renders ALL messages (could lag with 1000+ messages)
+
+---
+
+## Summary: How Everything Connects
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    COMPLETE SYSTEM FLOW                         │
+└─────────────────────────────────────────────────────────────────┘
+
+1. Creator generates stream keys (RTMP URL + key)
+2. Creator starts OBS → LiveKit Ingress
+3. LiveKit webhook → Database: isLive = true
+4. Viewer visits /{username}
+5. Frontend requests viewer token (JWT)
+6. Token grants: roomJoin=true, canPublish=false, canPublishData=true
+7. Browser connects to LiveKit via WebSocket + WebRTC
+8. Video: Subscribe to host's camera/mic tracks → Display in <video>
+9. Chat: Join data channel → Send/receive via useChat()
+10. Creator dashboard: Same flow, but identity = "Host-{userId}"
+11. All participants (viewers + creator) see same chat in real-time
+```
+
+---
+
 **End of Document**
+
+---
+
+## Quick Reference
+
+### Key Files
+- **Stream viewing:** `src/app/(browse)/[username]/page.tsx`
+- **Creator dashboard:** `src/app/(dashboard)/u/[username]/(home)/page.tsx`
+- **Token generation:** `src/actions/token.ts`
+- **Stream player:** `src/components/stream-player/index.tsx`
+- **Video component:** `src/components/stream-player/video.tsx`
+- **Chat system:** `src/components/stream-player/chat.tsx`
+- **Ingress setup:** `src/actions/ingress.ts`
+- **LiveKit webhook:** `src/app/api/webhook/livekit/route.ts`
+
+### Key Concepts
+- 🎥 **Video source:** OBS → LiveKit Ingress (not browser)
+- 👀 **Viewing:** All participants (including creator) use viewer tokens
+- 💬 **Chat:** WebRTC data channel via `useChat()` hook
+- 🔐 **Auth:** JWT tokens with room-specific grants
+- 🔄 **Real-time:** LiveKit handles WebRTC complexity
+- 📡 **State sync:** Webhooks update database (`isLive`, etc.)
 
