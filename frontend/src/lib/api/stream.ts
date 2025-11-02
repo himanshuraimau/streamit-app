@@ -378,4 +378,20 @@ export const viewerApi = {
       throw error;
     }
   },
+
+  // Get followed streams (requires auth)
+  async getFollowedStreams(): Promise<ApiResponse<LiveStream[]>> {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${API_BASE_URL}/api/viewer/following`, {
+        method: 'GET',
+        headers,
+      });
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching followed streams:', error);
+      throw error;
+    }
+  },
 };

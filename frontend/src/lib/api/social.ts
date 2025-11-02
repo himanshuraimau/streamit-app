@@ -45,6 +45,24 @@ export interface FollowResponse {
   };
 }
 
+export interface FollowingUser {
+  id: string;
+  username: string;
+  name: string | null;
+  image: string | null;
+  isLive: boolean;
+}
+
+export interface Creator {
+  id: string;
+  username: string;
+  name: string | null;
+  image: string | null;
+  bio: string | null;
+  isLive: boolean;
+  followerCount: number;
+}
+
 export const socialApi = {
   async getCreatorProfile(username: string): Promise<CreatorProfileResponse> {
     try {
@@ -83,6 +101,32 @@ export const socialApi = {
       return await response.json();
     } catch (err) {
       console.error('Error unfollowing user:', err);
+      throw err;
+    }
+  },
+
+  async getFollowing(userId: string): Promise<{ success: boolean; data?: FollowingUser[]; error?: string }> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/social/following/${userId}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      return await response.json();
+    } catch (err) {
+      console.error('Error fetching following:', err);
+      throw err;
+    }
+  },
+
+  async getCreators(): Promise<{ success: boolean; data?: Creator[]; error?: string }> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/social/creators`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      return await response.json();
+    } catch (err) {
+      console.error('Error fetching creators:', err);
       throw err;
     }
   },

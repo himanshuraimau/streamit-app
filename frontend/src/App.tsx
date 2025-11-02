@@ -27,6 +27,11 @@ import ContentPage from '@/pages/content/index';
 // Search Page
 import SearchPage from '@/pages/search';
 
+// Live & Social Pages
+import LivePage from '@/pages/live';
+import FollowingPage from '@/pages/following';
+import CreatorsPage from '@/pages/creators';
+
 // Creator & Stream Pages
 import WatchStream from '@/pages/watch';
 import CreatorPage from '@/pages/creator';
@@ -66,6 +71,11 @@ function App() {
 
       {/* Search route */}
       <Route path="/search" element={<SearchPage />} />
+
+      {/* Live & Social routes */}
+      <Route path="/live" element={<LivePage />} />
+      <Route path="/following" element={<FollowingPage />} />
+      <Route path="/creators" element={<CreatorsPage />} />
 
       {/* Creator profile routes (YouTube-style) - these must be last due to catch-all nature */}
       <Route path="/:username/live" element={<WatchStream />} />

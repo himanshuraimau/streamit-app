@@ -2,7 +2,6 @@ import {
   Home,
   Radio,
   Users,
-  TrendingUp,
   Search,
   UserPlus,
 } from "lucide-react"
@@ -20,6 +19,14 @@ import {
 } from "@/components/ui/sidebar"
 import { authClient } from "@/lib/auth-client"
 import { useEffect, useState } from "react"
+import { socialApi, type FollowingUser } from "@/lib/api/social"
+
+interface FollowedCreator {
+  id: string
+  username: string
+  name: string
+  image: string | null
+}
 
 const primaryNav = [
   { title: "Home", icon: Home, url: "/" },
@@ -30,7 +37,8 @@ const primaryNav = [
 export function HomeSidebar() {
   const location = useLocation()
   const { data: session } = authClient.useSession()
-  const [followedCreators, setFollowedCreators] = useState<any[]>([])
+  const [followedCreators, setFollowedCreators] = useState<FollowedCreator[]>([])
+  const [loadingFollowing, setLoadingFollowing] = useState(false)
 
   const authenticatedNav = [
     { title: "Following", icon: UserPlus, url: "/following" },
@@ -39,10 +47,28 @@ export function HomeSidebar() {
 
   useEffect(() => {
     // Fetch followed creators if authenticated
-    if (session?.user) {
-      // TODO: Implement fetch followed creators
-      // This will show creators the user follows
+    const fetchFollowing = async () => {
+      if (session?.user?.id) {
+        try {
+          setLoadingFollowing(true)
+          const response = await socialApi.getFollowing(session.user.id)
+          if (response.success && response.data) {
+            setFollowedCreators(response.data.map((user: FollowingUser) => ({
+              id: user.id,
+              username: user.username,
+              name: user.name || user.username,
+              image: user.image,
+            })))
+          }
+        } catch (error) {
+          console.error('[Sidebar] Error fetching following:', error)
+        } finally {
+          setLoadingFollowing(false)
+        }
+      }
     }
+
+    fetchFollowing()
   }, [session])
 
   const isActive = (url: string) => {
