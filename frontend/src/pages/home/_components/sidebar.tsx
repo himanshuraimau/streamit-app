@@ -1,15 +1,12 @@
 import {
   Home,
-  PlaySquare,
   Radio,
-  History,
-  Clock,
-  ThumbsUp,
-  ListVideo,
-  ChevronDown,
-  ChevronUp,
+  Users,
+  TrendingUp,
+  Search,
+  UserPlus,
 } from "lucide-react"
-import { useState } from "react"
+import { Link, useLocation } from "react-router-dom"
 import {
   Sidebar,
   SidebarContent,
@@ -21,37 +18,39 @@ import {
   SidebarMenuItem,
   SidebarSeparator,
 } from "@/components/ui/sidebar"
-
-// Mock subscription data
-const subscriptions = [
-  { id: 1, name: "Tech Channel", avatar: "TC" },
-  { id: 2, name: "Gaming Hub", avatar: "GH" },
-  { id: 3, name: "Music World", avatar: "MW" },
-  { id: 4, name: "Cooking Master", avatar: "CM" },
-  { id: 5, name: "Travel Vlog", avatar: "TV" },
-  { id: 6, name: "Science Today", avatar: "ST" },
-  { id: 7, name: "Art Studio", avatar: "AS" },
-]
+import { authClient } from "@/lib/auth-client"
+import { useEffect, useState } from "react"
 
 const primaryNav = [
-  { title: "Home", icon: Home, url: "#" },
-  { title: "Shorts", icon: PlaySquare, url: "#" },
-  { title: "Subscriptions", icon: Radio, url: "#" },
-]
-
-const secondaryNav = [
-  { title: "History", icon: History, url: "#" },
-  { title: "Watch Later", icon: Clock, url: "#" },
-  { title: "Liked Videos", icon: ThumbsUp, url: "#" },
-  { title: "Playlists", icon: ListVideo, url: "#" },
+  { title: "Home", icon: Home, url: "/" },
+  { title: "Live Now", icon: Radio, url: "/live" },
+  { title: "Search", icon: Search, url: "/search" },
 ]
 
 export function HomeSidebar() {
-  const [showAllSubscriptions, setShowAllSubscriptions] = useState(false)
+  const location = useLocation()
+  const { data: session } = authClient.useSession()
+  const [followedCreators, setFollowedCreators] = useState<any[]>([])
 
-  const displayedSubscriptions = showAllSubscriptions
-    ? subscriptions
-    : subscriptions.slice(0, 4)
+  const authenticatedNav = [
+    { title: "Following", icon: UserPlus, url: "/following" },
+    { title: "Creators", icon: Users, url: "/creators" },
+  ]
+
+  useEffect(() => {
+    // Fetch followed creators if authenticated
+    if (session?.user) {
+      // TODO: Implement fetch followed creators
+      // This will show creators the user follows
+    }
+  }, [session])
+
+  const isActive = (url: string) => {
+    if (url === "/") {
+      return location.pathname === "/"
+    }
+    return location.pathname.startsWith(url)
+  }
 
   return (
     <Sidebar collapsible="icon" className="border-r border-zinc-800 !top-20 !h-[calc(100vh-4rem)]">
@@ -63,10 +62,15 @@ export function HomeSidebar() {
               {primaryNav.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild tooltip={item.title}>
-                    <a href={item.url} className="text-white hover:bg-zinc-900">
+                    <Link 
+                      to={item.url} 
+                      className={`text-white hover:bg-zinc-900 ${
+                        isActive(item.url) ? 'bg-zinc-900' : ''
+                      }`}
+                    >
                       <item.icon />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -74,68 +78,66 @@ export function HomeSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarSeparator className="bg-zinc-800" />
+        {/* Authenticated User Navigation */}
+        {session?.user && (
+          <>
+            <SidebarSeparator className="bg-zinc-800" />
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {authenticatedNav.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild tooltip={item.title}>
+                        <Link 
+                          to={item.url} 
+                          className={`text-white hover:bg-zinc-900 ${
+                            isActive(item.url) ? 'bg-zinc-900' : ''
+                          }`}
+                        >
+                          <item.icon />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
 
-        {/* Secondary Navigation */}
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {secondaryNav.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
-                    <a href={item.url} className="text-white hover:bg-zinc-900">
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarSeparator className="bg-zinc-800 group-data-[collapsible=icon]:hidden" />
-
-        {/* Subscriptions - Only visible when expanded */}
-        <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-          <SidebarGroupLabel className="text-zinc-400">Subscriptions</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {displayedSubscriptions.map((sub) => (
-                <SidebarMenuItem key={sub.id}>
-                  <SidebarMenuButton asChild>
-                    <a href="#" className="flex items-center gap-3 text-white hover:bg-zinc-900">
-                      <div className="flex size-6 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-xs font-semibold text-white">
-                        {sub.avatar}
-                      </div>
-                      <span>{sub.name}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-              {subscriptions.length > 4 && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    onClick={() => setShowAllSubscriptions(!showAllSubscriptions)}
-                    className="text-white hover:bg-zinc-900"
-                  >
-                    {showAllSubscriptions ? (
-                      <>
-                        <ChevronUp />
-                        <span>Show less</span>
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown />
-                        <span>Show {subscriptions.length - 4} more</span>
-                      </>
-                    )}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {/* Subscriptions - Show followed creators when authenticated */}
+        {session?.user && followedCreators.length > 0 && (
+          <>
+            <SidebarSeparator className="bg-zinc-800 group-data-[collapsible=icon]:hidden" />
+            <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+              <SidebarGroupLabel className="text-zinc-400">Following</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {followedCreators.slice(0, 5).map((creator) => (
+                    <SidebarMenuItem key={creator.id}>
+                      <SidebarMenuButton asChild>
+                        <Link 
+                          to={`/${creator.username}`} 
+                          className="flex items-center gap-3 text-white hover:bg-zinc-900"
+                        >
+                          <div className="flex size-6 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-xs font-semibold text-white overflow-hidden">
+                            {creator.image ? (
+                              <img src={creator.image} alt={creator.name} className="w-full h-full object-cover" />
+                            ) : (
+                              creator.name.charAt(0).toUpperCase()
+                            )}
+                          </div>
+                          <span className="truncate">{creator.name}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
       </SidebarContent>
     </Sidebar>
   )
