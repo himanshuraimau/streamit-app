@@ -38,7 +38,6 @@ export function HomeSidebar() {
   const location = useLocation()
   const { data: session } = authClient.useSession()
   const [followedCreators, setFollowedCreators] = useState<FollowedCreator[]>([])
-  const [loadingFollowing, setLoadingFollowing] = useState(false)
 
   const authenticatedNav = [
     { title: "Following", icon: UserPlus, url: "/following" },
@@ -50,7 +49,6 @@ export function HomeSidebar() {
     const fetchFollowing = async () => {
       if (session?.user?.id) {
         try {
-          setLoadingFollowing(true)
           const response = await socialApi.getFollowing(session.user.id)
           if (response.success && response.data) {
             setFollowedCreators(response.data.map((user: FollowingUser) => ({
@@ -62,8 +60,6 @@ export function HomeSidebar() {
           }
         } catch (error) {
           console.error('[Sidebar] Error fetching following:', error)
-        } finally {
-          setLoadingFollowing(false)
         }
       }
     }

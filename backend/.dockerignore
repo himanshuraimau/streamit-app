@@ -1,0 +1,48 @@
+# Node modules
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Environment files (will be passed via docker-compose or env vars)
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+.github/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build outputs
+dist/
+build/
+*.log
+
+# Test files
+*.test.ts
+*.spec.ts
+__tests__/
+coverage/
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# Uploads (if you store files locally)
+uploads/
+
+# Prisma migrations (keep in image, but exclude dev db)
+# prisma/dev.db
+# prisma/dev.db-journal
