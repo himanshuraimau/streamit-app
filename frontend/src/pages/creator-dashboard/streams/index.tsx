@@ -153,29 +153,38 @@ export default function Streams() {
 
       {/* Show stream configuration if stream exists */}
       {streamInfo.ingressId && (
-        <>
+        <div className="space-y-8">
           {/* Stream Preview - Show live stream */}
           <StreamViewer streamInfo={streamInfo} />
 
-          {/* Quick Stats */}
-          <StreamStats
-            isLive={streamStatus?.isLive || false}
-            viewerCount={streamStatus?.viewerCount || 0}
-            isChatEnabled={streamInfo.isChatEnabled}
-          />
+          {/* Dashboard Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Column */}
+            <div className="space-y-6">
+              {/* Quick Stats */}
+              <StreamStats
+                isLive={streamStatus?.isLive || false}
+                viewerCount={streamStatus?.viewerCount || 0}
+                isChatEnabled={streamInfo.isChatEnabled}
+              />
 
-          {/* Stream Info */}
-          <StreamInfoCard
-            title={streamInfo.title}
-            onSave={handleSaveTitle}
-          />
+              {/* Stream Info */}
+              <StreamInfoCard
+                title={streamInfo.title}
+                onSave={handleSaveTitle}
+              />
+            </div>
 
-          {/* Chat Settings */}
-          <ChatSettingsCard
-            chatSettings={chatSettings}
-            onSettingChange={handleChatSettingChange}
-          />
-        </>
+            {/* Right Column */}
+            <div className="space-y-6">
+              {/* Chat Settings */}
+              <ChatSettingsCard
+                chatSettings={chatSettings}
+                onSettingChange={handleChatSettingChange}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

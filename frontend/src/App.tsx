@@ -24,7 +24,7 @@ import Posts from '@/pages/creator-dashboard/posts';
 // Content Pages
 import ContentPage from '@/pages/content/index';
 
-// Watch Stream Page
+// Creator & Stream Pages
 import WatchStream from '@/pages/watch';
 import CreatorPage from '@/pages/creator';
 
@@ -34,12 +34,6 @@ function App() {
       {/* Public routes */}
       <Route path="/" element={<Home />} />
       
-      {/* Watch stream route */}
-      <Route path="/u/:username" element={<WatchStream />} />
-
-  {/* Public creator profile */}
-  <Route path="/creator/:username" element={<CreatorPage />} />
-
       {/* Auth routes */}
       <Route path="/auth/login-options" element={<LoginOptions />} />
       <Route path="/auth/signup" element={<SignUp />} />
@@ -66,6 +60,13 @@ function App() {
 
       {/* Content routes */}
       <Route path="/content" element={<ContentPage />} />
+
+      {/* Creator profile routes (YouTube-style) - these must be last due to catch-all nature */}
+      <Route path="/:username/live" element={<WatchStream />} />
+      <Route path="/:username/videos" element={<CreatorPage />} />
+      <Route path="/:username/about" element={<CreatorPage />} />
+      <Route path="/:username/community" element={<CreatorPage />} />
+      <Route path="/:username" element={<CreatorPage />} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -66,7 +66,7 @@ export function LiveNowTab() {
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
         <div className="text-center space-y-4 max-w-2xl">
           <div className="flex items-center justify-center">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-linear-to-r from-pink-500 to-purple-600 flex items-center justify-center">
               <svg
                 className="w-8 h-8 text-white"
                 fill="currentColor"
@@ -97,7 +97,7 @@ export function LiveNowTab() {
         {streams.map((stream) => (
           <Card
             key={stream.id}
-            onClick={() => navigate(`/u/${stream.user.username}`)}
+            onClick={() => navigate(`/${stream.user.username}/live`)}
             className="group cursor-pointer bg-zinc-900 border-zinc-800 overflow-hidden hover:border-purple-500 transition-all duration-300 hover:scale-105"
           >
             {/* Thumbnail */}
@@ -110,7 +110,7 @@ export function LiveNowTab() {
                 />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 flex items-center justify-center opacity-50 group-hover:opacity-100 transition-opacity">
+                  <div className="w-16 h-16 rounded-full bg-linear-to-r from-pink-500 to-purple-600 flex items-center justify-center opacity-50 group-hover:opacity-100 transition-opacity">
                     <svg
                       className="w-8 h-8 text-white"
                       fill="currentColor"

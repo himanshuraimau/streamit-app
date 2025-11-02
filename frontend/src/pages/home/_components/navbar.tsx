@@ -18,6 +18,7 @@ export default function Navbar() {
   const session = authClient.useSession();
   const { signOut } = useSignOut();
   const { toggleSidebar } = useSidebar();
+  // Only fetch creator status if user is authenticated
   const { status, initialized } = useCreatorApplication();
 
   return (

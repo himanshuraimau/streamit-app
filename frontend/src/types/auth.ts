@@ -28,3 +28,14 @@ export interface AuthSession {
   user: User;
   session: Session;
 }
+
+export interface SignUpData {
+  email: string;
+  password: string;
+  name: string;
+  username: string;
+  age?: number;
+  phone?: string;
+}
+
+export type OTPType = 'email-verification' | 'sign-in' | 'forget-password';

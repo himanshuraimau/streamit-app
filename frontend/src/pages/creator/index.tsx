@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '@/pages/home/_components/navbar';
 import { HomeSidebar } from '@/pages/home/_components/sidebar';
 import { socialApi, type CreatorProfile } from '@/lib/api/social';
@@ -13,14 +13,47 @@ import { authClient } from '@/lib/auth-client';
 import { socialApi as socialApiClient } from '@/lib/api/social';
 import { SidebarProvider } from '@/components/ui/sidebar';
 
-type TabType = 'livestreams' | 'posts' | 'about';
+type TabType = 'posts' | 'livestreams' | 'videos' | 'about' | 'community';
 
 export default function CreatorPage() {
   const { username } = useParams<{ username: string }>();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<CreatorProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabType>('posts');
+  
+  // Determine active tab from URL path
+  const getActiveTabFromPath = (): TabType => {
+    const path = location.pathname;
+    if (path.endsWith('/videos')) return 'videos';
+    if (path.endsWith('/about')) return 'about';
+    if (path.endsWith('/community')) return 'community';
+    if (path.endsWith('/livestreams')) return 'livestreams';
+    return 'posts'; // default
+  };
+  
+  const [activeTab, setActiveTab] = useState<TabType>(getActiveTabFromPath());
+
+  // Update active tab when location changes
+  useEffect(() => {
+    const getActiveTab = (): TabType => {
+      const path = location.pathname;
+      if (path.endsWith('/videos')) return 'videos';
+      if (path.endsWith('/about')) return 'about';
+      if (path.endsWith('/community')) return 'community';
+      if (path.endsWith('/livestreams')) return 'livestreams';
+      return 'posts'; // default
+    };
+    setActiveTab(getActiveTab());
+  }, [location.pathname]);
+
+  // Navigate to tab
+  const handleTabChange = (tab: TabType) => {
+    const basePath = `/${username}`;
+    const tabPath = tab === 'posts' ? basePath : `${basePath}/${tab}`;
+    navigate(tabPath);
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -126,9 +159,13 @@ export default function CreatorPage() {
                     <span className="text-sm text-zinc-400">{profile.followerCount} followers</span>
                     <span className="text-sm text-zinc-400">{profile.followingCount} following</span>
                     {profile.isLive && (
-                      <span className="ml-4 inline-flex items-center px-3 py-1 rounded-full bg-red-600 text-white text-xs font-semibold">
-                        LIVE
-                      </span>
+                      <Button
+                        onClick={() => navigate(`/${username}/live`)}
+                        className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 text-sm"
+                      >
+                        <span className="w-2 h-2 rounded-full bg-white mr-2 animate-pulse"></span>
+                        Watch Live
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -149,7 +186,7 @@ export default function CreatorPage() {
               <div className="border-b border-zinc-800">
                 <div className="flex gap-8">
                   <button
-                    onClick={() => setActiveTab('posts')}
+                    onClick={() => handleTabChange('posts')}
                     className={`pb-4 px-2 font-medium transition-colors relative ${
                       activeTab === 'posts'
                         ? 'text-purple-400'
@@ -162,7 +199,20 @@ export default function CreatorPage() {
                     )}
                   </button>
                   <button
-                    onClick={() => setActiveTab('livestreams')}
+                    onClick={() => handleTabChange('videos')}
+                    className={`pb-4 px-2 font-medium transition-colors relative ${
+                      activeTab === 'videos'
+                        ? 'text-purple-400'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    Videos
+                    {activeTab === 'videos' && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-400" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => handleTabChange('livestreams')}
                     className={`pb-4 px-2 font-medium transition-colors relative ${
                       activeTab === 'livestreams'
                         ? 'text-purple-400'
@@ -175,7 +225,7 @@ export default function CreatorPage() {
                     )}
                   </button>
                   <button
-                    onClick={() => setActiveTab('about')}
+                    onClick={() => handleTabChange('about')}
                     className={`pb-4 px-2 font-medium transition-colors relative ${
                       activeTab === 'about'
                         ? 'text-purple-400'
@@ -211,6 +261,14 @@ export default function CreatorPage() {
                       ))
                     )}
                   </>
+                )}
+
+                {activeTab === 'videos' && (
+                  <Card className="bg-zinc-900 border-zinc-800 p-8 text-center">
+                    <Video className="w-16 h-16 text-zinc-600 mx-auto mb-4" />
+                    <h3 className="text-white font-semibold mb-2">Videos</h3>
+                    <p className="text-zinc-400">Video content will appear here</p>
+                  </Card>
                 )}
 
                 {activeTab === 'livestreams' && (

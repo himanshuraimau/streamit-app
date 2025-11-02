@@ -6,6 +6,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const getAuthHeaders = async () => {
   const session = await authClient.getSession();
   if (!session?.data?.session?.token) {
+    // Don't use console.error here as it's expected for non-authenticated users
     throw new Error('No authentication token found');
   }
   
