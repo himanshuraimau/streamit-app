@@ -24,7 +24,6 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
   // Avatar tab state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -39,39 +38,35 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
 
   // Load profile data when modal opens
   useEffect(() => {
-    if (open) {
-      loadProfile();
-    }
-  }, [open]);
+    const loadProfile = async () => {
+      if (!open) return;
+      
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/viewer/profile`, {
+          credentials: 'include',
+        });
 
-  const loadProfile = async () => {
-    try {
-      setIsLoadingProfile(true);
+        const data = await response.json();
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/viewer/profile`, {
-        credentials: 'include',
-      });
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to load profile');
+        }
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to load profile');
+        // Populate form fields
+        setName(data.name || session?.user?.name || '');
+        setUsername(data.username || '');
+        setBio(data.bio || '');
+      } catch (error) {
+        console.error('Failed to load profile:', error);
+        // Fallback to session data
+        setName(session?.user?.name || '');
+        setUsername('');
+        setBio('');
       }
+    };
 
-      // Populate form fields
-      setName(data.name || session?.user?.name || '');
-      setUsername(data.username || '');
-      setBio(data.bio || '');
-    } catch (error) {
-      console.error('Failed to load profile:', error);
-      // Fallback to session data
-      setName(session?.user?.name || '');
-      setUsername('');
-      setBio('');
-    } finally {
-      setIsLoadingProfile(false);
-    }
-  };
+    loadProfile();
+  }, [open, session?.user?.name]);
 
   const handleProfileUpdate = async () => {
     try {
