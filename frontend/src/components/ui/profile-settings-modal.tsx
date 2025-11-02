@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -202,6 +202,9 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
       <DialogContent className="sm:max-w-[600px] bg-zinc-900 border-zinc-800 text-white">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Profile Settings</DialogTitle>
+          <DialogDescription className="text-zinc-400">
+            Manage your profile information, avatar, and security settings
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="profile" className="w-full">

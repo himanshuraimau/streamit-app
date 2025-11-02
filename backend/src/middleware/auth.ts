@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { prisma } from '../lib/db';
+import { auth } from '../lib/auth';
 
 declare global {
   namespace Express {
@@ -16,41 +16,27 @@ declare global {
 
 export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
-
-    const token = authHeader.substring(7); 
-
-    // Find session by token
-    const session = await prisma.session.findUnique({
-      where: { token },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            username: true,
-          },
-        },
-      },
+    // Use Better Auth to get session from cookies
+    const session = await auth.api.getSession({
+      headers: req.headers as any,
     });
 
     if (!session) {
-      return res.status(401).json({ error: 'Invalid token' });
+      return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    if (session.expiresAt < new Date()) {
-      return res.status(401).json({ error: 'Token expired' });
-    }
-
-    req.user = session.user;
+    // Attach user info to request
+    req.user = {
+      id: session.user.id,
+      name: session.user.name,
+      email: session.user.email,
+      username: session.user.email?.split('@')[0] || 'user', // Fallback username
+    };
+    
     next();
   } catch (error) {
     console.error('Auth middleware error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(401).json({ error: 'Authentication failed' });
   }
 };
 
@@ -60,32 +46,19 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
  */
 export const optionalAuth = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      // No auth provided, continue without user
-      return next();
-    }
-
-    const token = authHeader.substring(7);
-
-    // Find session by token
-    const session = await prisma.session.findUnique({
-      where: { token },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            username: true,
-          },
-        },
-      },
+    // Use Better Auth to get session from cookies
+    const session = await auth.api.getSession({
+      headers: req.headers as any,
     });
 
-    if (session && session.expiresAt > new Date()) {
-      req.user = session.user;
+    if (session) {
+      // Attach user info to request if authenticated
+      req.user = {
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+        username: session.user.email?.split('@')[0] || 'user',
+      };
     }
     
     // Continue regardless of auth status
