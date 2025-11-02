@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { prisma } from '../lib/db';
 
 export interface SearchQuery {
