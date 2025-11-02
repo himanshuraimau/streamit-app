@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export default function Navbar() {
-  const session = authClient.useSession();
+  const { data: session, isPending } = authClient.useSession();
   const { signOut } = useSignOut();
   const { toggleSidebar } = useSidebar();
   const navigate = useNavigate();
@@ -30,6 +30,33 @@ export default function Navbar() {
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
+
+  // Show loading state while checking authentication
+  if (isPending) {
+    return (
+      <nav className="fixed top-0 left-0 right-0 z-[100] w-full border-b border-zinc-800 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/60">
+        <div className="flex h-20 items-center justify-between px-6 gap-6">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="size-10 text-white hover:bg-zinc-800"
+            >
+              <Menu className="size-5" />
+            </Button>
+            <Link to="/" className="flex items-center gap-2">
+              <img src="/logo_dark.svg" alt="StreamIt" className="h-9 w-auto" />
+              <span className="text-xl font-bold text-white">StreamIt</span>
+            </Link>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-20 bg-zinc-800 animate-pulse rounded" />
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-[100] w-full border-b border-zinc-800 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/60">
@@ -67,7 +94,7 @@ export default function Navbar() {
 
         {/* Right Section: Auth */}
         <div className="flex items-center gap-3">
-          {session.data ? (
+          {session ? (
             <>
               {/* Show Creator Dashboard button if approved, otherwise show Apply for Creator */}
               {initialized && status?.hasApplication && status.status === 'APPROVED' ? (
@@ -117,10 +144,10 @@ export default function Navbar() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-black">
-                    {session.data.user.image ? (
+                    {session.user.image ? (
                       <img
-                        src={session.data.user.image}
-                        alt={session.data.user.name}
+                        src={session.user.image}
+                        alt={session.user.name}
                         className="h-full w-full rounded-full object-cover"
                       />
                     ) : (
@@ -131,8 +158,8 @@ export default function Navbar() {
                 <DropdownMenuContent align="end" className="w-56 bg-zinc-900 border-zinc-800">
                   <DropdownMenuLabel className="text-white">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium">{session.data.user.name}</p>
-                      <p className="text-xs text-zinc-400">{session.data.user.email}</p>
+                      <p className="text-sm font-medium">{session.user.name}</p>
+                      <p className="text-xs text-zinc-400">{session.user.email}</p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="bg-zinc-800" />
