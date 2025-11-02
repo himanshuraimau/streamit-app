@@ -18,6 +18,9 @@ export const auth = betterAuth({
   
   // Base URL of the auth server
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  
+  // Secret for encryption
+  secret: process.env.BETTER_AUTH_SECRET,
 
   trustedOrigins: [
     process.env.FRONTEND_URL || "http://localhost:5173",
@@ -39,6 +42,14 @@ export const auth = betterAuth({
     },
     // Use secure cookies in production
     useSecureCookies: process.env.NODE_ENV === "production",
+    
+    // CRITICAL: Cookie attributes for cross-domain setup
+    defaultCookieAttributes: {
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: process.env.NODE_ENV === "production", // Required with SameSite=none
+      httpOnly: true,
+      ...(process.env.NODE_ENV === "production" ? { partitioned: true } : {}),
+    },
   },
 
   user: {

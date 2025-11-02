@@ -49,11 +49,8 @@ EXPOSE 3000
 # Install OpenSSL for Prisma
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
-# Fix permissions for bun user
-RUN chown -R bun:bun /app
-
-# Set the user to bun for security
-USER bun
+# Run as root user (simpler for production)
+# USER bun
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
