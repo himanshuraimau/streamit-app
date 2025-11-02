@@ -16,6 +16,7 @@ model User {
   email         String
   phone         String?
   username      String    @unique
+  bio           String?   @db.Text
   emailVerified Boolean   @default(false)
   image         String?
   createdAt     DateTime  @default(now())
@@ -49,6 +50,7 @@ model Session {
   id        String   @id
   expiresAt DateTime
   token     String
+  username  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   ipAddress String?
@@ -416,6 +418,7 @@ enum FilePurpose {
   ID_DOCUMENT
   SELFIE_PHOTO
   PROFILE_PICTURE
+  AVATAR
   STREAM_THUMBNAIL
   STREAM_OVERLAY
   POST_MEDIA

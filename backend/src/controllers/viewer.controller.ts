@@ -13,6 +13,55 @@ import { uploadFileToS3, generateFileName } from '../lib/s3';
  */
 export class ViewerController {
   /**
+   * Get current authenticated user info (protected endpoint)
+   * GET /api/viewer/me
+   */
+  static async getCurrentUser(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: 'Unauthorized'
+        });
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          username: true,
+          image: true,
+          bio: true,
+          age: true,
+          phone: true,
+          createdAt: true,
+        },
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: 'User not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        data: user,
+      });
+    } catch (error) {
+      console.error('[ViewerController] Error getting current user:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get user info',
+      });
+    }
+  }
+
+  /**
    * Get stream by username (public endpoint)
    * GET /api/viewer/stream/:username
    */
@@ -349,6 +398,7 @@ export class ViewerController {
           name: true,
           email: true,
           username: true,
+          bio: true,
           image: true,
           age: true,
           phone: true,
@@ -422,6 +472,7 @@ export class ViewerController {
           name: true,
           email: true,
           username: true,
+          bio: true,
           image: true,
           age: true,
           phone: true,

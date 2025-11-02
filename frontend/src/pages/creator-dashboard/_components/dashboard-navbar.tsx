@@ -3,7 +3,7 @@ import { authClient } from '@/lib/auth-client';
 import { useSignOut } from '@/utils/queries/auth';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, LogOut, Home, Settings, Menu } from 'lucide-react';
+import { LogOut, Home, Settings, Menu } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
 import { ProfileSettingsModal } from '@/components/ui/profile-settings-modal';
 import { useState } from 'react';
@@ -66,15 +66,19 @@ export function DashboardNavbar() {
           {session && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-black">
+                <button className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-black overflow-hidden">
                   {session.user.image ? (
                     <img
                       src={session.user.image}
                       alt={session.user.name}
-                      className="h-full w-full rounded-full object-cover"
+                      className="h-full w-full object-cover"
                     />
                   ) : (
-                    <User className="h-5 w-5 text-white" />
+                    <img
+                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(session.user.name)}&background=random&color=fff&size=128&bold=true`}
+                      alt={session.user.name}
+                      className="h-full w-full object-cover"
+                    />
                   )}
                 </button>
               </DropdownMenuTrigger>

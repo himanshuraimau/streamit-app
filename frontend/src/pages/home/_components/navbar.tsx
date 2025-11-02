@@ -2,8 +2,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { authClient } from '@/lib/auth-client';
 import { useSignOut } from '@/utils/queries/auth';
 import { useCreatorApplication } from '@/hooks/useCreatorApplication';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Button } from '@/components/ui/button';
-import { Search, User, LogOut, Menu, UserCircle, Settings, Video, BarChart3, CheckCircle } from 'lucide-react';
+import { Search, LogOut, Menu, UserCircle, Settings, Video, BarChart3, CheckCircle } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
 import { ProfileSettingsModal } from '@/components/ui/profile-settings-modal';
 import { useState } from 'react';
@@ -18,6 +19,7 @@ import {
 
 export default function Navbar() {
   const { data: session, isPending } = authClient.useSession();
+  const { data: currentUser } = useCurrentUser(); // Get full user data including avatar
   const { signOut } = useSignOut();
   const { toggleSidebar } = useSidebar();
   const navigate = useNavigate();
@@ -145,15 +147,20 @@ export default function Navbar() {
               )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-black">
-                    {session.user.image ? (
+                  <button className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-black overflow-hidden">
+                    {/* Use currentUser.image for avatar URL from database */}
+                    {currentUser?.image ? (
                       <img
-                        src={session.user.image}
+                        src={currentUser.image}
                         alt={session.user.name}
-                        className="h-full w-full rounded-full object-cover"
+                        className="h-full w-full object-cover"
                       />
                     ) : (
-                      <User className="h-5 w-5 text-white" />
+                      <img
+                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(session.user.name)}&background=random&color=fff&size=128&bold=true`}
+                        alt={session.user.name}
+                        className="h-full w-full object-cover"
+                      />
                     )}
                   </button>
                 </DropdownMenuTrigger>
@@ -165,7 +172,10 @@ export default function Navbar() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="bg-zinc-800" />
-                  <DropdownMenuItem className="text-zinc-300 focus:text-white focus:bg-zinc-800 cursor-pointer">
+                  <DropdownMenuItem 
+                    onClick={() => setIsSettingsOpen(true)}
+                    className="text-zinc-300 focus:text-white focus:bg-zinc-800 cursor-pointer"
+                  >
                     <UserCircle className="mr-2 h-4 w-4" />
                     <span>Profile</span>
                   </DropdownMenuItem>

@@ -42,7 +42,8 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
       if (!open) return;
       
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/viewer/profile`, {
+        // Use /me endpoint for current user data
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/viewer/me`, {
           credentials: 'include',
         });
 
@@ -52,10 +53,10 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
           throw new Error(data.error || 'Failed to load profile');
         }
 
-        // Populate form fields
-        setName(data.name || session?.user?.name || '');
-        setUsername(data.username || '');
-        setBio(data.bio || '');
+        // Populate form fields with data from /me endpoint
+        setName(data.data.name || '');
+        setUsername(data.data.username || '');
+        setBio(data.data.bio || '');
       } catch (error) {
         console.error('Failed to load profile:', error);
         // Fallback to session data
@@ -89,6 +90,7 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
 
       toast.success('Profile updated successfully!');
       queryClient.invalidateQueries({ queryKey: ['session'] });
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] }); // Refresh user data
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to update profile');
     } finally {
@@ -148,6 +150,7 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
 
       toast.success('Avatar uploaded successfully!');
       queryClient.invalidateQueries({ queryKey: ['session'] });
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] }); // Refresh user data with new avatar
       setSelectedFile(null);
       setPreviewUrl(null);
     } catch (error) {
@@ -298,7 +301,7 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
                 {/* Current Avatar */}
                 <div className="relative">
                   <img
-                    src={previewUrl || session?.user?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${session?.user?.name}`}
+                    src={previewUrl || session?.user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(session?.user?.name || 'User')}&background=a855f7&color=fff&size=256&bold=true`}
                     alt="Avatar"
                     className="w-32 h-32 rounded-full object-cover border-4 border-zinc-700"
                   />

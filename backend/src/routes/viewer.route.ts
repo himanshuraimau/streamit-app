@@ -10,6 +10,13 @@ const router = Router();
  * Most routes are public, some require authentication
  */
 
+// Get current user info (requires auth)
+router.get(
+  '/me',
+  requireAuth,
+  ViewerController.getCurrentUser
+);
+
 // Profile Management (requires auth)
 router.get(
   '/profile',
