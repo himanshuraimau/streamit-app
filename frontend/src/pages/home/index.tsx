@@ -45,21 +45,6 @@ export default function Home() {
               {/* Tab Content */}
               {renderTabContent()}
             </div>
-
-            {/* Footer */}
-            <footer className="border-t border-zinc-800 mt-20">
-              <div className="container mx-auto px-4 py-8">
-                <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                  <div className="flex items-center space-x-2">
-                    <img src="/logo_dark.svg" alt="StreamIt" className="h-8 w-auto" />
-                    <span className="text-xl font-bold text-white">StreamIt</span>
-                  </div>
-                  <p className="text-zinc-500 text-sm">
-                    © 2025 StreamIt. Your world of live streaming.
-                  </p>
-                </div>
-              </div>
-            </footer>
           </main>
         </div>
       </div>
