@@ -24,6 +24,9 @@ import Posts from '@/pages/creator-dashboard/posts';
 // Content Pages
 import ContentPage from '@/pages/content/index';
 
+// Search Page
+import SearchPage from '@/pages/search';
+
 // Creator & Stream Pages
 import WatchStream from '@/pages/watch';
 import CreatorPage from '@/pages/creator';
@@ -60,6 +63,9 @@ function App() {
 
       {/* Content routes */}
       <Route path="/content" element={<ContentPage />} />
+
+      {/* Search route */}
+      <Route path="/search" element={<SearchPage />} />
 
       {/* Creator profile routes (YouTube-style) - these must be last due to catch-all nature */}
       <Route path="/:username/live" element={<WatchStream />} />

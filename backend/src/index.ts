@@ -10,6 +10,7 @@ import streamRoutes from './routes/stream.route';
 import webhookRoutes from './routes/webhook.route';
 import viewerRoutes from './routes/viewer.route';
 import socialRoutes from './routes/social.route';
+import searchRoutes from './routes/search.route';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -47,6 +48,9 @@ app.use('/api/viewer', viewerRoutes);
 
 // Mount social routes
 app.use('/api/social', socialRoutes);
+
+// Mount search routes
+app.use('/api/search', searchRoutes);
 
 // IMPORTANT: Mount Better Auth handler LAST (catch-all for remaining auth routes)
 // Express v5 uses new wildcard syntax: /{*any} instead of /*

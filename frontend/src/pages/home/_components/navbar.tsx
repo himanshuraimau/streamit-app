@@ -1,10 +1,11 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { authClient } from '@/lib/auth-client';
 import { useSignOut } from '@/utils/queries/auth';
 import { useCreatorApplication } from '@/hooks/useCreatorApplication';
 import { Button } from '@/components/ui/button';
 import { Search, User, LogOut, Menu, UserCircle, Settings, Video, BarChart3, CheckCircle } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
+import { useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,8 +19,17 @@ export default function Navbar() {
   const session = authClient.useSession();
   const { signOut } = useSignOut();
   const { toggleSidebar } = useSidebar();
+  const navigate = useNavigate();
   // Only fetch creator status if user is authenticated
   const { status, initialized } = useCreatorApplication();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-[100] w-full border-b border-zinc-800 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/60">
@@ -43,14 +53,16 @@ export default function Navbar() {
 
         {/* Center Section: Search Bar */}
         <div className="hidden md:flex flex-1 justify-center px-8">
-          <div className="relative w-full max-w-[500px]">
-            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <form onSubmit={handleSearch} className="relative w-full max-w-[500px]">
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 pointer-events-none" />
             <input
               type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search streams..."
               className="w-full rounded-full bg-zinc-900 py-2.5 pl-11 pr-4 text-sm text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-purple-500 border border-zinc-800 transition-all"
             />
-          </div>
+          </form>
         </div>
 
         {/* Right Section: Auth */}

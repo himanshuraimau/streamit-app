@@ -33,7 +33,7 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
   message?: string;
-  details?: any[];
+  details?: unknown[];
 }
 
 export interface FileUploadResponse {
