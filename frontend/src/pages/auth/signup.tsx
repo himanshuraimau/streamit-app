@@ -17,7 +17,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft } from 'lucide-react';
+import { AuthNavbar } from '@/components/auth/auth-navbar';
 
 const signUpFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -65,7 +65,9 @@ export default function SignUp() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-black px-4 py-8 relative">
+      <AuthNavbar />
+      
       {/* Background Gradient Effect */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 -left-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl"></div>
@@ -73,18 +75,13 @@ export default function SignUp() {
       </div>
 
       <Card className="w-full max-w-md bg-zinc-900/80 backdrop-blur-xl border-zinc-800 relative z-10">
-        <CardHeader>
-          <div className="flex items-center justify-between mb-2">
-            <Link to="/auth/login-options" className="text-zinc-400 hover:text-white transition-colors">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-            <img src="/logo_dark.svg" alt="StreamIt" className="h-10 w-auto" />
-          </div>
-          <CardTitle className="text-2xl text-white">Create Account</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-2xl text-white text-center">Create Account</CardTitle>
+          <p className="text-sm text-zinc-400 text-center">Join StreamIt today</p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0 max-h-[calc(100vh-200px)] overflow-y-auto">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
               <FormField
                 control={form.control}
                 name="name"
@@ -161,18 +158,16 @@ export default function SignUp() {
                 )}
               />
 
-              <FormField
+                            <FormField
                 control={form.control}
-                name="age"
+                name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-zinc-300">Age</FormLabel>
+                    <FormLabel className="text-zinc-300 text-sm">Full Name</FormLabel>
                     <FormControl>
                       <Input
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="18"
-                        className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                        placeholder="John Doe"
+                        className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 h-9"
                         {...field}
                       />
                     </FormControl>
@@ -180,6 +175,140 @@ export default function SignUp() {
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-zinc-300 text-sm">Username</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="johndoe"
+                        className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 h-9"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-zinc-300 text-sm">Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="you@example.com"
+                        className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 h-9"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-zinc-300 text-sm">
+                      Phone <span className="text-zinc-500">(Optional)</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="tel"
+                        placeholder="+1 (555) 000-0000"
+                        className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 h-9"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="age"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-zinc-300 text-sm">Age</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="18"
+                        className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 h-9"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-zinc-300 text-sm">Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 h-9"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription className="text-xs text-zinc-500">
+                      Minimum 8 characters
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-zinc-300 text-sm">Confirm Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 h-9"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button
+                type="submit"
+                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 h-10 mt-2"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? 'Creating account...' : 'Sign Up'}
+              </Button>
+
+              <p className="text-center text-xs text-zinc-400 pt-2">
+                Already have an account?{' '}
+                <Link to="/auth/signin" className="text-purple-400 hover:text-purple-300 font-medium">
+                  Sign in
+                </Link>
+              </p>
 
               <FormField
                 control={form.control}

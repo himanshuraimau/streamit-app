@@ -35,6 +35,8 @@ const getFolderByPurpose = (purpose: string): string => {
       return 'creator-applications/identity/selfies';
     case 'PROFILE_PICTURE':
       return 'creator-applications/profiles';
+    case 'AVATAR':
+      return 'avatars';
     case 'POST_MEDIA':
       return 'posts/media';
     case 'POST_IMAGE':

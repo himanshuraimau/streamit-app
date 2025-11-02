@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { User, LogOut, Home, Settings, Menu } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
+import { ProfileSettingsModal } from '@/components/ui/profile-settings-modal';
+import { useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +20,7 @@ export function DashboardNavbar() {
   const { data: session } = authClient.useSession();
   const { signOut } = useSignOut();
   const { toggleSidebar } = useSidebar();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-[100] w-full border-b border-zinc-800 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/60">
@@ -83,7 +86,10 @@ export function DashboardNavbar() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-zinc-800" />
-                <DropdownMenuItem className="text-zinc-300 focus:text-white focus:bg-zinc-800 cursor-pointer">
+                <DropdownMenuItem 
+                  onClick={() => setIsSettingsOpen(true)}
+                  className="text-zinc-300 focus:text-white focus:bg-zinc-800 cursor-pointer"
+                >
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Account Settings</span>
                 </DropdownMenuItem>
@@ -100,6 +106,12 @@ export function DashboardNavbar() {
           )}
         </div>
       </div>
+
+      {/* Profile Settings Modal */}
+      <ProfileSettingsModal 
+        open={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+      />
     </nav>
   );
 }

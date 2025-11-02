@@ -16,7 +16,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft } from 'lucide-react';
+import { AuthNavbar } from '@/components/auth/auth-navbar';
 
 const signInSchema = z.object({
   email: z.email('Invalid email address'),
@@ -41,37 +41,34 @@ export default function SignIn() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black px-4">
+    <div className="min-h-screen flex items-center justify-center bg-black px-4 relative">
+      <AuthNavbar />
+      
       {/* Background Gradient Effect */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 -left-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl"></div>
         <div className="absolute bottom-1/4 -right-1/4 w-96 h-96 bg-pink-600/10 rounded-full blur-3xl"></div>
       </div>
 
-      <Card className="w-full max-w-md bg-zinc-900/80 backdrop-blur-xl border-zinc-800 relative z-10">
-        <CardHeader>
-          <div className="flex items-center justify-between mb-2">
-            <Link to="/auth/login-options" className="text-zinc-400 hover:text-white transition-colors">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-            <img src="/logo_dark.svg" alt="StreamIt" className="h-10 w-auto" />
-          </div>
-          <CardTitle className="text-2xl text-white">Login</CardTitle>
+      <Card className="w-full max-w-md bg-zinc-900/80 backdrop-blur-xl border-zinc-800 relative z-10 my-8">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-2xl text-white text-center">Welcome Back</CardTitle>
+          <p className="text-sm text-zinc-400 text-center">Sign in to your account</p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-zinc-300">Email</FormLabel>
+                    <FormLabel className="text-zinc-300 text-sm">Email</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
                         placeholder="you@example.com"
-                        className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                        className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 h-10"
                         {...field}
                       />
                     </FormControl>
@@ -85,12 +82,12 @@ export default function SignIn() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-zinc-300">Password</FormLabel>
+                    <FormLabel className="text-zinc-300 text-sm">Password</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
                         placeholder="••••••••"
-                        className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                        className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 h-10"
                         {...field}
                       />
                     </FormControl>
@@ -99,10 +96,10 @@ export default function SignIn() {
                 )}
               />
 
-              <div className="flex justify-end">
+              <div className="flex justify-end pt-1">
                 <Link
                   to="/auth/forgot-password"
-                  className="text-sm text-purple-400 hover:text-purple-300"
+                  className="text-xs text-purple-400 hover:text-purple-300"
                 >
                   Forgot password?
                 </Link>
@@ -110,13 +107,13 @@ export default function SignIn() {
 
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 h-10"
                 disabled={form.formState.isSubmitting}
               >
-                {form.formState.isSubmitting ? 'Signing in...' : 'LOGIN'}
+                {form.formState.isSubmitting ? 'Signing in...' : 'Sign In'}
               </Button>
 
-              <div className="space-y-2 text-center text-sm">
+              <div className="space-y-1.5 text-center text-xs pt-2">
                 <p className="text-zinc-400">
                   Don't have an account?{' '}
                   <Link to="/auth/signup" className="text-purple-400 hover:text-purple-300 font-medium">

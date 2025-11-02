@@ -5,6 +5,7 @@ import { useCreatorApplication } from '@/hooks/useCreatorApplication';
 import { Button } from '@/components/ui/button';
 import { Search, User, LogOut, Menu, UserCircle, Settings, Video, BarChart3, CheckCircle } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
+import { ProfileSettingsModal } from '@/components/ui/profile-settings-modal';
 import { useState } from 'react';
 import {
   DropdownMenu,
@@ -23,6 +24,7 @@ export default function Navbar() {
   // Only fetch creator status if user is authenticated
   const { status, initialized } = useCreatorApplication();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,7 +169,10 @@ export default function Navbar() {
                     <UserCircle className="mr-2 h-4 w-4" />
                     <span>Profile</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="text-zinc-300 focus:text-white focus:bg-zinc-800 cursor-pointer">
+                  <DropdownMenuItem 
+                    onClick={() => setIsSettingsOpen(true)}
+                    className="text-zinc-300 focus:text-white focus:bg-zinc-800 cursor-pointer"
+                  >
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>
                   </DropdownMenuItem>
@@ -201,6 +206,12 @@ export default function Navbar() {
           )}
         </div>
       </div>
+
+      {/* Profile Settings Modal */}
+      <ProfileSettingsModal 
+        open={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+      />
     </nav>
   );
 }

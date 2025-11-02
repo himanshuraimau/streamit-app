@@ -2,6 +2,10 @@ import type { Request, Response } from 'express';
 import { StreamService } from '../services/stream.service';
 import { TokenService } from '../services/token.service';
 import { z } from 'zod';
+import { prisma } from '../lib/db';
+import { auth } from '../lib/auth';
+import { updateProfileSchema, changePasswordSchema } from '../lib/validations/viewer.validation';
+import { uploadFileToS3, generateFileName } from '../lib/s3';
 
 /**
  * Viewer Controller - Handles HTTP requests for stream viewing
@@ -318,6 +322,274 @@ export class ViewerController {
       res.status(500).json({
         success: false,
         error: 'Failed to search streams',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  /**
+   * Get current user profile
+   * GET /api/viewer/profile
+   */
+  static async getProfile(req: Request, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+        });
+      }
+
+      const userId = req.user.id;
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          username: true,
+          image: true,
+          age: true,
+          phone: true,
+          createdAt: true,
+        },
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: 'User not found',
+        });
+      }
+
+      res.json({
+        success: true,
+        data: user,
+      });
+    } catch (error) {
+      console.error('[ViewerController] Error getting profile:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get profile',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  /**
+   * Update user profile
+   * PATCH /api/viewer/profile
+   * Body: { name?, username?, bio? }
+   */
+  static async updateProfile(req: Request, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+        });
+      }
+
+      const userId = req.user.id;
+
+      // Validate request body
+      const validatedData = updateProfileSchema.parse(req.body);
+
+      // Check if username is already taken (if updating username)
+      if (validatedData.username) {
+        const existingUser = await prisma.user.findFirst({
+          where: {
+            username: validatedData.username,
+            NOT: { id: userId },
+          },
+        });
+
+        if (existingUser) {
+          return res.status(409).json({
+            success: false,
+            error: 'Username already taken',
+          });
+        }
+      }
+
+      // Update user
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: validatedData,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          username: true,
+          image: true,
+          age: true,
+          phone: true,
+          createdAt: true,
+        },
+      });
+
+      res.json({
+        success: true,
+        data: updatedUser,
+        message: 'Profile updated successfully',
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          error: 'Validation error',
+          details: error.errors,
+        });
+      }
+
+      console.error('[ViewerController] Error updating profile:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to update profile',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  /**
+   * Upload avatar/profile picture
+   * POST /api/viewer/avatar
+   */
+  static async uploadAvatar(req: Request, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+        });
+      }
+
+      const userId = req.user.id;
+      const file = req.file;
+
+      if (!file) {
+        return res.status(400).json({
+          success: false,
+          error: 'No file uploaded',
+        });
+      }
+
+      // Validate file type
+      const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!allowedMimeTypes.includes(file.mimetype)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid file type. Only JPEG, PNG, and WebP images are allowed',
+        });
+      }
+
+      // Upload to S3
+      const fileName = generateFileName(file.originalname, 'AVATAR');
+      const avatarUrl = await uploadFileToS3(file.buffer, fileName, file.mimetype);
+
+      // Update user's avatar in database
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: { image: avatarUrl },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          username: true,
+          image: true,
+          age: true,
+          phone: true,
+          createdAt: true,
+        },
+      });
+
+      res.json({
+        success: true,
+        data: {
+          user: updatedUser,
+          avatarUrl,
+        },
+        message: 'Avatar uploaded successfully',
+      });
+    } catch (error) {
+      console.error('[ViewerController] Error uploading avatar:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to upload avatar',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  /**
+   * Change password
+   * PATCH /api/viewer/password
+   * Body: { currentPassword, newPassword, confirmPassword }
+   */
+  static async changePassword(req: Request, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+        });
+      }
+
+      const userId = req.user.id;
+      const email = req.user.email;
+
+      // Validate request body
+      const validatedData = changePasswordSchema.parse(req.body);
+
+      // Verify current password using Better Auth
+      try {
+        const signInResult = await auth.api.signInEmail({
+          body: {
+            email,
+            password: validatedData.currentPassword,
+          },
+        });
+
+        if (!signInResult?.user) {
+          return res.status(401).json({
+            success: false,
+            error: 'Current password is incorrect',
+          });
+        }
+      } catch (authError) {
+        return res.status(401).json({
+          success: false,
+          error: 'Current password is incorrect',
+        });
+      }
+
+      // Update password using Better Auth
+      await auth.api.changePassword({
+        body: {
+          newPassword: validatedData.newPassword,
+          currentPassword: validatedData.currentPassword,
+        },
+        headers: req.headers as any,
+      });
+
+      res.json({
+        success: true,
+        message: 'Password changed successfully',
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          error: 'Validation error',
+          details: error.issues,
+        });
+      }
+
+      console.error('[ViewerController] Error changing password:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to change password',
         message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
