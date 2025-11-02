@@ -23,15 +23,19 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Mount webhook routes FIRST with raw body parser (before express.json())
+// IMPORTANT: Mount Better Auth handler FIRST (before express.json())
+// Better Auth needs to handle raw request body
+app.all("/api/auth/*", toNodeHandler(auth));
+
+// Mount webhook routes with raw body parser (before express.json())
 // LiveKit webhook requires raw body for signature verification
 app.use('/api/webhook', express.raw({ type: 'application/webhook+json' }));
 app.use('/api/webhook', webhookRoutes);
 
-// Mount express.json() for all other routes
+// Mount express.json() for all other routes AFTER Better Auth
 app.use(express.json());
 
-// Mount custom auth routes FIRST (more specific routes)
+// Mount custom auth routes (more specific routes that need JSON parsing)
 app.use('/api/auth', authRoutes);
 
 // Mount creator routes
@@ -51,10 +55,6 @@ app.use('/api/social', socialRoutes);
 
 // Mount search routes
 app.use('/api/search', searchRoutes);
-
-// IMPORTANT: Mount Better Auth handler LAST (catch-all for remaining auth routes)
-// Express v5 uses new wildcard syntax: /{*any} instead of /*
-app.all("/api/auth/{*all}", toNodeHandler(auth));
 
 // Health check
 app.get('/health', async (req, res) => {
