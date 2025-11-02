@@ -21,12 +21,10 @@ COPY . .
 # Build arguments for environment variables
 ARG VITE_API_URL
 ARG VITE_LIVEKIT_WS_URL
-ARG VITE_BETTER_AUTH_URL
 
 # Set environment variables for build
 ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_LIVEKIT_WS_URL=${VITE_LIVEKIT_WS_URL}
-ENV VITE_BETTER_AUTH_URL=${VITE_BETTER_AUTH_URL}
 
 # Build the application
 RUN bun run build

@@ -13,9 +13,33 @@ export const auth = betterAuth({
     enabled: true,
   },
 
+  // Base path for auth routes (default is /api/auth)
+  basePath: "/api/auth",
+  
+  // Base URL of the auth server
+  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+
   trustedOrigins: [
     process.env.FRONTEND_URL || "http://localhost:5173",
   ],
+
+  // Advanced session configuration for cross-domain
+  session: {
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60, // 5 minutes
+    },
+  },
+
+  // Advanced cookie configuration for cross-domain
+  advanced: {
+    cookiePrefix: "better-auth",
+    crossSubDomainCookies: {
+      enabled: false, // Set to false since you have different domains
+    },
+    // Use secure cookies in production
+    useSecureCookies: process.env.NODE_ENV === "production",
+  },
 
   user: {
     additionalFields: {

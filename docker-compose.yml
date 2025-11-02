@@ -78,11 +78,13 @@ services:
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
         VITE_LIVEKIT_WS_URL: ${VITE_LIVEKIT_WS_URL}
-        VITE_BETTER_AUTH_URL: ${VITE_BETTER_AUTH_URL:-http://localhost:3000}
     container_name: streamit-frontend
     restart: unless-stopped
     ports:
       - "80:80"
+    environment:
+      # These are build-time variables, but we can also set runtime env vars if needed
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
     depends_on:
       - backend
     networks:

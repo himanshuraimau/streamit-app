@@ -35,7 +35,12 @@ print_info() {
 # Check for required environment variables
 if [ -z "$VITE_API_URL" ]; then
     print_error "VITE_API_URL environment variable is required"
-    echo "Example: export VITE_API_URL=http://your-backend-ip:3000"
+    echo ""
+    echo "For production, use:"
+    echo "  export VITE_API_URL=https://voltstreambackend.space"
+    echo ""
+    echo "For development, use:"
+    echo "  export VITE_API_URL=http://your-backend-ip:3000"
     exit 1
 fi
 
@@ -46,12 +51,8 @@ if [ -z "$VITE_LIVEKIT_WS_URL" ]; then
 fi
 
 print_success "Environment variables validated"
-
-# Set VITE_BETTER_AUTH_URL to VITE_API_URL if not set
-if [ -z "$VITE_BETTER_AUTH_URL" ]; then
-    export VITE_BETTER_AUTH_URL=$VITE_API_URL
-    print_info "VITE_BETTER_AUTH_URL set to $VITE_API_URL"
-fi
+print_info "VITE_API_URL: $VITE_API_URL"
+print_info "VITE_LIVEKIT_WS_URL: $VITE_LIVEKIT_WS_URL"
 
 # Stop and remove existing container if it exists
 print_info "Checking for existing container..."
@@ -64,11 +65,10 @@ if [ "$(docker ps -aq -f name=$CONTAINER_NAME)" ]; then
 fi
 
 # Build the Docker image
-print_info "Building Docker image..."
+print_info "Building Docker image with build args..."
 docker build \
     --build-arg VITE_API_URL=$VITE_API_URL \
     --build-arg VITE_LIVEKIT_WS_URL=$VITE_LIVEKIT_WS_URL \
-    --build-arg VITE_BETTER_AUTH_URL=$VITE_BETTER_AUTH_URL \
     -t $IMAGE_NAME . || {
     print_error "Docker build failed"
     exit 1

@@ -32,14 +32,18 @@ print_info() {
     echo -e "${YELLOW}ℹ $1${NC}"
 }
 
-# Check if .env file exists
-if [ ! -f .env ]; then
-    print_error ".env file not found!"
-    print_info "Please create .env file with required environment variables"
+# Check if .env.prod file exists (prefer prod, fallback to .env)
+if [ -f .env.prod ]; then
+    ENV_FILE=".env.prod"
+    print_success ".env.prod file found (using production config)"
+elif [ -f .env ]; then
+    ENV_FILE=".env"
+    print_success ".env file found"
+else
+    print_error "No .env or .env.prod file found!"
+    print_info "Please create .env.prod file with required environment variables"
     exit 1
 fi
-
-print_success ".env file found"
 
 # Stop and remove existing container if it exists
 print_info "Checking for existing container..."
@@ -65,12 +69,12 @@ docker run -d \
     --name $CONTAINER_NAME \
     --restart unless-stopped \
     -p $PORT:$PORT \
-    --env-file .env \
+    --env-file $ENV_FILE \
     $IMAGE_NAME || {
     print_error "Failed to start container"
     exit 1
 }
-print_success "Container started successfully"
+print_success "Container started successfully (using $ENV_FILE)"
 
 # Wait for container to be healthy
 print_info "Waiting for container to be ready..."
@@ -82,12 +86,19 @@ if [ "$(docker ps -q -f name=$CONTAINER_NAME)" ]; then
     
     # Run database migrations
     print_info "Running database migrations..."
-    docker exec --user root $CONTAINER_NAME bunx prisma migrate deploy || {
+    docker exec $CONTAINER_NAME bunx prisma migrate deploy || {
         print_error "Database migration failed"
         print_info "Check logs with: docker logs $CONTAINER_NAME"
         exit 1
     }
     print_success "Database migrations completed"
+    
+    # Generate Prisma Client (in case schema changed)
+    print_info "Generating Prisma Client..."
+    docker exec $CONTAINER_NAME bunx prisma generate || {
+        print_error "Prisma generate failed"
+    }
+    print_success "Prisma Client generated"
     
     # Check health endpoint
     print_info "Checking health endpoint..."
