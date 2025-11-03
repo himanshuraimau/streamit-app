@@ -24,20 +24,28 @@ app.use(cors({
   exposedHeaders: ['Set-Cookie'],
 }));
 
-// IMPORTANT: Mount Better Auth handler FIRST (before express.json())
-// Better Auth needs to handle raw request body
-app.all("/api/auth/{*any}", toNodeHandler(auth)); // ✅ Fixed for Express v5
-
 // Mount webhook routes with raw body parser (before express.json())
 // LiveKit webhook requires raw body for signature verification
 app.use('/api/webhook', express.raw({ type: 'application/webhook+json' }));
 app.use('/api/webhook', webhookRoutes);
 
-// Mount express.json() for all other routes AFTER Better Auth
+// Mount express.json() for all other routes
 app.use(express.json());
 
-// Mount custom auth routes (more specific routes that need JSON parsing)
+// Debug middleware to log all /api/auth requests
+app.use('/api/auth', (req, res, next) => {
+  console.log(`[Auth Route] ${req.method} ${req.path}`);
+  next();
+});
+
+// IMPORTANT: Mount custom auth routes BEFORE Better Auth catch-all
+// These are specific endpoints that need JSON parsing and aren't handled by Better Auth
 app.use('/api/auth', authRoutes);
+
+// Mount Better Auth handler as catch-all (after custom routes)
+// This handles Better Auth's built-in endpoints like /sign-up, /sign-in, /sign-out, /get-session
+// The wildcard pattern ensures Better Auth only handles routes not matched above
+app.all("/api/auth/*", toNodeHandler(auth));
 
 // Mount creator routes
 app.use('/api/creator', creatorRoutes);
