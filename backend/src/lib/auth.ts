@@ -193,7 +193,7 @@ export const auth = betterAuth({
         };
 
         await resend.emails.send({
-          from: "VoltStream <noreply@voltstream.space>",
+          from: "VoltStream <noreply@voltstreambackend.space>",
           to: email,
           subject:
             type === "email-verification"
