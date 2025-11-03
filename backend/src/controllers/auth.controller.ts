@@ -122,6 +122,22 @@ export class AuthController {
         },
       });
       
+      // After successful signup, send verification OTP
+      if (result.user && !result.user.emailVerified) {
+        try {
+          await auth.api.sendVerificationOTP({
+            body: { 
+              email, 
+              type: 'email-verification' 
+            },
+          });
+          console.log(`✅ Verification OTP sent to ${email} after signup`);
+        } catch (otpError) {
+          console.error('❌ Failed to send verification OTP:', otpError);
+          // Don't fail signup if OTP fails, user can request it manually
+        }
+      }
+      
       return res.status(200).json(result);
     } catch (error: any) {
       return res.status(error.status || 400).json({

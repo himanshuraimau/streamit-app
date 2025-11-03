@@ -79,7 +79,8 @@ export const auth = betterAuth({
       overrideDefaultEmailVerification: true,
       sendVerificationOnSignUp: true, // triggers OTP after signup
       async sendVerificationOTP({ email, otp, type }) {
-        const getEmailContent = (otp: string, type: string) => {
+        try {
+          const getEmailContent = (otp: string, type: string) => {
           const title = 
             type === "email-verification" 
               ? "Verify Your Email" 
@@ -203,7 +204,14 @@ export const auth = betterAuth({
                 : "Reset Your Password - VoltStream",
           html: getEmailContent(otp, type),
         });
-      },
+        
+        console.log(`✅ OTP email sent successfully to ${email} (type: ${type})`);
+      } catch (error) {
+        console.error('❌ Failed to send OTP email:', error);
+        // Rethrow so Better Auth knows the email failed
+        throw new Error(`Failed to send verification email: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    },
       otpLength: 6,
       expiresIn: 600, // 10 minutes
       allowedAttempts: 3,
