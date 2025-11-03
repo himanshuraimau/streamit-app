@@ -44,8 +44,11 @@ app.use('/api/auth', authRoutes);
 
 // Mount Better Auth handler as catch-all (after custom routes)
 // This handles Better Auth's built-in endpoints like /sign-up, /sign-in, /sign-out, /get-session
-// The wildcard pattern ensures Better Auth only handles routes not matched above
-app.all("/api/auth/*", toNodeHandler(auth));
+// Use middleware wrapper instead of app.all() to avoid route pattern issues
+app.use("/api/auth", (req, res, next) => {
+  // Only handle if no previous route matched
+  return toNodeHandler(auth)(req, res);
+});
 
 // Mount creator routes
 app.use('/api/creator', creatorRoutes);
