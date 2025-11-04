@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { apiFetch } from '@/lib/api-client';
 
 export interface CurrentUser {
   id: string;
@@ -15,14 +16,13 @@ export interface CurrentUser {
 /**
  * Hook to fetch the current authenticated user's complete profile
  * This includes avatar URL, bio, and other fields not in the session
+ * Now uses Bearer token authentication for Safari compatibility
  */
 export function useCurrentUser() {
   return useQuery<CurrentUser>({
     queryKey: ['currentUser'],
     queryFn: async () => {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/viewer/me`, {
-        credentials: 'include',
-      });
+      const response = await apiFetch('/api/viewer/me');
 
       if (!response.ok) {
         throw new Error('Failed to fetch user data');

@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { emailOTP } from "better-auth/plugins";
+import { emailOTP, bearer } from "better-auth/plugins";
 import { prisma } from "./db";
 import { Resend } from "resend";
 
@@ -24,6 +24,8 @@ export const auth = betterAuth({
 
   trustedOrigins: [
     process.env.FRONTEND_URL || "http://localhost:5173",
+    "https://voltstream.space", // Production frontend
+    "https://www.voltstream.space", // Production frontend with www
   ],
 
   // Advanced session configuration for cross-domain
@@ -75,6 +77,8 @@ export const auth = betterAuth({
 
 
   plugins: [
+    // Bearer token plugin for Safari and cross-domain compatibility
+    bearer(),
     emailOTP({
       overrideDefaultEmailVerification: true,
       sendVerificationOnSignUp: true, // triggers OTP after signup

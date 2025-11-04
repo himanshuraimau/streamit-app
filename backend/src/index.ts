@@ -21,7 +21,7 @@ app.use(cors({
   credentials: true, // Allow cookies to be sent
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
-  exposedHeaders: ['Set-Cookie'],
+  exposedHeaders: ['Set-Cookie', 'set-auth-token'], // Expose Bearer token header
 }));
 
 // Mount webhook routes with raw body parser (before express.json())
