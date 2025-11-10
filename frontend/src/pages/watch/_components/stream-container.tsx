@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Heart, Share2 } from 'lucide-react';
 import type { StreamByUsername } from '@/lib/api/stream';
+import { GiftButton } from '@/components/payment/GiftButton';
 
 interface StreamContainerProps {
   stream: StreamByUsername;
@@ -141,6 +142,15 @@ function StreamInfo({
               <Heart className={`w-4 h-4 mr-2 ${isFollowing ? 'fill-current' : ''}`} />
               {isFollowing ? 'Following' : 'Follow'}
             </Button>
+            <GiftButton
+              receiverId={stream.userId}
+              receiverName={stream.user.name || stream.user.username}
+              streamId={stream.id}
+              variant="outline"
+              size="sm"
+              showLabel={true}
+              className="border-zinc-600 text-purple-400 hover:bg-zinc-800"
+            />
             <Button
               onClick={onShare}
               variant="outline"

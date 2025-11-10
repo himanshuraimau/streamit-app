@@ -11,16 +11,33 @@ import webhookRoutes from './routes/webhook.route';
 import viewerRoutes from './routes/viewer.route';
 import socialRoutes from './routes/social.route';
 import searchRoutes from './routes/search.route';
+import paymentRoutes from './routes/payment.route';
+import { WebhookController } from './controllers/webhook.controller';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // CORS configuration - MUST be before Better Auth handler
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:5173',
+  'http://localhost:5173',
+  'https://binate-nonperceptively-celestina.ngrok-free.dev'
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true, // Allow cookies to be sent
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'ngrok-skip-browser-warning'],
   exposedHeaders: ['Set-Cookie', 'set-auth-token'], // Expose Bearer token header
 }));
 
@@ -28,6 +45,9 @@ app.use(cors({
 // LiveKit webhook requires raw body for signature verification
 app.use('/api/webhook', express.raw({ type: 'application/webhook+json' }));
 app.use('/api/webhook', webhookRoutes);
+
+// Mount Dodo webhook route (also needs raw body)
+app.post('/api/webhook/dodo', express.raw({ type: 'application/json' }), WebhookController.handleDodoWebhook);
 
 // Mount express.json() for all other routes
 app.use(express.json());
@@ -67,6 +87,9 @@ app.use('/api/social', socialRoutes);
 
 // Mount search routes
 app.use('/api/search', searchRoutes);
+
+// Mount payment routes
+app.use('/api/payment', paymentRoutes);
 
 // Health check
 app.get('/health', async (req, res) => {

@@ -41,6 +41,12 @@ model User {
   likes         Like[]
   comments      Comment[]
   commentLikes  CommentLike[]
+  
+  // Payment relationships
+  coinWallet       CoinWallet?
+  coinPurchases    CoinPurchase[]
+  giftsSent        GiftTransaction[] @relation("GiftsSent")
+  giftsReceived    GiftTransaction[] @relation("GiftsReceived")
 
   @@unique([email])
   @@map("user")
@@ -217,6 +223,9 @@ model Stream {
   userId                String   @unique
   user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
+  // Gift relationships
+  giftTransactions      GiftTransaction[]
+  
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
@@ -386,6 +395,149 @@ model CommentLike {
   @@map("comment_like")
 }
 
+// ============================================
+// PAYMENT & MONETIZATION MODELS
+// ============================================
+
+// User's coin wallet
+model CoinWallet {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  balance       Int      @default(0) // Current coin balance
+  totalEarned   Int      @default(0) // Lifetime earnings (for creators)
+  totalSpent    Int      @default(0) // Lifetime spending (for viewers)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@map("coin_wallet")
+}
+
+// Coin packages available for purchase
+model CoinPackage {
+  id            String   @id @default(cuid())
+  name          String   // e.g., "Starter Pack", "Premium Pack"
+  coins         Int      // Number of coins in package
+  price         Int      // Price in smallest currency unit (paise for INR)
+  currency      String   @default("INR")
+  
+  // Bonus and promotions
+  bonusCoins    Int      @default(0) // Bonus coins given with purchase
+  isActive      Boolean  @default(true)
+  
+  // Metadata
+  description   String?
+  sortOrder     Int      @default(0)
+  
+  purchases     CoinPurchase[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+  @@map("coin_package")
+}
+
+// Record of coin purchases
+model CoinPurchase {
+  id                String          @id @default(cuid())
+  userId            String
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  packageId         String
+  package           CoinPackage     @relation(fields: [packageId], references: [id])
+  
+  // Purchase details
+  coins             Int             // Coins purchased (base amount)
+  bonusCoins        Int             @default(0)
+  totalCoins        Int             // coins + bonusCoins
+  amount            Int             // Amount paid in smallest currency unit
+  currency          String          @default("INR")
+  
+  // Payment details
+  paymentGateway    String?         @default("dodo") // "dodo", "razorpay", etc.
+  transactionId     String?         @unique // External transaction ID (Dodo payment_id)
+  orderId           String          @unique // Internal order ID
+  
+  // Status tracking
+  status            PurchaseStatus  @default(PENDING)
+  failureReason     String?
+  
+  // Payment gateway response (store as JSON)
+  paymentData       Json?
+  
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([userId, status])
+  @@index([status, createdAt])
+  @@index([transactionId])
+  @@map("coin_purchase")
+}
+
+// Virtual gifts that users can send to creators
+model Gift {
+  id            String      @id @default(cuid())
+  name          String      // e.g., "Heart", "Diamond", "Crown"
+  description   String?
+  
+  // Gift properties
+  coinPrice     Int         // Cost in coins
+  
+  // Visual representation
+  imageUrl      String      // Static image
+  animationUrl  String?     // Animation URL (Lottie JSON or GIF)
+  
+  // Features
+  isActive      Boolean     @default(true)
+  sortOrder     Int         @default(0)
+  
+  // Usage tracking
+  giftsSent     GiftTransaction[]
+  
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([isActive, sortOrder])
+  @@map("gift")
+}
+
+// Record of gifts sent from users to creators
+model GiftTransaction {
+  id            String   @id @default(cuid())
+  
+  // Parties involved
+  senderId      String
+  sender        User     @relation("GiftsSent", fields: [senderId], references: [id], onDelete: Cascade)
+  
+  receiverId    String
+  receiver      User     @relation("GiftsReceived", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  giftId        String
+  gift          Gift     @relation(fields: [giftId], references: [id])
+  
+  // Transaction details
+  coinAmount    Int      // Coins deducted from sender
+  quantity      Int      @default(1) // Number of gifts sent
+  
+  // Context
+  streamId      String?  // If sent during a live stream
+  stream        Stream?  @relation(fields: [streamId], references: [id], onDelete: SetNull)
+  
+  message       String?  // Optional message with gift
+  
+  createdAt     DateTime @default(now())
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([streamId, createdAt])
+  @@index([createdAt])
+  @@map("gift_transaction")
+}
+
 // Enums
 enum ApplicationStatus {
   DRAFT
@@ -436,4 +588,11 @@ enum MediaType {
   IMAGE
   VIDEO
   GIF
+}
+
+enum PurchaseStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
 }

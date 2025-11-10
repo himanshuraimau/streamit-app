@@ -1,9 +1,10 @@
 import type { Request, Response } from 'express';
 import { WebhookService } from '../services/webhook.service';
+import { PaymentService } from '../services/payment.service';
+import { Webhook } from 'standardwebhooks';
 
 /**
- * Webhook Controller - Handles LiveKit webhook events
- * Processes stream status updates and other LiveKit events
+ * Webhook Controller - Handles LiveKit and Dodo Payment webhook events
  */
 export class WebhookController {
   /**
@@ -67,5 +68,68 @@ export class WebhookController {
       message: 'LiveKit webhook endpoint is ready',
       timestamp: new Date().toISOString(),
     });
+  }
+
+  /**
+   * Handle Dodo Payments webhook events
+   * POST /api/webhook/dodo
+   * 
+   * This endpoint receives payment notifications from Dodo Payments:
+   * - payment.succeeded: When a payment is successfully completed
+   * - payment.failed: When a payment fails
+   */
+  static async handleDodoWebhook(req: Request, res: Response) {
+    try {
+      const webhookSecret = process.env.DODO_WEBHOOK_SECRET;
+      
+      if (!webhookSecret) {
+        console.error('[WebhookController] DODO_WEBHOOK_SECRET not configured');
+        return res.status(500).json({
+          success: false,
+          error: 'Webhook secret not configured',
+        });
+      }
+
+      const webhook = new Webhook(webhookSecret);
+      
+      // Get raw body and headers for verification
+      const rawBody = req.body.toString();
+      const headers = {
+        'webhook-id': req.headers['webhook-id'] as string,
+        'webhook-signature': req.headers['webhook-signature'] as string,
+        'webhook-timestamp': req.headers['webhook-timestamp'] as string,
+      };
+
+      // Verify webhook signature
+      try {
+        await webhook.verify(rawBody, headers);
+      } catch (error) {
+        console.error('[WebhookController] Webhook verification failed:', error);
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid webhook signature',
+        });
+      }
+
+      // Parse and process the payload
+      const payload = JSON.parse(rawBody);
+      console.log('[WebhookController] Processing Dodo webhook:', payload.event_type);
+      console.log('[WebhookController] Full payload:', JSON.stringify(payload, null, 2));
+
+      await PaymentService.processWebhook(payload);
+
+      res.json({
+        success: true,
+        message: 'Webhook processed successfully',
+      });
+    } catch (error) {
+      console.error('[WebhookController] Error processing Dodo webhook:', error);
+      
+      res.status(500).json({
+        success: false,
+        error: 'Error processing webhook',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
   }
 }

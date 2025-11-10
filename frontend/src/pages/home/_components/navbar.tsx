@@ -4,9 +4,10 @@ import { useSignOut } from '@/utils/queries/auth';
 import { useCreatorApplication } from '@/hooks/useCreatorApplication';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Button } from '@/components/ui/button';
-import { Search, LogOut, Menu, UserCircle, Settings, Video, BarChart3, CheckCircle } from 'lucide-react';
+import { Search, LogOut, Menu, UserCircle, Settings, Video, BarChart3, CheckCircle, Gift, Coins } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
 import { ProfileSettingsModal } from '@/components/ui/profile-settings-modal';
+import { CoinBalance } from '@/components/payment/CoinBalance';
 import { useState } from 'react';
 import {
   DropdownMenu,
@@ -100,6 +101,9 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           {session ? (
             <>
+              {/* Coin Balance */}
+              <CoinBalance />
+
               {/* Show Creator Dashboard button if approved, otherwise show Apply for Creator */}
               {initialized && status?.hasApplication && status.status === 'APPROVED' ? (
                 <Link to="/creator-dashboard">
@@ -185,6 +189,21 @@ export default function Navbar() {
                   >
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-zinc-800" />
+                  <DropdownMenuItem
+                    onClick={() => navigate('/gifts/sent')}
+                    className="text-zinc-300 focus:text-white focus:bg-zinc-800 cursor-pointer"
+                  >
+                    <Gift className="mr-2 h-4 w-4" />
+                    <span>Gifts Sent</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => navigate('/coins/purchase')}
+                    className="text-zinc-300 focus:text-white focus:bg-zinc-800 cursor-pointer"
+                  >
+                    <Coins className="mr-2 h-4 w-4" />
+                    <span>Buy Coins</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-zinc-800" />
                   <DropdownMenuItem

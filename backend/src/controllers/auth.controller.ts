@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { auth } from '../lib/auth';
+import { prisma } from '../lib/db';
 
 export class AuthController {
   // POST /api/auth/send-verification-otp
@@ -121,6 +122,19 @@ export class AuthController {
           username,
         },
       });
+      
+      // Auto-create coin wallet for new user
+      if (result.user) {
+        try {
+          await prisma.coinWallet.create({
+            data: { userId: result.user.id },
+          });
+          console.log(`✅ Coin wallet created for user ${result.user.id}`);
+        } catch (walletError) {
+          console.error('❌ Failed to create coin wallet:', walletError);
+          // Don't fail signup if wallet creation fails
+        }
+      }
       
       // After successful signup, send verification OTP
       if (result.user && !result.user.emailVerified) {

@@ -8,10 +8,11 @@ import { PostCard } from '@/pages/creator-dashboard/content-upload/_components/P
 import type { PostResponse } from '@/types/content';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Video } from 'lucide-react';
+import { Loader2, Video, Gift, TrendingUp } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { socialApi as socialApiClient } from '@/lib/api/social';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { usePaymentStore } from '@/stores/payment.store';
 
 type TabType = 'posts' | 'livestreams' | 'videos' | 'about' | 'community';
 
@@ -82,10 +83,63 @@ export default function CreatorPage() {
   const userId = profile?.id;
   const postsQuery = useUserPosts(userId || '', { limit: 12 });
   const session = authClient.useSession();
+  const { fetchGiftsSent, fetchGiftsReceived, giftsSent, giftsReceived } = usePaymentStore();
 
   // Follow/unfollow local state
   const [isFollowing, setIsFollowing] = useState<boolean>(!!profile?.isFollowing);
   const [followLoading, setFollowLoading] = useState(false);
+  const [giftStats, setGiftStats] = useState<{ sent?: number; received?: number; earnings?: number }>({});
+  const [loadingGifts, setLoadingGifts] = useState(false);
+
+  // Fetch gift statistics
+  useEffect(() => {
+    const loadGiftStats = async () => {
+      if (!profile?.id) return;
+      
+      setLoadingGifts(true);
+      try {
+        // Check if viewing own profile
+        const isOwnProfile = session.data?.user?.id === profile.id;
+        
+        if (isOwnProfile) {
+          // Load both sent and received for own profile
+          await Promise.all([
+            fetchGiftsSent({ page: 1, limit: 1 }),
+            fetchGiftsReceived({ page: 1, limit: 1 })
+          ]);
+        } else {
+          // For other profiles, we can't fetch their stats directly
+          // This would need a public stats endpoint on the backend
+          // For now, we'll skip this
+        }
+      } catch (err) {
+        console.error('Failed to load gift stats:', err);
+      } finally {
+        setLoadingGifts(false);
+      }
+    };
+
+    loadGiftStats();
+  }, [profile?.id, session.data?.user?.id, fetchGiftsSent, fetchGiftsReceived]);
+
+  // Calculate gift statistics from store data
+  useEffect(() => {
+    const stats: { sent?: number; received?: number; earnings?: number } = {};
+    
+    if (giftsSent.length > 0) {
+      const totalSent = giftsSent.reduce((sum, gift) => sum + gift.coinAmount, 0);
+      stats.sent = totalSent;
+    }
+    
+    if (giftsReceived.length > 0) {
+      const totalReceived = giftsReceived.reduce((sum, gift) => sum + gift.coinAmount, 0);
+      const earnings = Math.floor(totalReceived * 0.7); // 70% after commission
+      stats.received = totalReceived;
+      stats.earnings = earnings;
+    }
+    
+    setGiftStats(stats);
+  }, [giftsSent, giftsReceived]);
 
   const handleFollowToggle = async () => {
     if (!profile?.id) return;
@@ -327,6 +381,75 @@ export default function CreatorPage() {
                       <h3 className="text-white font-semibold mb-3">About</h3>
                       <p className="text-zinc-400 text-sm">{profile?.bio || 'No bio available'}</p>
                     </Card>
+                    
+                    {/* Gift Statistics Card - only show for own profile */}
+                    {session.data?.user?.id === profile?.id && (
+                      <Card className="bg-gradient-to-br from-purple-900/20 to-pink-900/20 border-purple-800/50 p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Gift className="w-5 h-5 text-purple-400" />
+                          <h3 className="text-white font-semibold">Gift Statistics</h3>
+                        </div>
+                        
+                        {loadingGifts ? (
+                          <div className="flex items-center justify-center py-4">
+                            <Loader2 className="w-6 h-6 text-purple-400 animate-spin" />
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {/* Gifts Received */}
+                            {typeof giftStats.received !== 'undefined' && (
+                              <div className="bg-zinc-800/50 rounded-lg p-3">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-zinc-400 text-sm">Gifts Received</span>
+                                  <TrendingUp className="w-4 h-4 text-green-400" />
+                                </div>
+                                <p className="text-2xl font-bold text-white">{giftStats.received}</p>
+                                <p className="text-xs text-green-400 mt-1">
+                                  ~{giftStats.earnings} coins earned (70%)
+                                </p>
+                                <Button
+                                  onClick={() => navigate('/gifts/received')}
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full mt-2 text-purple-400 hover:text-purple-300 hover:bg-purple-900/20"
+                                >
+                                  View History
+                                </Button>
+                              </div>
+                            )}
+                            
+                            {/* Gifts Sent */}
+                            {typeof giftStats.sent !== 'undefined' && (
+                              <div className="bg-zinc-800/50 rounded-lg p-3">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-zinc-400 text-sm">Gifts Sent</span>
+                                  <Gift className="w-4 h-4 text-amber-400" />
+                                </div>
+                                <p className="text-2xl font-bold text-white">{giftStats.sent}</p>
+                                <p className="text-xs text-zinc-400 mt-1">Total coins spent</p>
+                                <Button
+                                  onClick={() => navigate('/gifts/sent')}
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full mt-2 text-purple-400 hover:text-purple-300 hover:bg-purple-900/20"
+                                >
+                                  View History
+                                </Button>
+                              </div>
+                            )}
+                            
+                            {/* Empty State */}
+                            {!giftStats.received && !giftStats.sent && (
+                              <div className="text-center py-4">
+                                <Gift className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                                <p className="text-zinc-400 text-sm">No gift activity yet</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </Card>
+                    )}
+                    
                     {profile?.categories && profile.categories.length > 0 && (
                       <Card className="bg-zinc-900 border-zinc-800 p-4">
                         <h3 className="text-white font-semibold mb-3">Categories</h3>

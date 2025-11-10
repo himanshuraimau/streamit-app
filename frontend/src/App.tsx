@@ -36,6 +36,13 @@ import CreatorsPage from '@/pages/creators';
 import WatchStream from '@/pages/watch';
 import CreatorPage from '@/pages/creator';
 
+// Payment Pages
+import CoinShop from '@/pages/CoinShop';
+import CoinSuccess from '@/pages/CoinSuccess';
+import PurchaseHistory from '@/pages/PurchaseHistory';
+import { GiftsSent } from '@/pages/GiftsSent';
+import { GiftsReceived } from '@/pages/GiftsReceived';
+
 function App() {
   return (
     <Routes>
@@ -76,6 +83,15 @@ function App() {
       <Route path="/live" element={<LivePage />} />
       <Route path="/following" element={<FollowingPage />} />
       <Route path="/creators" element={<CreatorsPage />} />
+
+      {/* Coin/Payment routes */}
+      <Route path="/coins/shop" element={<CoinShop />} />
+      <Route path="/coins/success" element={<CoinSuccess />} />
+      <Route path="/coins/history" element={<PurchaseHistory />} />
+      
+      {/* Gift routes */}
+      <Route path="/gifts/sent" element={<GiftsSent />} />
+      <Route path="/gifts/received" element={<GiftsReceived />} />
 
       {/* Creator profile routes (YouTube-style) - these must be last due to catch-all nature */}
       <Route path="/:username/live" element={<WatchStream />} />

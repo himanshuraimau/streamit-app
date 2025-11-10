@@ -8,6 +8,7 @@ import {
   CheckCircle,
   BarChart3,
   FileText,
+  Gift,
 } from "lucide-react";
 import { useCreatorApplication } from '@/hooks/useCreatorApplication';
 import { Card } from '@/components/ui/card';
@@ -31,6 +32,7 @@ const creatorNavItems = [
   { title: "Community", icon: Users, url: "/creator-dashboard/community" },
   { title: "Content Upload", icon: Upload, url: "/creator-dashboard/content-upload" },
   { title: "Posts", icon: FileText, url: "/creator-dashboard/posts" },
+  { title: "Gifts Received", icon: Gift, url: "/gifts/received" },
 ];
 
 export function CreatorSidebar() {

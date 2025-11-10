@@ -32,6 +32,11 @@ export async function apiFetch(url: string, options: FetchOptions = {}): Promise
     headers.set('Authorization', `Bearer ${token}`);
   }
   
+  // Add ngrok header to bypass browser warning
+  if (fullUrl.includes('ngrok')) {
+    headers.set('ngrok-skip-browser-warning', 'true');
+  }
+  
   // Always include credentials for cookie fallback
   const finalOptions: RequestInit = {
     ...fetchOptions,
