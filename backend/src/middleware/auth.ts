@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { auth } from '../lib/auth';
+import { createErrorResponse, ErrorCode } from '../types/errors';
 
 declare global {
   namespace Express {
@@ -22,7 +23,9 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     });
 
     if (!session) {
-      return res.status(401).json({ error: 'Not authenticated' });
+      return res.status(401).json(
+        createErrorResponse('You must be signed in to access this resource', ErrorCode.UNAUTHORIZED)
+      );
     }
 
     // Attach user info to request
@@ -36,7 +39,9 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     next();
   } catch (error) {
     console.error('Auth middleware error:', error);
-    res.status(401).json({ error: 'Authentication failed' });
+    res.status(401).json(
+      createErrorResponse('Authentication failed. Please sign in again.', ErrorCode.UNAUTHORIZED)
+    );
   }
 };
 

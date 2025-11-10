@@ -2,6 +2,7 @@ import { authClient } from '@/lib/auth-client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import type { SignUpData, OTPType } from '@/types';
+import { handleApiResponse, formatErrorForToast } from '@/lib/errors';
 
 /**
  * Sign Up Hook
@@ -12,7 +13,6 @@ export const useSignUp = () => {
 
   const signUp = async (data: SignUpData) => {
     try {
-      // Better Auth requires additional fields to be passed separately
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/auth/sign-up/email`, {
         method: 'POST',
         headers: {
@@ -29,18 +29,16 @@ export const useSignUp = () => {
         credentials: 'include',
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Sign up failed');
-      }
+      await handleApiResponse(response);
 
       toast.success('Account created!', {
         description: 'Please verify your email',
       });
       navigate('/auth/verify-email', { state: { email: data.email } });
-    } catch (error: any) {
-      toast.error('Sign up failed', {
-        description: error.message || 'An error occurred',
+    } catch (error: unknown) {
+      const errorInfo = formatErrorForToast(error);
+      toast.error(errorInfo.title, {
+        description: errorInfo.description,
       });
     }
   };
@@ -66,14 +64,16 @@ export const useSignIn = () => {
           navigate('/');
         },
         onError: (ctx) => {
-          toast.error('Sign in failed', {
-            description: ctx.error.message,
+          const errorInfo = formatErrorForToast(ctx.error);
+          toast.error(errorInfo.title, {
+            description: errorInfo.description,
           });
         },
       });
-    } catch (error: any) {
-      toast.error('Sign in failed', {
-        description: error.message || 'An error occurred',
+    } catch (error: unknown) {
+      const errorInfo = formatErrorForToast(error);
+      toast.error(errorInfo.title, {
+        description: errorInfo.description,
       });
     }
   };
@@ -97,17 +97,15 @@ export const useSendOTP = () => {
         credentials: 'include',
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to send OTP');
-      }
+      await handleApiResponse(response);
 
       toast.success('OTP sent!', {
         description: 'Check your email for the verification code',
       });
-    } catch (error: any) {
-      toast.error('Failed to send OTP', {
-        description: error.message || 'An error occurred',
+    } catch (error: unknown) {
+      const errorInfo = formatErrorForToast(error);
+      toast.error(errorInfo.title, {
+        description: errorInfo.description,
       });
     }
   };
@@ -132,18 +130,16 @@ export const useVerifyEmail = () => {
         credentials: 'include',
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Verification failed');
-      }
+      await handleApiResponse(response);
 
       toast.success('Email verified!', {
         description: 'You can now sign in',
       });
       setTimeout(() => navigate('/auth/signin'), 2000);
-    } catch (error: any) {
-      toast.error('Verification failed', {
-        description: error.message || 'An error occurred',
+    } catch (error: unknown) {
+      const errorInfo = formatErrorForToast(error);
+      toast.error(errorInfo.title, {
+        description: errorInfo.description,
       });
     }
   };
@@ -168,16 +164,14 @@ export const useSignInOTP = () => {
         credentials: 'include',
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Sign in failed');
-      }
+      await handleApiResponse(response);
 
       toast.success('Signed in successfully!');
       navigate('/');
-    } catch (error: any) {
-      toast.error('Sign in failed', {
-        description: error.message || 'An error occurred',
+    } catch (error: unknown) {
+      const errorInfo = formatErrorForToast(error);
+      toast.error(errorInfo.title, {
+        description: errorInfo.description,
       });
     }
   };
@@ -202,18 +196,16 @@ export const useForgotPassword = () => {
         credentials: 'include',
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to send reset code');
-      }
+      await handleApiResponse(response);
 
       toast.success('Reset code sent!', {
         description: 'Check your email',
       });
       navigate('/auth/reset-password', { state: { email } });
-    } catch (error: any) {
-      toast.error('Failed to send reset code', {
-        description: error.message || 'An error occurred',
+    } catch (error: unknown) {
+      const errorInfo = formatErrorForToast(error);
+      toast.error(errorInfo.title, {
+        description: errorInfo.description,
       });
     }
   };
@@ -238,18 +230,16 @@ export const useResetPassword = () => {
         credentials: 'include',
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Reset failed');
-      }
+      await handleApiResponse(response);
 
       toast.success('Password reset successful!', {
         description: 'You can now sign in with your new password',
       });
       setTimeout(() => navigate('/auth/signin'), 2000);
-    } catch (error: any) {
-      toast.error('Reset failed', {
-        description: error.message || 'An error occurred',
+    } catch (error: unknown) {
+      const errorInfo = formatErrorForToast(error);
+      toast.error(errorInfo.title, {
+        description: errorInfo.description,
       });
     }
   };
@@ -273,9 +263,10 @@ export const useSignOut = () => {
           },
         },
       });
-    } catch (error: any) {
-      toast.error('Sign out failed', {
-        description: error.message || 'An error occurred',
+    } catch (error: unknown) {
+      const errorInfo = formatErrorForToast(error);
+      toast.error(errorInfo.title, {
+        description: errorInfo.description,
       });
     }
   };

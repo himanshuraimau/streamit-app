@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { auth } from '../lib/auth';
 import { prisma } from '../lib/db';
+import { parseBetterAuthError, ErrorCode, ErrorMessages } from '../types/errors';
 
 export class AuthController {
   // POST /api/auth/send-verification-otp
@@ -14,9 +15,9 @@ export class AuthController {
       
       return res.status(200).json(result);
     } catch (error: any) {
-      return res.status(error.status || 500).json({
-        error: error.message || 'Failed to send verification OTP',
-      });
+      console.error('❌ Send verification OTP error:', error);
+      const errorResponse = parseBetterAuthError(error);
+      return res.status(error.status || 500).json(errorResponse);
     }
   }
 
@@ -31,11 +32,10 @@ export class AuthController {
       
       return res.status(200).json(result);
     } catch (error: any) {
-      const status = error.code === 'TOO_MANY_ATTEMPTS' ? 429 : (error.status || 400);
-      return res.status(status).json({
-        error: error.message || 'Failed to verify OTP',
-        code: error.code,
-      });
+      console.error('❌ Check verification OTP error:', error);
+      const errorResponse = parseBetterAuthError(error);
+      const status = errorResponse.code === ErrorCode.TOO_MANY_ATTEMPTS ? 429 : (error.status || 400);
+      return res.status(status).json(errorResponse);
     }
   }
 
@@ -50,9 +50,9 @@ export class AuthController {
       
       return res.status(200).json(result);
     } catch (error: any) {
-      return res.status(error.status || 401).json({
-        error: error.message || 'Failed to sign in with OTP',
-      });
+      console.error('❌ Sign in with OTP error:', error);
+      const errorResponse = parseBetterAuthError(error);
+      return res.status(error.status || 401).json(errorResponse);
     }
   }
 
@@ -67,9 +67,9 @@ export class AuthController {
       
       return res.status(200).json(result);
     } catch (error: any) {
-      return res.status(error.status || 400).json({
-        error: error.message || 'Failed to verify email',
-      });
+      console.error('❌ Verify email error:', error);
+      const errorResponse = parseBetterAuthError(error);
+      return res.status(error.status || 400).json(errorResponse);
     }
   }
 
@@ -84,9 +84,9 @@ export class AuthController {
       
       return res.status(200).json(result);
     } catch (error: any) {
-      return res.status(error.status || 400).json({
-        error: error.message || 'Failed to send password reset OTP',
-      });
+      console.error('❌ Forgot password error:', error);
+      const errorResponse = parseBetterAuthError(error);
+      return res.status(error.status || 400).json(errorResponse);
     }
   }
 
@@ -101,9 +101,9 @@ export class AuthController {
       
       return res.status(200).json(result);
     } catch (error: any) {
-      return res.status(error.status || 400).json({
-        error: error.message || 'Failed to reset password',
-      });
+      console.error('❌ Reset password error:', error);
+      const errorResponse = parseBetterAuthError(error);
+      return res.status(error.status || 400).json(errorResponse);
     }
   }
 
@@ -154,9 +154,9 @@ export class AuthController {
       
       return res.status(200).json(result);
     } catch (error: any) {
-      return res.status(error.status || 400).json({
-        error: error.message || 'Failed to sign up',
-      });
+      console.error('❌ Sign up error:', error);
+      const errorResponse = parseBetterAuthError(error);
+      return res.status(error.status || 400).json(errorResponse);
     }
   }
 
@@ -173,9 +173,9 @@ export class AuthController {
       
       return res.status(200).json(result);
     } catch (error: any) {
-      return res.status(error.status || 401).json({
-        error: error.message || 'Failed to sign in',
-      });
+      console.error('❌ Sign in error:', error);
+      const errorResponse = parseBetterAuthError(error);
+      return res.status(error.status || 401).json(errorResponse);
     }
   }
 }
