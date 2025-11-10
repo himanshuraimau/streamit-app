@@ -17,25 +17,30 @@ export const authClient = createAuthClient({
         headers.set("Authorization", `Bearer ${token}`);
       }
       
-      const response = await fetch(url, {
-        ...init,
-        headers,
-      });
-      
-      // Store token from response header
-      const authToken = response.headers.get("set-auth-token");
-      if (authToken) {
-        localStorage.setItem("better_auth_token", authToken);
-        console.log("✅ Bearer token stored successfully");
+      try {
+        const response = await fetch(url, {
+          ...init,
+          headers,
+        });
+        
+        // Store token from response header
+        const authToken = response.headers.get("set-auth-token");
+        if (authToken) {
+          localStorage.setItem("better_auth_token", authToken);
+          console.log("✅ Bearer token stored successfully");
+        }
+        
+        // Clear token on 401
+        if (response.status === 401) {
+          localStorage.removeItem("better_auth_token");
+          console.log("🔒 Token cleared due to 401 error");
+        }
+        
+        return response;
+      } catch (error) {
+        console.error("❌ Auth fetch error:", error);
+        throw error; // Re-throw to ensure error propagates
       }
-      
-      // Clear token on 401
-      if (response.status === 401) {
-        localStorage.removeItem("better_auth_token");
-        console.log("🔒 Token cleared due to 401 error");
-      }
-      
-      return response;
     },
   },
   

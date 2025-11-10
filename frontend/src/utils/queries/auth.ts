@@ -13,7 +13,7 @@ export const useSignUp = () => {
 
   const signUp = async (data: SignUpData) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/auth/sign-up/email`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/auth/signup/email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -36,6 +36,7 @@ export const useSignUp = () => {
       });
       navigate('/auth/verify-email', { state: { email: data.email } });
     } catch (error: unknown) {
+      console.error('❌ Sign up error:', error);
       const errorInfo = formatErrorForToast(error);
       toast.error(errorInfo.title, {
         description: errorInfo.description,
@@ -55,22 +56,35 @@ export const useSignIn = () => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      await authClient.signIn.email({
-        email,
-        password,
-      }, {
-        onSuccess: () => {
-          toast.success('Welcome back!');
-          navigate('/');
+      const result = await authClient.signIn.email(
+        {
+          email,
+          password,
         },
-        onError: (ctx) => {
-          const errorInfo = formatErrorForToast(ctx.error);
-          toast.error(errorInfo.title, {
-            description: errorInfo.description,
-          });
-        },
-      });
+        {
+          onSuccess: () => {
+            toast.success('Welcome back!');
+            navigate('/');
+          },
+          onError: (ctx) => {
+            // Handle error from Better Auth callback
+            const errorInfo = formatErrorForToast(ctx.error);
+            toast.error(errorInfo.title, {
+              description: errorInfo.description,
+            });
+          },
+        }
+      );
+      
+      // Check if there was an error in the result
+      if (result?.error) {
+        const errorInfo = formatErrorForToast(result.error);
+        toast.error(errorInfo.title, {
+          description: errorInfo.description,
+        });
+      }
     } catch (error: unknown) {
+      // Fallback error handler
       const errorInfo = formatErrorForToast(error);
       toast.error(errorInfo.title, {
         description: errorInfo.description,
@@ -103,6 +117,7 @@ export const useSendOTP = () => {
         description: 'Check your email for the verification code',
       });
     } catch (error: unknown) {
+      console.error('❌ Send OTP error:', error);
       const errorInfo = formatErrorForToast(error);
       toast.error(errorInfo.title, {
         description: errorInfo.description,
@@ -137,6 +152,7 @@ export const useVerifyEmail = () => {
       });
       setTimeout(() => navigate('/auth/signin'), 2000);
     } catch (error: unknown) {
+      console.error('❌ Verify email error:', error);
       const errorInfo = formatErrorForToast(error);
       toast.error(errorInfo.title, {
         description: errorInfo.description,
@@ -169,6 +185,7 @@ export const useSignInOTP = () => {
       toast.success('Signed in successfully!');
       navigate('/');
     } catch (error: unknown) {
+      console.error('❌ Sign in with OTP error:', error);
       const errorInfo = formatErrorForToast(error);
       toast.error(errorInfo.title, {
         description: errorInfo.description,
@@ -203,6 +220,7 @@ export const useForgotPassword = () => {
       });
       navigate('/auth/reset-password', { state: { email } });
     } catch (error: unknown) {
+      console.error('❌ Forgot password error:', error);
       const errorInfo = formatErrorForToast(error);
       toast.error(errorInfo.title, {
         description: errorInfo.description,
@@ -237,6 +255,7 @@ export const useResetPassword = () => {
       });
       setTimeout(() => navigate('/auth/signin'), 2000);
     } catch (error: unknown) {
+      console.error('❌ Reset password error:', error);
       const errorInfo = formatErrorForToast(error);
       toast.error(errorInfo.title, {
         description: errorInfo.description,
@@ -264,6 +283,7 @@ export const useSignOut = () => {
         },
       });
     } catch (error: unknown) {
+      console.error('❌ Sign out error:', error);
       const errorInfo = formatErrorForToast(error);
       toast.error(errorInfo.title, {
         description: errorInfo.description,

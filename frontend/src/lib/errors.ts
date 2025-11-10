@@ -43,6 +43,14 @@ export enum ErrorCode {
  * Handles various error formats and ensures consistent structure
  */
 export function parseErrorResponse(error: unknown): ErrorResponse {
+  // Handle null/undefined
+  if (!error) {
+    return {
+      error: 'An unexpected error occurred. Please try again.',
+      code: ErrorCode.SERVER_ERROR,
+    };
+  }
+  
   // If error is already in our format
   if (error && typeof error === 'object' && 'error' in error && typeof error.error === 'string') {
     return {
@@ -53,12 +61,24 @@ export function parseErrorResponse(error: unknown): ErrorResponse {
     };
   }
   
-  // Handle Better Auth error format
-  if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
-    return {
-      error: error.message,
-      code: 'code' in error && typeof error.code === 'string' ? error.code : undefined,
-    };
+  // Handle Better Auth error format (can be nested in different ways)
+  if (error && typeof error === 'object') {
+    // Check for error.error.message pattern (nested error)
+    if ('error' in error && error.error && typeof error.error === 'object' && 'message' in error.error) {
+      const nestedError = error.error as { message?: string; code?: string };
+      return {
+        error: typeof nestedError.message === 'string' ? nestedError.message : 'An error occurred',
+        code: typeof nestedError.code === 'string' ? nestedError.code : undefined,
+      };
+    }
+    
+    // Check for direct message property
+    if ('message' in error && typeof error.message === 'string') {
+      return {
+        error: error.message,
+        code: 'code' in error && typeof error.code === 'string' ? error.code : undefined,
+      };
+    }
   }
   
   // Handle string errors
@@ -67,6 +87,7 @@ export function parseErrorResponse(error: unknown): ErrorResponse {
   }
   
   // Fallback for unknown error formats
+  console.error('❌ Unhandled error format:', error);
   return {
     error: 'An unexpected error occurred. Please try again.',
     code: ErrorCode.SERVER_ERROR,
@@ -92,20 +113,34 @@ export function getErrorMessage(error: unknown): string {
     return 'An unexpected error occurred. Please try again.';
   }
   
-  // Check various error properties
+  // Check various error properties with multiple levels of nesting
   let message: unknown;
   
-  if ('error' in error) {
-    if (typeof error.error === 'object' && error.error && 'message' in error.error) {
+  // Try error.error.message (nested error object)
+  if ('error' in error && error.error && typeof error.error === 'object') {
+    if ('message' in error.error) {
       message = error.error.message;
-    } else {
+    } else if (typeof error.error === 'string') {
       message = error.error;
     }
-  } else if ('message' in error) {
+  }
+  
+  // Try error.message
+  if (!message && 'message' in error) {
     message = error.message;
-  } else if ('msg' in error) {
+  }
+  
+  // Try error.error (if it's a string)
+  if (!message && 'error' in error && typeof error.error === 'string') {
+    message = error.error;
+  }
+  
+  // Try other common properties
+  if (!message && 'msg' in error) {
     message = error.msg;
-  } else if ('description' in error) {
+  }
+  
+  if (!message && 'description' in error) {
     message = error.description;
   }
   
@@ -120,6 +155,9 @@ export function getErrorMessage(error: unknown): string {
       .filter(Boolean)
       .join(', ');
   }
+  
+  // Log unhandled format for debugging
+  console.error('❌ Could not extract error message from:', error);
   
   // Fallback
   return 'An unexpected error occurred. Please try again.';
@@ -164,8 +202,12 @@ export async function handleApiResponse<T>(response: Response): Promise<T> {
  * Returns an object with title and description
  */
 export function formatErrorForToast(error: unknown): { title: string; description: string } {
+  console.log('🔍 Formatting error for toast:', error);
+  
   const errorMessage = getErrorMessage(error);
   const errorCode = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
+  
+  console.log('📝 Extracted message:', errorMessage, 'Code:', errorCode);
   
   // Provide more context based on error code
   let title = 'Error';
@@ -207,8 +249,12 @@ export function formatErrorForToast(error: unknown): { title: string; descriptio
       }
   }
   
-  return {
+  const result = {
     title,
     description: errorMessage,
   };
+  
+  console.log('✅ Formatted toast:', result);
+  
+  return result;
 }
