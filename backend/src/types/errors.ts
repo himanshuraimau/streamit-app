@@ -81,12 +81,52 @@ export function createErrorResponse(
 }
 
 /**
+ * Helper function to safely parse status code to number
+ */
+function getStatusCode(error: any): number {
+  const status = error?.status || error?.statusCode;
+  
+  // If status is already a number, return it
+  if (typeof status === 'number') {
+    return status;
+  }
+  
+  // If status is a string, try to convert or map it
+  if (typeof status === 'string') {
+    const numStatus = parseInt(status, 10);
+    if (!isNaN(numStatus)) {
+      return numStatus;
+    }
+    
+    // Map common string status codes to numbers
+    const statusMap: Record<string, number> = {
+      'BAD_REQUEST': 400,
+      'UNAUTHORIZED': 401,
+      'FORBIDDEN': 403,
+      'NOT_FOUND': 404,
+      'INTERNAL_SERVER_ERROR': 500,
+    };
+    
+    return statusMap[status] || 500;
+  }
+  
+  return 500;
+}
+
+/**
+ * Helper function to get HTTP status code from error (exported for use in controllers)
+ */
+export function getHttpStatusCode(error: any, defaultStatus: number = 500): number {
+  return getStatusCode(error) || defaultStatus;
+}
+
+/**
  * Parse Better Auth errors into standardized format
  */
 export function parseBetterAuthError(error: any): ErrorResponse {
   // Better Auth error structure
   const message = error?.message || error?.error?.message || 'An error occurred';
-  const statusCode = error?.status || error?.statusCode || 500;
+  const statusCode = getStatusCode(error);
   
   // Map common Better Auth errors to our error codes
   let code: ErrorCode | undefined;
