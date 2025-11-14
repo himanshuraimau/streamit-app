@@ -1,9 +1,16 @@
 import DodoPayments from 'dodopayments';
 import { prisma } from '../lib/db';
 
+// Log environment for debugging
+console.log('🔧 Dodo Payments Configuration:');
+console.log('  Environment: test_mode (forced)');
+console.log('  API Key present:', !!process.env.DODO_API_KEY);
+console.log('  API Key prefix:', process.env.DODO_API_KEY?.substring(0, 20) + '...');
+
+// Force test mode for now
 const dodo = new DodoPayments({
   bearerToken: process.env.DODO_API_KEY || '',
-  environment: process.env.NODE_ENV === 'production' ? 'live_mode' : 'test_mode',
+  environment: 'test_mode', // Forced to test mode
 });
 
 export class PaymentService {
@@ -29,11 +36,20 @@ export class PaymentService {
     
     try {
       // Create checkout session with Dodo
+      // Note: product_id should be the Dodo product ID from your Dodo dashboard
+      // You need to create products in Dodo first and store their IDs in your database
       const session = await dodo.checkoutSessions.create({
         product_cart: [{ product_id: pkg.id, quantity: 1 }],
         customer: {
           email: user.email,
           name: user.name,
+        },
+        metadata: {
+          packageId: pkg.id,
+          packageName: pkg.name,
+          coins: pkg.coins.toString(),
+          bonusCoins: pkg.bonusCoins.toString(),
+          orderId,
         },
         return_url: `${process.env.FRONTEND_URL}/coins/success?orderId=${orderId}`,
       });
@@ -62,9 +78,21 @@ export class PaymentService {
         orderId,
         sessionId: session.session_id 
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error creating checkout:', error);
-      throw new Error('Failed to create checkout session');
+      console.error('❌ Error details:', {
+        message: error?.message,
+        status: error?.status,
+        headers: error?.headers,
+        name: error?.name,
+      });
+      
+      // Provide more specific error messages
+      if (error?.status === 401) {
+        throw new Error('Invalid Dodo Payments API key. Please check your DODO_API_KEY environment variable and ensure it is a TEST MODE key.');
+      }
+      
+      throw new Error(error?.message || 'Failed to create checkout session');
     }
   }
 
