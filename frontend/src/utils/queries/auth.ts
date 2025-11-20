@@ -11,7 +11,7 @@ import { handleApiResponse, formatErrorForToast } from '@/lib/errors';
 export const useSignUp = () => {
   const navigate = useNavigate();
 
-  const signUp = async (data: SignUpData) => {
+  const signUp = async (data: SignUpData, setError?: any) => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/auth/signup/email`, {
         method: 'POST',
@@ -37,6 +37,29 @@ export const useSignUp = () => {
       navigate('/auth/verify-email', { state: { email: data.email } });
     } catch (error: unknown) {
       console.error('❌ Sign up error:', error);
+
+      // Check if error has validation details
+      if (error && typeof error === 'object' && 'details' in error && Array.isArray(error.details)) {
+        const details = error.details as Array<{ field: string; message: string }>;
+
+        // Set field-level errors if setError function is provided
+        if (setError && details.length > 0) {
+          details.forEach((detail) => {
+            setError(detail.field, {
+              type: 'manual',
+              message: detail.message,
+            });
+          });
+
+          // Show a general toast for validation errors
+          toast.error('Validation Error', {
+            description: 'Please check the form for errors',
+          });
+          return; // Don't show individual error toast if we set field errors
+        }
+      }
+
+      // Fallback to general error toast
       const errorInfo = formatErrorForToast(error);
       toast.error(errorInfo.title, {
         description: errorInfo.description,
@@ -54,7 +77,7 @@ export const useSignUp = () => {
 export const useSignIn = () => {
   const navigate = useNavigate();
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, setError?: any) => {
     try {
       const result = await authClient.signIn.email(
         {
@@ -68,17 +91,62 @@ export const useSignIn = () => {
           },
           onError: (ctx) => {
             // Handle error from Better Auth callback
-            const errorInfo = formatErrorForToast(ctx.error);
+            const error = ctx.error;
+
+            // Check if error has validation details
+            if (error && typeof error === 'object' && 'details' in error && Array.isArray(error.details)) {
+              const details = error.details as Array<{ field: string; message: string }>;
+
+              // Set field-level errors if setError function is provided
+              if (setError && details.length > 0) {
+                details.forEach((detail) => {
+                  setError(detail.field, {
+                    type: 'manual',
+                    message: detail.message,
+                  });
+                });
+
+                toast.error('Validation Error', {
+                  description: 'Please check the form for errors',
+                });
+                return;
+              }
+            }
+
+            // Fallback to general error
+            const errorInfo = formatErrorForToast(error);
             toast.error(errorInfo.title, {
               description: errorInfo.description,
             });
           },
         }
       );
-      
+
       // Check if there was an error in the result
       if (result?.error) {
-        const errorInfo = formatErrorForToast(result.error);
+        const error = result.error;
+
+        // Check if error has validation details
+        if (error && typeof error === 'object' && 'details' in error && Array.isArray(error.details)) {
+          const details = error.details as Array<{ field: string; message: string }>;
+
+          // Set field-level errors if setError function is provided
+          if (setError && details.length > 0) {
+            details.forEach((detail) => {
+              setError(detail.field, {
+                type: 'manual',
+                message: detail.message,
+              });
+            });
+
+            toast.error('Validation Error', {
+              description: 'Please check the form for errors',
+            });
+            return;
+          }
+        }
+
+        const errorInfo = formatErrorForToast(error);
         toast.error(errorInfo.title, {
           description: errorInfo.description,
         });

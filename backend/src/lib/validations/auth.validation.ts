@@ -4,9 +4,9 @@ export const SignUpSchema = z.object({
   name: z.string().min(1, "Name is required"),
   username: z.string().min(3, "Username must be at least 3 characters"),
   email: z.email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  age: z.number().int().positive().optional(),
-  phone: z.string().regex(/^\d{10}$/, "Phone must be 10 digits").optional(),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  age: z.number().int().min(13, "You must be at least 13 years old").optional(),
+  phone: z.string().min(1).optional().or(z.literal('')),
 });
 
 export const SignInSchema = z.object({

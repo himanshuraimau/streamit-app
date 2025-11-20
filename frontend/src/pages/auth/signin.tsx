@@ -37,7 +37,7 @@ export default function SignIn() {
   });
 
   const onSubmit = async (data: SignInFormValues) => {
-    await signIn(data.email, data.password);
+    await signIn(data.email, data.password, form.setError);
   };
 
   return (
@@ -46,7 +46,7 @@ export default function SignIn() {
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-pink-600 to-purple-800"></div>
         <div className="absolute inset-0 bg-black/20"></div>
-        
+
         {/* Animated Background Pattern */}
         <div className="absolute inset-0">
           <div className="absolute top-20 left-20 w-72 h-72 bg-white/5 rounded-full blur-3xl animate-pulse"></div>
@@ -59,11 +59,11 @@ export default function SignIn() {
             <img src="/logo_dark.svg" alt="StreamIt" className="h-12 w-auto" />
             <span className="text-3xl font-bold">StreamIt</span>
           </Link>
-          
+
           <h1 className="text-5xl font-bold mb-6 leading-tight">
             Welcome back to<br />your streaming<br />community
           </h1>
-          
+
           <p className="text-xl text-white/80 mb-8 max-w-md">
             Connect with creators, watch live streams, and be part of something amazing.
           </p>
@@ -95,7 +95,7 @@ export default function SignIn() {
               <CardTitle className="text-3xl font-bold text-white">Sign in</CardTitle>
               <p className="text-zinc-400">Enter your credentials to access your account</p>
             </CardHeader>
-            
+
             <CardContent>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">

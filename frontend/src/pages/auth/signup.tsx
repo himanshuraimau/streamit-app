@@ -61,7 +61,7 @@ export default function SignUp() {
       phone: data.phone,
       age: parseInt(data.age, 10),
       password: data.password,
-    });
+    }, form.setError);
   };
 
   return (
