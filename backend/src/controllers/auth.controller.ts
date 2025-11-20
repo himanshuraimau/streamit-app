@@ -8,11 +8,11 @@ export class AuthController {
   async sendVerificationOTP(req: Request, res: Response) {
     try {
       const { email, type } = req.body;
-      
+
       const result = await auth.api.sendVerificationOTP({
         body: { email, type },
       });
-      
+
       return res.status(200).json(result);
     } catch (error: any) {
       console.error('❌ Send verification OTP error:', error);
@@ -25,11 +25,11 @@ export class AuthController {
   async checkVerificationOTP(req: Request, res: Response) {
     try {
       const { email, type, otp } = req.body;
-      
+
       const result = await auth.api.checkVerificationOTP({
         body: { email, type, otp },
       });
-      
+
       return res.status(200).json(result);
     } catch (error: any) {
       console.error('❌ Check verification OTP error:', error);
@@ -43,11 +43,11 @@ export class AuthController {
   async signInEmailOTP(req: Request, res: Response) {
     try {
       const { email, otp } = req.body;
-      
+
       const result = await auth.api.signInEmailOTP({
         body: { email, otp },
       });
-      
+
       return res.status(200).json(result);
     } catch (error: any) {
       console.error('❌ Sign in with OTP error:', error);
@@ -60,11 +60,11 @@ export class AuthController {
   async verifyEmail(req: Request, res: Response) {
     try {
       const { email, otp } = req.body;
-      
+
       const result = await auth.api.verifyEmailOTP({
         body: { email, otp },
       });
-      
+
       return res.status(200).json(result);
     } catch (error: any) {
       console.error('❌ Verify email error:', error);
@@ -77,11 +77,11 @@ export class AuthController {
   async forgetPasswordEmailOTP(req: Request, res: Response) {
     try {
       const { email } = req.body;
-      
+
       const result = await auth.api.forgetPasswordEmailOTP({
         body: { email },
       });
-      
+
       return res.status(200).json(result);
     } catch (error: any) {
       console.error('❌ Forgot password error:', error);
@@ -94,11 +94,11 @@ export class AuthController {
   async resetPasswordEmailOTP(req: Request, res: Response) {
     try {
       const { email, otp, password } = req.body;
-      
+
       const result = await auth.api.resetPasswordEmailOTP({
         body: { email, otp, password },
       });
-      
+
       return res.status(200).json(result);
     } catch (error: any) {
       console.error('❌ Reset password error:', error);
@@ -111,18 +111,18 @@ export class AuthController {
   async signUpEmail(req: Request, res: Response) {
     try {
       const { name, age, email, phone, username, password } = req.body;
-      
+
       const result = await auth.api.signUpEmail({
-        body: { 
-          name, 
-          email, 
+        body: {
+          name,
+          email,
           password,
           age,
           phone,
           username,
         },
       });
-      
+
       // Auto-create coin wallet for new user
       if (result.user) {
         try {
@@ -135,23 +135,10 @@ export class AuthController {
           // Don't fail signup if wallet creation fails
         }
       }
-      
-      // After successful signup, send verification OTP
-      if (result.user && !result.user.emailVerified) {
-        try {
-          await auth.api.sendVerificationOTP({
-            body: { 
-              email, 
-              type: 'email-verification' 
-            },
-          });
-          console.log(`✅ Verification OTP sent to ${email} after signup`);
-        } catch (otpError) {
-          console.error('❌ Failed to send verification OTP:', otpError);
-          // Don't fail signup if OTP fails, user can request it manually
-        }
-      }
-      
+
+      // Note: Verification OTP is automatically sent by Better Auth plugin
+      // (configured with sendVerificationOnSignUp: true in lib/auth.ts)
+
       return res.status(200).json(result);
     } catch (error: any) {
       console.error('❌ Sign up error:', error);
@@ -165,12 +152,12 @@ export class AuthController {
     try {
       const { username, password, email } = req.body;
       const result = await auth.api.signInEmail({
-        body: { 
+        body: {
           email: email || username,
-          password 
+          password
         },
       });
-      
+
       return res.status(200).json(result);
     } catch (error: any) {
       console.error('❌ Sign in error:', error);
