@@ -4,14 +4,16 @@ import { usePublicFeed, useFeed } from '@/hooks/useContent';
 import { authClient } from '@/lib/auth-client';
 import { useCreatorApplication } from '@/hooks/useCreatorApplication';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { PostFeed } from '../creator-dashboard/content-upload/_components/PostFeed';
-import { DashboardNavbar } from '../creator-dashboard/_components/dashboard-navbar';
-import { CreatorSidebar } from '../creator-dashboard/_components/creator-sidebar';
+import { GridPostFeed } from '@/pages/creator-dashboard/content-upload/_components/GridPostFeed';
+import { PostFeed } from '@/pages/creator-dashboard/content-upload/_components/PostFeed';
+import { DashboardNavbar } from '@/pages/creator-dashboard/_components/dashboard-navbar';
+import { CreatorSidebar } from '@/pages/creator-dashboard/_components/creator-sidebar';
 import { Button } from '@/components/ui/button';
-import { Globe, Users } from 'lucide-react';
+import { Globe, Users, Grid3X3, List } from 'lucide-react';
 
 export default function ContentPage() {
   const [feedType, setFeedType] = useState<'public' | 'personalized'>('public');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const { data: session, isPending } = authClient.useSession();
   const { status, loading } = useCreatorApplication();
 
@@ -65,40 +67,80 @@ export default function ContentPage() {
                 <p className="text-zinc-400">Discover amazing content from creators</p>
               </div>
 
-              {/* Feed Type Selector */}
-              <div className="flex items-center justify-center space-x-4 p-4 bg-zinc-900/50 rounded-lg mb-6">
-                <Button
-                  variant={feedType === 'public' ? 'default' : 'ghost'}
-                  onClick={() => setFeedType('public')}
-                  className="flex items-center space-x-2"
-                >
-                  <Globe className="w-4 h-4" />
-                  <span>Public Feed</span>
-                </Button>
-                <Button
-                  variant={feedType === 'personalized' ? 'default' : 'ghost'}
-                  onClick={() => setFeedType('personalized')}
-                  className="flex items-center space-x-2"
-                >
-                  <Users className="w-4 h-4" />
-                  <span>Following</span>
-                </Button>
+              {/* Controls */}
+              <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                {/* Feed Type Selector */}
+                <div className="flex items-center justify-center sm:justify-start space-x-4 p-4 bg-zinc-900/50 rounded-lg">
+                  <Button
+                    variant={feedType === 'public' ? 'default' : 'ghost'}
+                    onClick={() => setFeedType('public')}
+                    className="flex items-center space-x-2"
+                  >
+                    <Globe className="w-4 h-4" />
+                    <span>Public Feed</span>
+                  </Button>
+                  <Button
+                    variant={feedType === 'personalized' ? 'default' : 'ghost'}
+                    onClick={() => setFeedType('personalized')}
+                    className="flex items-center space-x-2"
+                  >
+                    <Users className="w-4 h-4" />
+                    <span>Following</span>
+                  </Button>
+                </div>
+
+                {/* View Mode Toggle */}
+                <div className="flex items-center justify-center sm:justify-end space-x-2 p-4 bg-zinc-900/50 rounded-lg">
+                  <Button
+                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('grid')}
+                    className="flex items-center space-x-2"
+                  >
+                    <Grid3X3 className="w-4 h-4" />
+                    <span className="hidden sm:inline">Grid</span>
+                  </Button>
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                    className="flex items-center space-x-2"
+                  >
+                    <List className="w-4 h-4" />
+                    <span className="hidden sm:inline">List</span>
+                  </Button>
+                </div>
               </div>
 
               {/* Feed Content */}
-              <div className="max-w-4xl mx-auto">
-                <PostFeed
-                  posts={allPosts}
-                  isLoading={activeQuery.isLoading}
-                  hasNextPage={activeQuery.hasNextPage || false}
-                  isFetchingNextPage={activeQuery.isFetchingNextPage}
-                  fetchNextPage={activeQuery.fetchNextPage}
-                  emptyMessage={
-                    feedType === 'personalized' 
-                      ? "No posts from people you follow. Try switching to the public feed!"
-                      : "No posts available. Be the first to share something!"
-                  }
-                />
+              <div className={`${viewMode === 'grid' ? '' : 'max-w-4xl mx-auto'}`}>
+                {viewMode === 'grid' ? (
+                  <GridPostFeed
+                    posts={allPosts}
+                    isLoading={activeQuery.isLoading}
+                    hasNextPage={activeQuery.hasNextPage || false}
+                    isFetchingNextPage={activeQuery.isFetchingNextPage}
+                    fetchNextPage={activeQuery.fetchNextPage}
+                    emptyMessage={
+                      feedType === 'personalized' 
+                        ? "No posts from people you follow. Try switching to the public feed!"
+                        : "No posts available. Be the first to share something!"
+                    }
+                  />
+                ) : (
+                  <PostFeed
+                    posts={allPosts}
+                    isLoading={activeQuery.isLoading}
+                    hasNextPage={activeQuery.hasNextPage || false}
+                    isFetchingNextPage={activeQuery.isFetchingNextPage}
+                    fetchNextPage={activeQuery.fetchNextPage}
+                    emptyMessage={
+                      feedType === 'personalized' 
+                        ? "No posts from people you follow. Try switching to the public feed!"
+                        : "No posts available. Be the first to share something!"
+                    }
+                  />
+                )}
               </div>
             </div>
           </main>
