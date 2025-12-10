@@ -1,19 +1,12 @@
 # Build stage
-FROM oven/bun:1 AS build
+FROM node:20-alpine AS build
 WORKDIR /app
 
-# Install build dependencies for native modules (better-sqlite3)
-RUN apt-get update && apt-get install -y \
-    python3 \
-    make \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
+# Copy package files and .npmrc
+COPY package.json .npmrc ./
 
-# Copy package files
-COPY package.json bun.lock* ./
-
-# Install dependencies
-RUN bun install --frozen-lockfile
+# Install all dependencies (dev dependencies needed for build)
+RUN npm install
 
 # Copy source code
 COPY . .
@@ -27,7 +20,7 @@ ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_LIVEKIT_WS_URL=${VITE_LIVEKIT_WS_URL}
 
 # Build the application
-RUN bun run build
+RUN npm run build
 
 # Production stage with nginx
 FROM nginx:alpine AS production
