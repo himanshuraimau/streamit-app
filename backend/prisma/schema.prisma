@@ -1,4 +1,3 @@
-
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "debian-openssl-3.0.x"]
@@ -23,30 +22,34 @@ model User {
   updatedAt     DateTime  @default(now()) @updatedAt
   sessions      Session[]
   accounts      Account[]
-  
+
   // Creator application relationship
   creatorApplication CreatorApplication?
-  
+
   // Streaming relationships (only for approved creators)
-  stream        Stream?
-  
+  stream Stream?
+
   // Social relationships
-  following     Follow[] @relation("Following")
-  followedBy    Follow[] @relation("FollowedBy")
-  blocking      Block[]  @relation("Blocking")
-  blockedBy     Block[]  @relation("BlockedBy")
-  
+  following  Follow[] @relation("Following")
+  followedBy Follow[] @relation("FollowedBy")
+  blocking   Block[]  @relation("Blocking")
+  blockedBy  Block[]  @relation("BlockedBy")
+
   // Content relationships
-  posts         Post[]
-  likes         Like[]
-  comments      Comment[]
-  commentLikes  CommentLike[]
-  
+  posts        Post[]
+  likes        Like[]
+  comments     Comment[]
+  commentLikes CommentLike[]
+
   // Payment relationships
-  coinWallet       CoinWallet?
-  coinPurchases    CoinPurchase[]
-  giftsSent        GiftTransaction[] @relation("GiftsSent")
-  giftsReceived    GiftTransaction[] @relation("GiftsReceived")
+  coinWallet    CoinWallet?
+  coinPurchases CoinPurchase[]
+  giftsSent     GiftTransaction[] @relation("GiftsSent")
+  giftsReceived GiftTransaction[] @relation("GiftsReceived")
+
+  // Discount relationships
+  ownedDiscountCodes  DiscountCode[]       @relation("OwnedDiscountCodes")
+  discountRedemptions DiscountRedemption[]
 
   @@unique([email])
   @@map("user")
@@ -100,134 +103,134 @@ model Verification {
 
 // Creator Application Models
 model CreatorApplication {
-  id          String                @id @default(cuid())
-  userId      String                @unique
-  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   // Application status and metadata
-  status      ApplicationStatus     @default(DRAFT)
-  submittedAt DateTime?
-  reviewedAt  DateTime?
-  reviewedBy  String?               // Admin user ID who reviewed
-  rejectionReason String?           // Reason for rejection if applicable
-  
+  status          ApplicationStatus @default(DRAFT)
+  submittedAt     DateTime?
+  reviewedAt      DateTime?
+  reviewedBy      String? // Admin user ID who reviewed
+  rejectionReason String? // Reason for rejection if applicable
+
   // Identity verification data
-  identity    IdentityVerification?
-  
+  identity IdentityVerification?
+
   // Financial information
-  financial   FinancialDetails?
-  
+  financial FinancialDetails?
+
   // Profile information
-  profile     CreatorProfile?
-  
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @updatedAt
+  profile CreatorProfile?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("creator_application")
 }
 
 model IdentityVerification {
-  id                    String              @id @default(cuid())
-  creatorApplicationId  String              @unique
-  creatorApplication    CreatorApplication  @relation(fields: [creatorApplicationId], references: [id], onDelete: Cascade)
-  
-  idType                IDType
-  idDocumentUrl         String              // URL to uploaded ID document
-  selfiePhotoUrl        String              // URL to uploaded selfie photo
-  
+  id                   String             @id @default(cuid())
+  creatorApplicationId String             @unique
+  creatorApplication   CreatorApplication @relation(fields: [creatorApplicationId], references: [id], onDelete: Cascade)
+
+  idType         IDType
+  idDocumentUrl  String // URL to uploaded ID document
+  selfiePhotoUrl String // URL to uploaded selfie photo
+
   // Verification status
-  isVerified            Boolean             @default(false)
-  verifiedAt            DateTime?
-  verifiedBy            String?             // Admin user ID who verified
-  
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
+  isVerified Boolean   @default(false)
+  verifiedAt DateTime?
+  verifiedBy String? // Admin user ID who verified
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("identity_verification")
 }
 
 model FinancialDetails {
-  id                    String              @id @default(cuid())
-  creatorApplicationId  String              @unique
-  creatorApplication    CreatorApplication  @relation(fields: [creatorApplicationId], references: [id], onDelete: Cascade)
-  
-  accountHolderName     String
-  accountNumber         String              // Encrypted in application
-  ifscCode              String
-  panNumber             String              // Encrypted in application
-  
+  id                   String             @id @default(cuid())
+  creatorApplicationId String             @unique
+  creatorApplication   CreatorApplication @relation(fields: [creatorApplicationId], references: [id], onDelete: Cascade)
+
+  accountHolderName String
+  accountNumber     String // Encrypted in application
+  ifscCode          String
+  panNumber         String // Encrypted in application
+
   // Verification status
-  isVerified            Boolean             @default(false)
-  verifiedAt            DateTime?
-  verifiedBy            String?             // Admin user ID who verified
-  
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
+  isVerified Boolean   @default(false)
+  verifiedAt DateTime?
+  verifiedBy String? // Admin user ID who verified
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("financial_details")
 }
 
 model CreatorProfile {
-  id                    String              @id @default(cuid())
-  creatorApplicationId  String              @unique
-  creatorApplication    CreatorApplication  @relation(fields: [creatorApplicationId], references: [id], onDelete: Cascade)
-  
-  profilePictureUrl     String              // URL to uploaded profile picture
-  bio                   String
-  categories            ContentCategory[]   // Array of content categories
-  
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
+  id                   String             @id @default(cuid())
+  creatorApplicationId String             @unique
+  creatorApplication   CreatorApplication @relation(fields: [creatorApplicationId], references: [id], onDelete: Cascade)
+
+  profilePictureUrl String // URL to uploaded profile picture
+  bio               String
+  categories        ContentCategory[] // Array of content categories
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("creator_profile")
 }
 
 // File upload tracking for better management
 model FileUpload {
-  id            String      @id @default(cuid())
-  fileName      String
-  originalName  String
-  mimeType      String
-  size          Int
-  url           String
-  uploadedBy    String      // User ID who uploaded
-  purpose       FilePurpose // What the file is used for
-  
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id           String      @id @default(cuid())
+  fileName     String
+  originalName String
+  mimeType     String
+  size         Int
+  url          String
+  uploadedBy   String // User ID who uploaded
+  purpose      FilePurpose // What the file is used for
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("file_upload")
 }
 
 // Streaming Models (for approved creators only)
 model Stream {
-  id                    String   @id @default(cuid())
-  title                 String   @db.Text
-  description           String?  @db.Text
-  thumbnail             String?  @db.Text
-  
+  id          String  @id @default(cuid())
+  title       String  @db.Text
+  description String? @db.Text
+  thumbnail   String? @db.Text
+
   // Streaming infrastructure
-  ingressId             String?  @unique
-  serverUrl             String?  @db.Text
-  streamKey             String?  @db.Text
-  
+  ingressId String? @unique
+  serverUrl String? @db.Text
+  streamKey String? @db.Text
+
   // Stream status
-  isLive                Boolean  @default(false)
-  
+  isLive Boolean @default(false)
+
   // Chat settings
-  isChatEnabled         Boolean  @default(true)
-  isChatDelayed         Boolean  @default(false)
-  isChatFollowersOnly   Boolean  @default(false)
-  
+  isChatEnabled       Boolean @default(true)
+  isChatDelayed       Boolean @default(false)
+  isChatFollowersOnly Boolean @default(false)
+
   // Creator relationship
-  userId                String   @unique
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   // Gift relationships
-  giftTransactions      GiftTransaction[]
-  
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  giftTransactions GiftTransaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([ingressId])
@@ -242,11 +245,11 @@ model Follow {
   followerId  String
   followingId String
 
-  follower    User @relation(name: "Following", fields: [followerId], references: [id], onDelete: Cascade)
-  following   User @relation(name: "FollowedBy", fields: [followingId], references: [id], onDelete: Cascade)
+  follower  User @relation(name: "Following", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation(name: "FollowedBy", fields: [followingId], references: [id], onDelete: Cascade)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([followerId, followingId])
   @@index([followerId])
@@ -260,8 +263,8 @@ model Block {
   blockerId String
   blockedId String
 
-  blocker   User @relation("Blocking", fields: [blockerId], references: [id], onDelete: Cascade)
-  blocked   User @relation("BlockedBy", fields: [blockedId], references: [id], onDelete: Cascade)
+  blocker User @relation("Blocking", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("BlockedBy", fields: [blockedId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -274,29 +277,29 @@ model Block {
 
 // Social Media Content Models
 model Post {
-  id          String    @id @default(cuid())
-  content     String?   @db.Text  // Text content (optional for media-only posts)
-  type        PostType  @default(TEXT)
-  
+  id      String   @id @default(cuid())
+  content String?  @db.Text // Text content (optional for media-only posts)
+  type    PostType @default(TEXT)
+
   // Media attachments
-  media       PostMedia[]
-  
+  media PostMedia[]
+
   // Engagement
-  likes       Like[]
-  comments    Comment[]
-  likesCount  Int       @default(0)
-  commentsCount Int     @default(0)
-  
+  likes         Like[]
+  comments      Comment[]
+  likesCount    Int       @default(0)
+  commentsCount Int       @default(0)
+
   // Visibility and settings
-  isPublic    Boolean   @default(true)
+  isPublic      Boolean @default(true)
   allowComments Boolean @default(true)
-  
+
   // Author
-  authorId    String
-  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([authorId])
   @@index([createdAt])
@@ -307,24 +310,24 @@ model Post {
 
 // Media attachments for posts
 model PostMedia {
-  id        String    @id @default(cuid())
-  url       String    @db.Text
-  type      MediaType
-  mimeType  String
-  size      Int?
-  width     Int?
-  height    Int?
-  duration  Int?      // For videos, in seconds
-  
+  id       String    @id @default(cuid())
+  url      String    @db.Text
+  type     MediaType
+  mimeType String
+  size     Int?
+  width    Int?
+  height   Int?
+  duration Int? // For videos, in seconds
+
   // Thumbnail for videos
   thumbnailUrl String? @db.Text
-  
+
   // Post relationship
-  postId    String
-  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([postId])
   @@index([type])
@@ -333,13 +336,13 @@ model PostMedia {
 
 // Likes system
 model Like {
-  id     String   @id @default(cuid())
+  id     String @id @default(cuid())
   userId String
   postId String
-  
-  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post   Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
 
   @@unique([userId, postId])
@@ -351,25 +354,25 @@ model Like {
 
 // Comments system
 model Comment {
-  id        String    @id @default(cuid())
-  content   String    @db.Text
-  
+  id      String @id @default(cuid())
+  content String @db.Text
+
   // Relationships
-  userId    String
-  postId    String
-  parentId  String?   // For nested comments/replies
-  
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies   Comment[] @relation("CommentReplies")
-  
+  userId   String
+  postId   String
+  parentId String? // For nested comments/replies
+
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
+
   // Engagement
-  likes     CommentLike[]
-  likesCount Int       @default(0)
-  
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  likes      CommentLike[]
+  likesCount Int           @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([postId])
@@ -380,13 +383,13 @@ model Comment {
 
 // Comment likes (separate from post likes)
 model CommentLike {
-  id        String  @id @default(cuid())
+  id        String @id @default(cuid())
   userId    String
   commentId String
-  
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  comment   Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
-  
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
 
   @@unique([userId, commentId])
@@ -401,16 +404,16 @@ model CommentLike {
 
 // User's coin wallet
 model CoinWallet {
-  id            String   @id @default(cuid())
-  userId        String   @unique
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  balance       Int      @default(0) // Current coin balance
-  totalEarned   Int      @default(0) // Lifetime earnings (for creators)
-  totalSpent    Int      @default(0) // Lifetime spending (for viewers)
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  balance     Int @default(0) // Current coin balance
+  totalEarned Int @default(0) // Lifetime earnings (for creators)
+  totalSpent  Int @default(0) // Lifetime spending (for viewers)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@map("coin_wallet")
@@ -418,24 +421,24 @@ model CoinWallet {
 
 // Coin packages available for purchase
 model CoinPackage {
-  id            String   @id @default(cuid())
-  name          String   // e.g., "Starter Pack", "Premium Pack"
-  coins         Int      // Number of coins in package
-  price         Int      // Price in smallest currency unit (paise for INR)
-  currency      String   @default("INR")
-  
+  id       String @id @default(cuid())
+  name     String // e.g., "Starter Pack", "Premium Pack"
+  coins    Int // Number of coins in package
+  price    Int // Price in smallest currency unit (paise for INR)
+  currency String @default("INR")
+
   // Bonus and promotions
-  bonusCoins    Int      @default(0) // Bonus coins given with purchase
-  isActive      Boolean  @default(true)
-  
+  bonusCoins Int     @default(0) // Bonus coins given with purchase
+  isActive   Boolean @default(true)
+
   // Metadata
-  description   String?
-  sortOrder     Int      @default(0)
-  
-  purchases     CoinPurchase[]
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  description String?
+  sortOrder   Int     @default(0)
+
+  purchases CoinPurchase[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([isActive, sortOrder])
   @@map("coin_package")
@@ -443,34 +446,41 @@ model CoinPackage {
 
 // Record of coin purchases
 model CoinPurchase {
-  id                String          @id @default(cuid())
-  userId            String
-  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  packageId         String
-  package           CoinPackage     @relation(fields: [packageId], references: [id])
-  
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  packageId String
+  package   CoinPackage @relation(fields: [packageId], references: [id])
+
   // Purchase details
-  coins             Int             // Coins purchased (base amount)
-  bonusCoins        Int             @default(0)
-  totalCoins        Int             // coins + bonusCoins
-  amount            Int             // Amount paid in smallest currency unit
-  currency          String          @default("INR")
-  
+  coins      Int // Coins purchased (base amount)
+  bonusCoins Int    @default(0)
+  totalCoins Int // coins + bonusCoins
+  amount     Int // Amount paid in smallest currency unit
+  currency   String @default("INR")
+
+  // Discount information
+  discountCodeId     String?
+  discountBonusCoins Int     @default(0) // Bonus coins from discount code
+
+  // Relationship to discount redemption
+  discountRedemption DiscountRedemption?
+
   // Payment details
-  paymentGateway    String?         @default("dodo") // "dodo", "razorpay", etc.
-  transactionId     String?         @unique // External transaction ID (Dodo payment_id)
-  orderId           String          @unique // Internal order ID
-  
+  paymentGateway String? @default("dodo") // "dodo", "razorpay", etc.
+  transactionId  String? @unique // External transaction ID (Dodo payment_id)
+  orderId        String  @unique // Internal order ID
+
   // Status tracking
-  status            PurchaseStatus  @default(PENDING)
-  failureReason     String?
-  
+  status        PurchaseStatus @default(PENDING)
+  failureReason String?
+
   // Payment gateway response (store as JSON)
-  paymentData       Json?
-  
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  paymentData Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId, status])
   @@index([status, createdAt])
@@ -480,26 +490,26 @@ model CoinPurchase {
 
 // Virtual gifts that users can send to creators
 model Gift {
-  id            String      @id @default(cuid())
-  name          String      // e.g., "Heart", "Diamond", "Crown"
-  description   String?
-  
+  id          String  @id @default(cuid())
+  name        String // e.g., "Heart", "Diamond", "Crown"
+  description String?
+
   // Gift properties
-  coinPrice     Int         // Cost in coins
-  
+  coinPrice Int // Cost in coins
+
   // Visual representation
-  imageUrl      String      // Static image
-  animationUrl  String?     // Animation URL (Lottie JSON or GIF)
-  
+  imageUrl     String // Static image
+  animationUrl String? // Animation URL (Lottie JSON or GIF)
+
   // Features
-  isActive      Boolean     @default(true)
-  sortOrder     Int         @default(0)
-  
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
+
   // Usage tracking
-  giftsSent     GiftTransaction[]
-  
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  giftsSent GiftTransaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([isActive, sortOrder])
   @@map("gift")
@@ -507,29 +517,29 @@ model Gift {
 
 // Record of gifts sent from users to creators
 model GiftTransaction {
-  id            String   @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Parties involved
-  senderId      String
-  sender        User     @relation("GiftsSent", fields: [senderId], references: [id], onDelete: Cascade)
-  
-  receiverId    String
-  receiver      User     @relation("GiftsReceived", fields: [receiverId], references: [id], onDelete: Cascade)
-  
-  giftId        String
-  gift          Gift     @relation(fields: [giftId], references: [id])
-  
+  senderId String
+  sender   User   @relation("GiftsSent", fields: [senderId], references: [id], onDelete: Cascade)
+
+  receiverId String
+  receiver   User   @relation("GiftsReceived", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  giftId String
+  gift   Gift   @relation(fields: [giftId], references: [id])
+
   // Transaction details
-  coinAmount    Int      // Coins deducted from sender
-  quantity      Int      @default(1) // Number of gifts sent
-  
+  coinAmount Int // Coins deducted from sender
+  quantity   Int @default(1) // Number of gifts sent
+
   // Context
-  streamId      String?  // If sent during a live stream
-  stream        Stream?  @relation(fields: [streamId], references: [id], onDelete: SetNull)
-  
-  message       String?  // Optional message with gift
-  
-  createdAt     DateTime @default(now())
+  streamId String? // If sent during a live stream
+  stream   Stream? @relation(fields: [streamId], references: [id], onDelete: SetNull)
+
+  message String? // Optional message with gift
+
+  createdAt DateTime @default(now())
 
   @@index([senderId])
   @@index([receiverId])
@@ -581,7 +591,7 @@ enum PostType {
   TEXT
   IMAGE
   VIDEO
-  MIXED     // Text + Media
+  MIXED // Text + Media
 }
 
 enum MediaType {
@@ -595,4 +605,81 @@ enum PurchaseStatus {
   COMPLETED
   FAILED
   REFUNDED
+}
+
+// ============================================
+// DISCOUNT CODE MODELS
+// ============================================
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum CodeType {
+  PROMOTIONAL
+  REWARD
+}
+
+// Discount codes (both promotional and reward)
+model DiscountCode {
+  id   String @id @default(cuid())
+  code String @unique
+
+  // Discount configuration
+  discountType  DiscountType // PERCENTAGE or FIXED
+  discountValue Int // Percentage (1-100) or fixed amount in paise
+
+  // Code type and ownership
+  codeType  CodeType // PROMOTIONAL or REWARD
+  createdBy String? // Admin ID for promotional, null for reward
+  ownerId   String? // User ID for reward codes, null for promotional
+  owner     User?    @relation("OwnedDiscountCodes", fields: [ownerId], references: [id])
+
+  // Usage limits
+  maxRedemptions     Int? // null = unlimited (for promotional)
+  currentRedemptions Int     @default(0)
+  isOneTimeUse       Boolean @default(true) // For reward codes
+
+  // Validity
+  minPurchaseAmount Int? // Minimum purchase in paise
+  expiresAt         DateTime?
+  isActive          Boolean   @default(true)
+
+  // Metadata
+  description String?
+
+  // Relationships
+  redemptions DiscountRedemption[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([code])
+  @@index([ownerId])
+  @@index([codeType, isActive])
+  @@map("discount_code")
+}
+
+// Track code redemptions
+model DiscountRedemption {
+  id String @id @default(cuid())
+
+  discountCodeId String
+  discountCode   DiscountCode @relation(fields: [discountCodeId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  purchaseId String       @unique
+  purchase   CoinPurchase @relation(fields: [purchaseId], references: [id])
+
+  // Bonus coins awarded
+  bonusCoinsAwarded Int // Extra coins given from discount
+
+  createdAt DateTime @default(now())
+
+  @@index([discountCodeId])
+  @@index([userId])
+  @@map("discount_redemption")
 }

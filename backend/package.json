@@ -13,6 +13,7 @@
     "db:push": "bunx prisma db push",
     "db:studio": "bunx prisma studio",
     "db:seed": "bun prisma/seed-payment.ts",
+    "db:seed-discount": "bun prisma/seed-discount.ts",
     "auth:generate": "bunx @better-auth/cli generate",
     "setup": "bun install && bunx prisma generate && bunx prisma migrate dev"
   },
