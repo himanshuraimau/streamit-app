@@ -4,6 +4,12 @@ async function seedDiscountCodes() {
   console.log('🌱 Seeding discount codes...');
 
   try {
+    // Delete existing promotional codes to refresh them
+    await prisma.discountCode.deleteMany({
+      where: { codeType: 'PROMOTIONAL' }
+    });
+    console.log('🗑️ Cleared existing promotional codes');
+
     // Seed promotional discount codes
     console.log('Creating promotional discount codes...');
     const discountCodes = await prisma.discountCode.createMany({
@@ -17,7 +23,7 @@ async function seedDiscountCodes() {
           maxRedemptions: 100,
           currentRedemptions: 0,
           isOneTimeUse: true,
-          expiresAt: new Date('2025-12-31T23:59:59Z'),
+          expiresAt: new Date('2026-12-31T23:59:59Z'),
           isActive: true,
           description: 'Welcome discount - 20% bonus coins for new users',
         },
@@ -30,7 +36,7 @@ async function seedDiscountCodes() {
           maxRedemptions: 50,
           currentRedemptions: 0,
           isOneTimeUse: true,
-          expiresAt: new Date('2025-06-30T23:59:59Z'),
+          expiresAt: new Date('2026-06-30T23:59:59Z'),
           isActive: true,
           description: 'Flat 50 rupees worth of bonus coins',
         },
@@ -44,7 +50,7 @@ async function seedDiscountCodes() {
           currentRedemptions: 0,
           isOneTimeUse: true,
           minPurchaseAmount: 49900, // Minimum ₹499 purchase
-          expiresAt: new Date('2025-08-31T23:59:59Z'),
+          expiresAt: new Date('2026-08-31T23:59:59Z'),
           isActive: true,
           description: 'Summer special - 25% bonus coins on purchases ₹499+',
         },
@@ -58,7 +64,7 @@ async function seedDiscountCodes() {
           currentRedemptions: 0,
           isOneTimeUse: true,
           minPurchaseAmount: 99900, // Minimum ₹999 purchase
-          expiresAt: new Date('2025-12-31T23:59:59Z'),
+          expiresAt: new Date('2026-12-31T23:59:59Z'),
           isActive: true,
           description: 'VIP exclusive - 30% bonus coins on premium purchases',
         },
@@ -72,7 +78,7 @@ async function seedDiscountCodes() {
           currentRedemptions: 0,
           isOneTimeUse: true,
           minPurchaseAmount: 99900, // Minimum ₹999 purchase
-          expiresAt: new Date('2025-09-30T23:59:59Z'),
+          expiresAt: new Date('2026-09-30T23:59:59Z'),
           isActive: true,
           description: 'Flat 100 rupees worth of bonus coins on ₹999+ purchases',
         },
@@ -106,6 +112,18 @@ async function seedDiscountCodes() {
       skipDuplicates: true,
     });
     console.log(`✅ Created ${discountCodes.count} promotional discount codes`);
+
+    console.log('');
+    console.log('📋 Available Discount Codes:');
+    console.log('----------------------------');
+    console.log('WELCOME20   - 20% bonus (no minimum)');
+    console.log('FLAT50      - ₹50 worth bonus (no minimum)');
+    console.log('SUMMER25    - 25% bonus (min ₹499 purchase)');
+    console.log('VIP30       - 30% bonus (min ₹999 purchase)');
+    console.log('FLAT100     - ₹100 worth bonus (min ₹999 purchase)');
+    console.log('NEWYEAR15   - 15% bonus (no minimum)');
+    console.log('UNLIMITED10 - 10% bonus (no minimum, never expires)');
+    console.log('');
 
     console.log('✨ Discount codes seeded successfully!');
   } catch (error) {
