@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle, XCircle, Loader2, Coins } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, Coins, Gift, Copy, Check } from 'lucide-react';
 import { usePayment } from '@/stores/payment.store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCoins, formatPrice } from '@/types/payment.types';
+import { discountApi } from '@/lib/api/discount';
+import { formatDiscountValue, DiscountType } from '@/types/discount.types';
 import type { CoinPurchase } from '@/types/payment.types';
+import type { DiscountCode } from '@/types/discount.types';
 
 export default function CoinSuccess() {
   const navigate = useNavigate();
@@ -16,6 +19,10 @@ export default function CoinSuccess() {
   const [purchase, setPurchase] = useState<CoinPurchase | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Reward code state
+  const [rewardCode, setRewardCode] = useState<DiscountCode | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!orderId) {
@@ -31,6 +38,14 @@ export default function CoinSuccess() {
         const result = await verifyPurchase(orderId);
         if (result) {
           setPurchase(result);
+          
+          // If purchase is completed, fetch the latest reward code
+          if (result.status === 'COMPLETED') {
+            const rewardResponse = await discountApi.getLatestRewardCode();
+            if (rewardResponse.success && rewardResponse.data) {
+              setRewardCode(rewardResponse.data);
+            }
+          }
         } else {
           setError('Purchase not found');
         }
@@ -43,6 +58,30 @@ export default function CoinSuccess() {
 
     verify();
   }, [orderId, verifyPurchase]);
+
+  // Copy reward code to clipboard
+  const handleCopyCode = async () => {
+    if (!rewardCode) return;
+    
+    try {
+      await navigator.clipboard.writeText(rewardCode.code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy code:', err);
+    }
+  };
+
+  // Format expiration date
+  const formatExpirationDate = (dateString: string | null) => {
+    if (!dateString) return 'No expiration';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
 
   // Loading State
   if (loading) {
@@ -117,6 +156,54 @@ export default function CoinSuccess() {
                 <span className="font-mono text-xs">{purchase.orderId}</span>
               </div>
             </div>
+
+            {/* Reward Code Section - Requirements: 2.1, 2.3 */}
+            {rewardCode && (
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Gift className="h-5 w-5 text-purple-600" />
+                  <span className="font-semibold text-purple-800">You earned a reward code!</span>
+                </div>
+                
+                <div className="bg-white rounded-md p-3 border border-purple-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-mono text-lg font-bold text-purple-700">
+                        {rewardCode.code}
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {formatDiscountValue(rewardCode.discountType as DiscountType, rewardCode.discountValue)} bonus coins
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopyCode}
+                      className="flex items-center gap-1"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="h-4 w-4 text-green-600" />
+                          <span className="text-green-600">Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4" />
+                          <span>Copy</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="text-xs text-muted-foreground mt-2">
+                  Expires: {formatExpirationDate(rewardCode.expiresAt)}
+                </div>
+                <div className="text-xs text-purple-600 mt-1">
+                  Use this code on your next purchase for bonus coins!
+                </div>
+              </div>
+            )}
           </CardContent>
           <CardFooter className="flex gap-2">
             <Button onClick={() => navigate('/')} variant="outline" className="flex-1">

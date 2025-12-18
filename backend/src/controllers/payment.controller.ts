@@ -5,6 +5,7 @@ import { z } from 'zod';
 // Validation schemas
 const createPurchaseSchema = z.object({
   packageId: z.string().min(1, 'Package ID is required'),
+  discountCode: z.string().optional(),
 });
 
 const sendGiftSchema = z.object({
@@ -61,13 +62,16 @@ export class PaymentController {
   /**
    * Create checkout session for coin purchase
    * POST /api/payment/purchase
+   * 
+   * Accepts optional discountCode in request body
+   * Requirements: 1.4
    */
   static async createPurchase(req: Request, res: Response) {
     try {
       const userId = req.user!.id;
-      const { packageId } = createPurchaseSchema.parse(req.body);
+      const { packageId, discountCode } = createPurchaseSchema.parse(req.body);
       
-      const result = await PaymentService.createCheckout(userId, packageId);
+      const result = await PaymentService.createCheckout(userId, packageId, discountCode);
       
       res.json({ 
         success: true, 

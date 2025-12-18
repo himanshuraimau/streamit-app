@@ -1,5 +1,6 @@
 import DodoPayments from 'dodopayments';
 import { prisma } from '../lib/db';
+import { DiscountService } from './discount.service';
 
 // Log environment for debugging
 console.log('🔧 Dodo Payments Configuration:');
@@ -16,8 +17,11 @@ const dodo = new DodoPayments({
 export class PaymentService {
   /**
    * Create checkout session for coin purchase
+   * Accepts optional discountCode parameter to apply bonus coins
+   * 
+   * Requirements: 1.4
    */
-  static async createCheckout(userId: string, packageId: string) {
+  static async createCheckout(userId: string, packageId: string, discountCode?: string) {
     const pkg = await prisma.coinPackage.findUnique({ 
       where: { id: packageId, isActive: true } 
     });
@@ -31,8 +35,28 @@ export class PaymentService {
       throw new Error('User not found');
     }
 
+    // Validate discount code if provided
+    let discountCodeId: string | null = null;
+    let discountBonusCoins = 0;
+
+    if (discountCode) {
+      const validationResult = await DiscountService.validateCode(discountCode, packageId, userId);
+      
+      if (!validationResult.success) {
+        throw new Error(validationResult.error || 'Invalid discount code');
+      }
+
+      // Get the discount code record to store its ID
+      const discountCodeRecord = await DiscountService.getCodeByString(discountCode);
+      if (discountCodeRecord) {
+        discountCodeId = discountCodeRecord.id;
+        discountBonusCoins = validationResult.data!.bonusCoins;
+      }
+    }
+
     const orderId = `order_${Date.now()}_${userId.slice(0, 8)}`;
-    const totalCoins = pkg.coins + pkg.bonusCoins;
+    // Total coins = base coins + package bonus + discount bonus
+    const totalCoins = pkg.coins + pkg.bonusCoins + discountBonusCoins;
     
     try {
       // Create checkout session with Dodo
@@ -49,18 +73,22 @@ export class PaymentService {
           packageName: pkg.name,
           coins: pkg.coins.toString(),
           bonusCoins: pkg.bonusCoins.toString(),
+          discountBonusCoins: discountBonusCoins.toString(),
+          discountCodeId: discountCodeId || '',
           orderId,
         },
         return_url: `${process.env.FRONTEND_URL}/coins/success?orderId=${orderId}`,
       });
 
-      // Create pending purchase record
+      // Create pending purchase record with discount info
       await prisma.coinPurchase.create({
         data: {
           userId,
           packageId,
           coins: pkg.coins,
           bonusCoins: pkg.bonusCoins,
+          discountCodeId,
+          discountBonusCoins,
           totalCoins,
           amount: pkg.price,
           currency: pkg.currency,
@@ -71,12 +99,13 @@ export class PaymentService {
         },
       });
 
-      console.log(`✅ Checkout session created: ${session.session_id} for user ${userId}`);
+      console.log(`✅ Checkout session created: ${session.session_id} for user ${userId}${discountCode ? ` with discount code ${discountCode}` : ''}`);
 
       return { 
         checkoutUrl: session.checkout_url, 
         orderId,
-        sessionId: session.session_id 
+        sessionId: session.session_id,
+        discountBonusCoins,
       };
     } catch (error: any) {
       console.error('❌ Error creating checkout:', error);
@@ -98,6 +127,13 @@ export class PaymentService {
 
   /**
    * Process Dodo webhook payment confirmation
+   * 
+   * On payment success:
+   * - Credits base coins + package bonus + discount bonus to user wallet
+   * - Creates discount redemption record if discount code was used
+   * - Generates reward code for user
+   * 
+   * Requirements: 2.1, 6.1
    */
   static async processWebhook(payload: any) {
     console.log('📦 Processing webhook:', payload.event_type, payload.data?.payment_id || payload.payment_id);
@@ -150,7 +186,7 @@ export class PaymentService {
         },
       });
 
-      // Credit coins to user's wallet
+      // Credit coins to user's wallet (includes discount bonus coins)
       await prisma.coinWallet.upsert({
         where: { userId: purchase.userId },
         create: { 
@@ -165,6 +201,34 @@ export class PaymentService {
       });
 
       console.log(`💰 Credited ${purchase.totalCoins} coins to user ${purchase.userId}`);
+
+      // Apply discount code if one was used (create redemption record)
+      if (purchase.discountCodeId && purchase.discountBonusCoins > 0) {
+        try {
+          await DiscountService.applyDiscount(
+            purchase.discountCodeId,
+            purchase.id,
+            purchase.userId,
+            purchase.discountBonusCoins
+          );
+          console.log(`🎟️ Discount code applied for purchase ${purchase.id}`);
+        } catch (error) {
+          console.error('⚠️ Error applying discount:', error);
+          // Don't fail the webhook - coins are already credited
+        }
+      }
+
+      // Generate reward code for user
+      try {
+        const rewardCode = await DiscountService.generateRewardCode(
+          purchase.userId,
+          purchase.amount
+        );
+        console.log(`🎁 Reward code generated: ${rewardCode.code} for user ${purchase.userId}`);
+      } catch (error) {
+        console.error('⚠️ Error generating reward code:', error);
+        // Don't fail the webhook - coins are already credited
+      }
     } 
     // Handle payment failure
     else if (eventType === 'payment.failed' || status === 'failed') {

@@ -84,6 +84,7 @@ VITE_API_URL=http://localhost:3000
 | `/coins/shop` | CoinShop | Buy coins |
 | `/coins/success` | CoinSuccess | Purchase confirmation |
 | `/coins/history` | PurchaseHistory | Transaction history |
+| `/coins/my-codes` | MyCodes | View discount codes |
 | `/gifts/sent` | GiftsSent | Sent gifts |
 | `/gifts/received` | GiftsReceived | Received gifts |
 
@@ -161,8 +162,17 @@ import { paymentApi } from '@/lib/api/payment';
 
 await paymentApi.getWallet();
 await paymentApi.getPackages();
-await paymentApi.createCheckout(packageId);
+await paymentApi.createCheckout(packageId, discountCode);
 await paymentApi.sendGift({ receiverId, giftId, streamId });
+```
+
+#### Discount API (`lib/api/discount.ts`)
+```typescript
+import { discountApi } from '@/lib/api/discount';
+
+await discountApi.validateCode(code, packageId);
+await discountApi.getMyCodes();
+await discountApi.getLatestRewardCode();
 ```
 
 ## Custom Hooks
@@ -217,6 +227,8 @@ Coin wallet and gift state management.
 - `GiftPicker` - Gift selection modal
 - `GiftButton` - Send gift trigger
 - `GiftAnimation` - Gift animation overlay
+- `DiscountCodeInput` - Discount code entry and validation
+- `AppliedDiscount` - Shows applied discount details
 
 ### Content Components
 - `PostCard` - Post display card
@@ -289,5 +301,25 @@ interface Gift {
   coinPrice: number;
   imageUrl: string;
   animationUrl?: string;
+}
+
+// discount.types.ts
+interface DiscountCode {
+  id: string;
+  code: string;
+  discountType: 'PERCENTAGE' | 'FIXED';
+  discountValue: number;
+  codeType: 'PROMOTIONAL' | 'REWARD';
+  expiresAt: string | null;
+  isActive: boolean;
+}
+
+interface DiscountValidationData {
+  code: string;
+  discountType: 'PERCENTAGE' | 'FIXED';
+  discountValue: number;
+  baseCoins: number;
+  bonusCoins: number;
+  totalCoins: number;
 }
 ```

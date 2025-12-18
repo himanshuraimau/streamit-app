@@ -71,7 +71,7 @@ interface PaymentState {
   fetchWallet: () => Promise<void>;
   fetchPackages: () => Promise<void>;
   fetchPurchaseHistory: (params?: PaginationParams) => Promise<void>;
-  createCheckout: (packageId: string) => Promise<string | null>; // Returns checkout URL
+  createCheckout: (packageId: string, discountCode?: string) => Promise<string | null>; // Returns checkout URL
   verifyPurchase: (orderId: string) => Promise<CoinPurchase | null>;
   
   // Gift Actions
@@ -201,11 +201,12 @@ export const usePaymentStore = create<PaymentState>()(
       },
 
       // Create checkout and redirect to Dodo
-      createCheckout: async (packageId: string) => {
+      // Requirements: 1.4 - Pass discount code to checkout
+      createCheckout: async (packageId: string, discountCode?: string) => {
         set({ checkoutLoading: true, checkoutError: null });
         
         try {
-          const response = await paymentApi.createCheckout(packageId);
+          const response = await paymentApi.createCheckout(packageId, discountCode);
           
           if (response.success && response.data) {
             toast.success('Redirecting to payment...');

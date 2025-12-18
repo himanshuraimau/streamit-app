@@ -307,4 +307,20 @@ export class DiscountService {
       where: { code: code.toUpperCase() },
     });
   }
+
+  /**
+   * Get the latest reward code generated for a user
+   * Used to display the reward code on the purchase success page
+   * 
+   * Requirements: 2.1, 2.3
+   */
+  static async getLatestRewardCode(userId: string): Promise<DiscountCode | null> {
+    return prisma.discountCode.findFirst({
+      where: {
+        ownerId: userId,
+        codeType: 'REWARD',
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }

@@ -1,11 +1,15 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Coins, ArrowLeft, History } from 'lucide-react';
+import { Coins, ArrowLeft, History, Tag, Ticket } from 'lucide-react';
 import { usePayment } from '@/stores/payment.store';
 import { CoinPackageCard } from '@/components/payment/CoinPackageCard';
+import { DiscountCodeInput } from '@/components/payment/DiscountCodeInput';
+import { AppliedDiscount } from '@/components/payment/AppliedDiscount';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import type { DiscountValidationData } from '@/types/discount.types';
+import type { CoinPackage } from '@/types/payment.types';
 
 export default function CoinShop() {
   const navigate = useNavigate();
@@ -20,13 +24,42 @@ export default function CoinShop() {
     createCheckout,
   } = usePayment();
 
+  // Discount code state - Requirements: 1.1
+  const [selectedPackage, setSelectedPackage] = useState<CoinPackage | null>(null);
+  const [appliedDiscount, setAppliedDiscount] = useState<DiscountValidationData | null>(null);
+
   useEffect(() => {
     fetchWallet();
     fetchPackages();
   }, [fetchWallet, fetchPackages]);
 
+  // Auto-select first package when packages load
+  useEffect(() => {
+    if (packages.length > 0 && !selectedPackage) {
+      // Select the featured package or first one
+      const featured = packages.find(p => p.isFeatured);
+      setSelectedPackage(featured || packages[0]);
+    }
+  }, [packages, selectedPackage]);
+
+  // Handle discount code application - Requirements: 1.1
+  const handleDiscountApplied = (discount: DiscountValidationData | null) => {
+    setAppliedDiscount(discount);
+  };
+
+  // Handle package selection
+  const handlePackageSelect = (pkg: CoinPackage) => {
+    setSelectedPackage(pkg);
+    // Clear discount when package changes since it was validated for a different package
+    setAppliedDiscount(null);
+  };
+
+  // Handle purchase with discount code - Requirements: 1.4
   const handlePurchase = async (packageId: string) => {
-    const checkoutUrl = await createCheckout(packageId);
+    const checkoutUrl = await createCheckout(
+      packageId,
+      appliedDiscount?.code // Pass discount code if applied
+    );
     
     if (checkoutUrl) {
       // Redirect to Dodo payment page
@@ -53,10 +86,16 @@ export default function CoinShop() {
           </div>
         </div>
 
-        <Button variant="outline" onClick={() => navigate('/coins/history')}>
-          <History className="h-4 w-4 mr-2" />
-          Purchase History
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate('/coins/my-codes')}>
+            <Ticket className="h-4 w-4 mr-2" />
+            My Codes
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/coins/history')}>
+            <History className="h-4 w-4 mr-2" />
+            Purchase History
+          </Button>
+        </div>
       </div>
 
       {/* Current Balance */}
@@ -84,17 +123,51 @@ export default function CoinShop() {
           ))}
         </div>
       ) : (
-        /* Package Grid */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {packages.map((pkg) => (
-            <CoinPackageCard
-              key={pkg.id}
-              package={pkg}
-              onPurchase={handlePurchase}
-              loading={checkoutLoading}
-            />
-          ))}
-        </div>
+        <>
+          {/* Package Grid - Requirements: 1.2 - Show bonus coins when discount applied */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {packages.map((pkg) => (
+              <CoinPackageCard
+                key={pkg.id}
+                package={pkg}
+                onPurchase={handlePurchase}
+                onSelect={handlePackageSelect}
+                loading={checkoutLoading}
+                isSelected={selectedPackage?.id === pkg.id}
+                discountBonusCoins={
+                  selectedPackage?.id === pkg.id && appliedDiscount
+                    ? appliedDiscount.bonusCoins
+                    : undefined
+                }
+              />
+            ))}
+          </div>
+
+          {/* Discount Code Section - Requirements: 1.1 */}
+          {selectedPackage && (
+            <div className="mt-8 max-w-md mx-auto space-y-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Tag className="h-4 w-4" />
+                <span>Have a discount code?</span>
+              </div>
+              
+              <DiscountCodeInput
+                packageId={selectedPackage.id}
+                onDiscountApplied={handleDiscountApplied}
+                disabled={checkoutLoading}
+              />
+
+              {/* Applied Discount Display - Requirements: 1.2 */}
+              {appliedDiscount && (
+                <AppliedDiscount
+                  discount={appliedDiscount}
+                  packageCoins={selectedPackage.coins}
+                  packageBonusCoins={selectedPackage.bonusCoins}
+                />
+              )}
+            </div>
+          )}
+        </>
       )}
 
       {/* Empty State */}
@@ -114,6 +187,7 @@ export default function CoinShop() {
         <ul className="space-y-2 text-sm text-muted-foreground">
           <li>• Coins are used to send gifts to creators during live streams</li>
           <li>• Bonus coins are added automatically to select packages</li>
+          <li>• Use discount codes to get extra bonus coins on your purchase</li>
           <li>• All transactions are secured by Dodo Payments</li>
           <li>• Coins are non-refundable once purchased</li>
         </ul>

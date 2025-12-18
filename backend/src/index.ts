@@ -12,6 +12,7 @@ import viewerRoutes from './routes/viewer.route';
 import socialRoutes from './routes/social.route';
 import searchRoutes from './routes/search.route';
 import paymentRoutes from './routes/payment.route';
+import discountRoutes from './routes/discount.route';
 import { WebhookController } from './controllers/webhook.controller';
 
 const app = express();
@@ -100,6 +101,9 @@ app.use('/api/search', searchRoutes);
 
 // Mount payment routes
 app.use('/api/payment', paymentRoutes);
+
+// Mount discount routes
+app.use('/api/discount', discountRoutes);
 
 // Health check
 app.get('/health', async (req, res) => {

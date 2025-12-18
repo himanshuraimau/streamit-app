@@ -27,6 +27,7 @@ export const auth = betterAuth({
     "http://localhost:5173",
     "https://voltstream.space", // Production frontend
     "https://www.voltstream.space", // Production frontend with www
+    "https://binate-nonperceptively-celestina.ngrok-free.dev", // ngrok tunnel
   ],
 
   // Advanced session configuration for cross-domain

@@ -42,6 +42,7 @@ import CoinSuccess from '@/pages/CoinSuccess';
 import PurchaseHistory from '@/pages/PurchaseHistory';
 import { GiftsSent } from '@/pages/GiftsSent';
 import { GiftsReceived } from '@/pages/GiftsReceived';
+import MyCodes from '@/pages/MyCodes';
 
 function App() {
   return (
@@ -88,6 +89,7 @@ function App() {
       <Route path="/coins/shop" element={<CoinShop />} />
       <Route path="/coins/success" element={<CoinSuccess />} />
       <Route path="/coins/history" element={<PurchaseHistory />} />
+      <Route path="/coins/my-codes" element={<MyCodes />} />
       
       {/* Gift routes */}
       <Route path="/gifts/sent" element={<GiftsSent />} />

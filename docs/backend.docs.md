@@ -84,6 +84,10 @@ DODO_WEBHOOK_SECRET=...
 - **Gift** - Virtual gifts
 - **GiftTransaction** - Gift sending records
 
+### Discount System
+- **DiscountCode** - Promotional and reward discount codes
+- **DiscountRedemption** - Tracks code usage per user/purchase
+
 ## API Endpoints
 
 ### Authentication (`/api/auth`)
@@ -175,6 +179,14 @@ DODO_WEBHOOK_SECRET=...
 | GET | `/gifts-sent` | Yes | Get gifts sent |
 | GET | `/gifts-received` | Yes | Get gifts received |
 
+### Discount (`/api/discount`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/validate` | Yes | Validate discount code for package |
+| GET | `/my-codes` | Yes | Get user's reward codes |
+| GET | `/latest-reward` | Yes | Get latest reward code |
+
 ### Search (`/api/search`)
 
 | Method | Endpoint | Description |
@@ -220,6 +232,9 @@ Generates LiveKit tokens for viewers and creators.
 ### MediaService
 Handles image processing with Sharp and S3 uploads.
 
+### DiscountService
+Manages discount code validation, bonus coin calculation, redemption tracking, and reward code generation after purchases.
+
 ## Running the Server
 
 ```bash
@@ -234,6 +249,9 @@ bun run db:migrate
 
 # Seed payment data
 bun run db:seed
+
+# Seed discount codes
+bun run db:seed-discount
 
 # Start development server
 bun run dev

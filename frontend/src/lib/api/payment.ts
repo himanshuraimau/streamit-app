@@ -52,12 +52,14 @@ export const paymentApi = {
   /**
    * Create checkout session for coin purchase
    * Returns Dodo checkout URL to redirect user to
+   * @param packageId - The coin package to purchase
+   * @param discountCode - Optional discount code to apply (Requirements: 1.4)
    */
-  async createCheckout(packageId: string): Promise<ApiResponse<CheckoutSessionResponse>> {
+  async createCheckout(packageId: string, discountCode?: string): Promise<ApiResponse<CheckoutSessionResponse>> {
     try {
       const response = await apiPost<ApiResponse<CheckoutSessionResponse>>(
         '/api/payment/purchase',
-        { packageId }
+        { packageId, discountCode }
       );
       return response;
     } catch (error) {
