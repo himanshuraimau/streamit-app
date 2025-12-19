@@ -209,11 +209,6 @@ model Stream {
   description String? @db.Text
   thumbnail   String? @db.Text
 
-  // Streaming infrastructure
-  ingressId String? @unique
-  serverUrl String? @db.Text
-  streamKey String? @db.Text
-
   // Stream status
   isLive Boolean @default(false)
 
@@ -233,7 +228,6 @@ model Stream {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
-  @@index([ingressId])
   @@index([title])
   @@index([isLive])
   @@map("stream")
