@@ -90,7 +90,7 @@
 - [x] 8. Checkpoint - Frontend streaming works
   - Ensure all tests pass, ask the user if questions arise.
 
-- [-] 9. Frontend cleanup and navigation
+- [x] 9. Frontend cleanup and navigation
   - [x] 9.1 Delete Keys page
     - Remove frontend/src/pages/creator-dashboard/keys/ folder
     - _Requirements: 6.3_
@@ -102,18 +102,18 @@
     - Remove /creator-dashboard/keys route
     - Update /creator-dashboard/streams to use new GoLivePage
     - _Requirements: 6.3_
-  - [-] 9.4 Update streams page components
+  - [x] 9.4 Update streams page components
     - Remove stream-credentials.tsx
     - Remove create-stream-form.tsx (replace with setup form in GoLivePage)
     - Update stream-viewer.tsx for WebRTC
     - _Requirements: 6.3_
 
-- [ ] 10. Viewer experience verification
-  - [ ] 10.1 Verify viewer flow works with WebRTC streams
+- [x] 10. Viewer experience verification
+  - [x] 10.1 Verify viewer flow works with WebRTC streams
     - Test authenticated viewer joining
     - Test guest viewer joining
     - Test offline state display
     - _Requirements: 4.2, 4.5_
 
-- [ ] 11. Final Checkpoint - All tests passing
+- [x] 11. Final Checkpoint - All tests passing
   - Ensure all tests pass, ask the user if questions arise.
