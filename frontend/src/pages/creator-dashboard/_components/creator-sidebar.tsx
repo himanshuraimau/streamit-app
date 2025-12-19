@@ -1,7 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import {
   Video,
-  Key,
   MessageCircle,
   Users,
   Upload,
@@ -26,8 +25,7 @@ import {
 
 const creatorNavItems = [
   { title: "Overview", icon: BarChart3, url: "/creator-dashboard/overview" },
-  { title: "Streams", icon: Video, url: "/creator-dashboard/streams" },
-  { title: "Keys", icon: Key, url: "/creator-dashboard/keys" },
+  { title: "Go Live", icon: Video, url: "/creator-dashboard/streams" },
   { title: "Chat", icon: MessageCircle, url: "/creator-dashboard/chat" },
   { title: "Community", icon: Users, url: "/creator-dashboard/community" },
   { title: "Content Upload", icon: Upload, url: "/creator-dashboard/content-upload" },

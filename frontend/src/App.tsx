@@ -15,7 +15,6 @@ import CreatorApplication from '@/pages/creator-application';
 import CreatorDashboard from '@/pages/creator-dashboard';
 import Overview from '@/pages/creator-dashboard/overview';
 import Streams from '@/pages/creator-dashboard/streams';
-import Keys from '@/pages/creator-dashboard/keys';
 import Chat from '@/pages/creator-dashboard/chat';
 import Community from '@/pages/creator-dashboard/community';
 import ContentUpload from '@/pages/creator-dashboard/content-upload';
@@ -67,7 +66,6 @@ function App() {
         <Route index element={<Navigate to="/creator-dashboard/overview" replace />} />
         <Route path="overview" element={<Overview />} />
         <Route path="streams" element={<Streams />} />
-        <Route path="keys" element={<Keys />} />
         <Route path="chat" element={<Chat />} />
         <Route path="community" element={<Community />} />
         <Route path="content-upload" element={<ContentUpload />} />

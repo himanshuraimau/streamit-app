@@ -2,9 +2,9 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { StreamService } from '../services/stream.service';
 import {
-  createIngressSchema,
   updateStreamInfoSchema,
   updateChatSettingsSchema,
+  setupStreamSchema,
 } from '../lib/validations/stream.validation';
 import { TokenService } from '../services/token.service';
 import { prisma } from '../lib/db';
@@ -15,44 +15,49 @@ import { prisma } from '../lib/db';
  */
 export class StreamController {
   /**
-   * Create stream ingress (generate stream key)
-   * POST /api/stream/ingress
+   * Go live - Get publish token and set stream status to live
+   * POST /api/stream/go-live
+   * Requirements: 1.3, 2.3
    */
-  static async createIngress(req: Request, res: Response) {
+  static async goLive(req: Request, res: Response) {
     try {
       const userId = req.user!.id;
 
-      // Validate request body
-      const { ingressType } = createIngressSchema.parse(req.body);
+      console.log(`[StreamController] Going live for user: ${userId}`);
 
-      console.log(`[StreamController] Creating ingress for user: ${userId}`);
-
-      // Create ingress through service
-      const stream = await StreamService.createStreamIngress(userId, ingressType);
-
-      res.status(201).json({
-        success: true,
-        data: {
-          ingressId: stream.ingressId,
-          serverUrl: stream.serverUrl,
-          streamKey: stream.streamKey,
-          userId: stream.userId,
-        },
-        message: 'Stream key created successfully',
-      });
-    } catch (error) {
-      console.error('[StreamController] Error creating ingress:', error);
-
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({
+      // Check if stream exists
+      const stream = await StreamService.getCreatorStream(userId);
+      if (!stream) {
+        return res.status(404).json({
           success: false,
-          error: 'Validation error',
-          details: error.issues,
+          error: 'Stream not found',
+          message: 'Please set up your stream first',
         });
       }
 
+      // Generate creator token with publish permissions
+      const token = await TokenService.generateCreatorToken(userId, userId);
+
+      // Set stream to live
+      const updatedStream = await StreamService.setStreamLive(userId, true);
+
+      res.json({
+        success: true,
+        data: {
+          token,
+          wsUrl: process.env.LIVEKIT_URL,
+          roomId: userId,
+          stream: {
+            id: updatedStream.id,
+            title: updatedStream.title,
+            isLive: updatedStream.isLive,
+          },
+        },
+      });
+    } catch (error) {
+      console.error('[StreamController] Error going live:', error);
+
       if (error instanceof Error) {
-        // Check for specific error messages
         if (
           error.message.includes('creator application') ||
           error.message.includes('APPROVED')
@@ -66,30 +71,32 @@ export class StreamController {
 
       res.status(500).json({
         success: false,
-        error: 'Failed to create stream key',
+        error: 'Failed to go live',
         message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
 
   /**
-   * Delete stream ingress (remove stream key)
-   * DELETE /api/stream/ingress
+   * End stream - Set stream status to offline
+   * POST /api/stream/end-stream
+   * Requirements: 2.3
    */
-  static async deleteIngress(req: Request, res: Response) {
+  static async endStream(req: Request, res: Response) {
     try {
       const userId = req.user!.id;
 
-      console.log(`[StreamController] Deleting ingress for user: ${userId}`);
+      console.log(`[StreamController] Ending stream for user: ${userId}`);
 
-      await StreamService.deleteStreamIngress(userId);
+      // Set stream to offline
+      await StreamService.setStreamLive(userId, false);
 
       res.json({
         success: true,
-        message: 'Stream key deleted successfully',
+        message: 'Stream ended',
       });
     } catch (error) {
-      console.error('[StreamController] Error deleting ingress:', error);
+      console.error('[StreamController] Error ending stream:', error);
 
       if (error instanceof Error && error.message === 'Stream not found') {
         return res.status(404).json({
@@ -100,7 +107,73 @@ export class StreamController {
 
       res.status(500).json({
         success: false,
-        error: 'Failed to delete stream key',
+        error: 'Failed to end stream',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  /**
+   * Setup stream - Create or update stream metadata
+   * POST /api/stream/setup
+   * Requirements: 5.2
+   */
+  static async setupStream(req: Request, res: Response) {
+    try {
+      const userId = req.user!.id;
+
+      // Validate request body
+      const data = setupStreamSchema.parse(req.body);
+
+      console.log(`[StreamController] Setting up stream for user: ${userId}`);
+
+      // Create or update stream
+      const stream = await StreamService.createOrUpdateStream(userId, {
+        title: data.title,
+        description: data.description,
+        isChatEnabled: data.isChatEnabled,
+        isChatDelayed: data.isChatDelayed,
+        isChatFollowersOnly: data.isChatFollowersOnly,
+      });
+
+      res.status(201).json({
+        success: true,
+        data: {
+          id: stream.id,
+          title: stream.title,
+          description: stream.description,
+          isLive: stream.isLive,
+          isChatEnabled: stream.isChatEnabled,
+          isChatDelayed: stream.isChatDelayed,
+          isChatFollowersOnly: stream.isChatFollowersOnly,
+        },
+      });
+    } catch (error) {
+      console.error('[StreamController] Error setting up stream:', error);
+
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          error: 'Validation error',
+          details: error.issues,
+        });
+      }
+
+      if (error instanceof Error) {
+        if (
+          error.message.includes('creator application') ||
+          error.message.includes('APPROVED')
+        ) {
+          return res.status(403).json({
+            success: false,
+            error: error.message,
+          });
+        }
+      }
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to setup stream',
         message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
@@ -122,61 +195,19 @@ export class StreamController {
         return res.status(404).json({
           success: false,
           error: 'Stream not found',
-          message: 'Please create a stream key first',
+          message: 'Please set up your stream first',
         });
       }
 
-      // Don't expose stream key in regular info endpoint
-      const { streamKey, ...streamInfo } = stream;
-
       res.json({
         success: true,
-        data: streamInfo,
+        data: stream,
       });
     } catch (error) {
       console.error('[StreamController] Error getting stream info:', error);
       res.status(500).json({
         success: false,
         error: 'Failed to get stream info',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
-  }
-
-  /**
-   * Get creator's stream credentials (including stream key)
-   * GET /api/stream/credentials
-   */
-  static async getStreamCredentials(req: Request, res: Response) {
-    try {
-      const userId = req.user!.id;
-
-      console.log(`[StreamController] Getting stream credentials for user: ${userId}`);
-
-      const stream = await StreamService.getCreatorStream(userId);
-
-      if (!stream) {
-        return res.status(404).json({
-          success: false,
-          error: 'Stream not found',
-          message: 'Please create a stream key first',
-        });
-      }
-
-      // Return credentials including streamKey
-      res.json({
-        success: true,
-        data: {
-          ingressId: stream.ingressId,
-          serverUrl: stream.serverUrl,
-          streamKey: stream.streamKey,
-        },
-      });
-    } catch (error) {
-      console.error('[StreamController] Error getting stream credentials:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to get stream credentials',
         message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
@@ -318,85 +349,6 @@ export class StreamController {
   }
 
   /**
-   * Create stream with metadata (NEW FLOW)
-   * POST /api/stream/create
-   */
-  static async createStreamWithMetadata(req: Request, res: Response) {
-    try {
-      const userId = req.user!.id;
-
-      // Validation schema will be imported from validations
-      const data = req.body;
-
-      if (!data.title || data.title.trim().length === 0) {
-        return res.status(400).json({
-          success: false,
-          error: 'Title is required',
-        });
-      }
-
-      console.log(`[StreamController] Creating stream with metadata for user: ${userId}`);
-
-      // Create stream record with metadata
-      const stream = await StreamService.createStreamWithMetadata(userId, {
-        title: data.title.trim(),
-        description: data.description?.trim(),
-        thumbnail: data.thumbnail,
-        isChatEnabled: data.chatSettings?.isChatEnabled ?? true,
-        isChatDelayed: data.chatSettings?.isChatDelayed ?? false,
-        isChatFollowersOnly: data.chatSettings?.isChatFollowersOnly ?? false,
-      });
-
-      // Generate ingress based on method
-      const streamMethod = data.streamMethod || 'obs';
-      const ingressType = streamMethod === 'browser' ? 'WHIP' : 'RTMP';
-
-      const updatedStream = await StreamService.addIngressToStream(userId, ingressType);
-
-      res.status(201).json({
-        success: true,
-        data: {
-          stream: {
-            id: updatedStream.id,
-            title: updatedStream.title,
-            description: updatedStream.description,
-            thumbnail: updatedStream.thumbnail,
-            isChatEnabled: updatedStream.isChatEnabled,
-            isChatDelayed: updatedStream.isChatDelayed,
-            isChatFollowersOnly: updatedStream.isChatFollowersOnly,
-          },
-          credentials: {
-            serverUrl: updatedStream.serverUrl,
-            streamKey: updatedStream.streamKey,
-          },
-          streamMethod,
-        },
-        message: 'Stream created successfully',
-      });
-    } catch (error) {
-      console.error('[StreamController] Error creating stream with metadata:', error);
-
-      if (error instanceof Error) {
-        if (
-          error.message.includes('creator application') ||
-          error.message.includes('APPROVED')
-        ) {
-          return res.status(403).json({
-            success: false,
-            error: error.message,
-          });
-        }
-      }
-
-      res.status(500).json({
-        success: false,
-        error: 'Failed to create stream',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
-  }
-
-  /**
    * Get past streams for creator
    * GET /api/stream/past
    */
@@ -404,12 +356,9 @@ export class StreamController {
     try {
       const userId = req.user!.id;
 
-      const limit = parseInt(req.query.limit as string) || 10;
-      const offset = parseInt(req.query.offset as string) || 0;
-
       console.log(`[StreamController] Getting past streams for user: ${userId}`);
 
-      const result = await StreamService.getPastStreams(userId, limit, offset);
+      const result = await StreamService.getPastStreams(userId);
 
       res.json({
         success: true,
@@ -425,58 +374,4 @@ export class StreamController {
     }
   }
 
-  /**
-   * Get creator token for viewing own stream
-   * POST /api/stream/creator-token
-   */
-  static async getCreatorToken(req: Request, res: Response) {
-    try {
-      const userId = req.user!.id;
-
-      console.log(`[StreamController] Getting creator view token for user: ${userId}`);
-
-      // Get user info
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-      });
-
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          error: 'User not found',
-        });
-      }
-
-      // Check if stream exists
-      const stream = await StreamService.getCreatorStream(userId);
-      if (!stream) {
-        return res.status(404).json({
-          success: false,
-          error: 'Stream not found',
-          message: 'Please create a stream key first',
-        });
-      }
-
-      // Generate viewer token for creator (subscribe-only, different identity)
-      // This allows creator to view their OBS stream without identity conflicts
-      const token = await TokenService.generateCreatorViewerToken(userId, userId);
-
-      res.json({
-        success: true,
-        data: {
-          token,
-          identity: `Host-${userId}`, // Different identity to avoid conflicts with OBS
-          name: user.name || user.username,
-          wsUrl: process.env.LIVEKIT_URL,
-        },
-      });
-    } catch (error) {
-      console.error('[StreamController] Error getting creator token:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to get creator token',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
-  }
 }

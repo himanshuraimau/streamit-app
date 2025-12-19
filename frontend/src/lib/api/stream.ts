@@ -22,31 +22,16 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
-export interface StreamIngress {
-  ingressId: string;
-  serverUrl: string;
-  streamKey: string;
-  userId: string;
-}
-
-export interface StreamCredentials {
-  ingressId: string | null;
-  serverUrl: string | null;
-  streamKey: string | null;
-}
-
 export interface StreamInfo {
   id: string;
   title: string;
+  description?: string | null;
   thumbnail: string | null;
   isLive: boolean;
   isChatEnabled: boolean;
   isChatDelayed: boolean;
   isChatFollowersOnly: boolean;
   userId: string;
-  streamKey?: string;
-  serverUrl?: string;
-  ingressId?: string;
 }
 
 export interface StreamStatus {
@@ -66,33 +51,34 @@ export interface UpdateChatSettingsRequest {
   isChatFollowersOnly?: boolean;
 }
 
-export interface CreateStreamRequest {
+// WebRTC streaming interfaces
+export interface SetupStreamRequest {
   title: string;
   description?: string;
-  thumbnail?: string;
-  chatSettings?: {
-    isChatEnabled?: boolean;
-    isChatDelayed?: boolean;
-    isChatFollowersOnly?: boolean;
-  };
-  streamMethod: 'browser' | 'obs';
+  isChatEnabled?: boolean;
+  isChatDelayed?: boolean;
+  isChatFollowersOnly?: boolean;
 }
 
-export interface CreateStreamResponse {
+export interface SetupStreamResponse {
+  id: string;
+  title: string;
+  description: string | null;
+  isLive: boolean;
+  isChatEnabled: boolean;
+  isChatDelayed: boolean;
+  isChatFollowersOnly: boolean;
+}
+
+export interface GoLiveResponse {
+  token: string;
+  wsUrl: string;
+  roomId: string;
   stream: {
     id: string;
     title: string;
-    description: string | null;
-    thumbnail: string | null;
-    isChatEnabled: boolean;
-    isChatDelayed: boolean;
-    isChatFollowersOnly: boolean;
+    isLive: boolean;
   };
-  credentials: {
-    serverUrl: string;
-    streamKey: string;
-  };
-  streamMethod: 'browser' | 'obs';
 }
 
 export interface PastStreamsResponse {
@@ -113,11 +99,12 @@ export interface ViewerTokenResponse {
 }
 
 export const streamApi = {
-  // NEW FLOW: Create stream with metadata
-  async createStreamWithMetadata(data: CreateStreamRequest): Promise<ApiResponse<CreateStreamResponse>> {
+  // Setup stream - Create or update stream metadata before going live
+  // Requirements: 5.2
+  async setupStream(data: SetupStreamRequest): Promise<ApiResponse<SetupStreamResponse>> {
     try {
       const headers = await getAuthHeaders();
-      const response = await fetch(`${API_BASE_URL}/api/stream/create`, {
+      const response = await fetch(`${API_BASE_URL}/api/stream/setup`, {
         method: 'POST',
         headers,
         body: JSON.stringify(data),
@@ -125,7 +112,41 @@ export const streamApi = {
 
       return await response.json();
     } catch (error) {
-      console.error('Error creating stream:', error);
+      console.error('Error setting up stream:', error);
+      throw error;
+    }
+  },
+
+  // Go live - Get publish token and set stream status to live
+  // Requirements: 1.1, 1.3
+  async goLive(): Promise<ApiResponse<GoLiveResponse>> {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${API_BASE_URL}/api/stream/go-live`, {
+        method: 'POST',
+        headers,
+      });
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error going live:', error);
+      throw error;
+    }
+  },
+
+  // End stream - Set stream status to offline
+  // Requirements: 2.3
+  async endStream(): Promise<ApiResponse<{ message: string }>> {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${API_BASE_URL}/api/stream/end-stream`, {
+        method: 'POST',
+        headers,
+      });
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error ending stream:', error);
       throw error;
     }
   },
@@ -146,39 +167,6 @@ export const streamApi = {
     }
   },
 
-  // Create stream ingress (generate stream key) - OLD FLOW
-  async createIngress(ingressType: 'RTMP' | 'WHIP' = 'RTMP'): Promise<ApiResponse<StreamIngress>> {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`${API_BASE_URL}/api/stream/ingress`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ ingressType }),
-      });
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error creating ingress:', error);
-      throw error;
-    }
-  },
-
-  // Delete stream ingress
-  async deleteIngress(): Promise<ApiResponse<{ message: string }>> {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`${API_BASE_URL}/api/stream/ingress`, {
-        method: 'DELETE',
-        headers,
-      });
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error deleting ingress:', error);
-      throw error;
-    }
-  },
-
   // Get stream info
   async getStreamInfo(): Promise<ApiResponse<StreamInfo>> {
     try {
@@ -191,22 +179,6 @@ export const streamApi = {
       return await response.json();
     } catch (error) {
       console.error('Error fetching stream info:', error);
-      throw error;
-    }
-  },
-
-  // Get stream credentials (including stream key)
-  async getStreamCredentials(): Promise<ApiResponse<StreamCredentials>> {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`${API_BASE_URL}/api/stream/credentials`, {
-        method: 'GET',
-        headers,
-      });
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching stream credentials:', error);
       throw error;
     }
   },
@@ -290,21 +262,6 @@ export const streamApi = {
     }
   },
 
-  // Get creator's own stream token (for viewing own stream as creator)
-  async getCreatorViewToken(): Promise<ApiResponse<ViewerTokenResponse>> {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`${API_BASE_URL}/api/stream/creator-token`, {
-        method: 'POST',
-        headers,
-      });
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error getting creator view token:', error);
-      throw error;
-    }
-  },
 };
 
 // Viewer API - Public endpoints for watching streams

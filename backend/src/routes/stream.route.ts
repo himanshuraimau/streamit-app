@@ -6,39 +6,30 @@ import { StreamController } from '../controllers/stream.controller';
 const router = Router();
 
 /**
- * Stream Routes - Creator-only endpoints
+ * Stream Routes - Creator-only endpoints for WebRTC streaming
  * All routes require authentication and creator approval
  */
 
-// NEW FLOW: Create stream with metadata
+// WebRTC streaming flow
 router.post(
-  '/create',
+  '/setup',
   requireAuth,
   requireCreator,
-  StreamController.createStreamWithMetadata
+  StreamController.setupStream
 );
 
-// Get past streams
-router.get(
-  '/past',
-  requireAuth,
-  requireCreator,
-  StreamController.getPastStreams
-);
-
-// Ingress management (stream key) - OLD FLOW (keeping for backward compatibility)
 router.post(
-  '/ingress',
+  '/go-live',
   requireAuth,
   requireCreator,
-  StreamController.createIngress
+  StreamController.goLive
 );
 
-router.delete(
-  '/ingress',
+router.post(
+  '/end-stream',
   requireAuth,
   requireCreator,
-  StreamController.deleteIngress
+  StreamController.endStream
 );
 
 // Stream information
@@ -47,13 +38,6 @@ router.get(
   requireAuth,
   requireCreator,
   StreamController.getStreamInfo
-);
-
-router.get(
-  '/credentials',
-  requireAuth,
-  requireCreator,
-  StreamController.getStreamCredentials
 );
 
 router.put(
@@ -79,12 +63,12 @@ router.get(
   StreamController.getStreamStatus
 );
 
-// Get creator token for viewing own stream
-router.post(
-  '/creator-token',
+// Get past streams
+router.get(
+  '/past',
   requireAuth,
   requireCreator,
-  StreamController.getCreatorToken
+  StreamController.getPastStreams
 );
 
 export default router;

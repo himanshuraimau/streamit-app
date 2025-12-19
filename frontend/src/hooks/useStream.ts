@@ -1,35 +1,23 @@
 import { useState, useCallback, useEffect } from 'react';
 import { streamApi } from '@/lib/api/stream';
-import type { StreamIngress, StreamInfo, StreamStatus } from '@/lib/api/stream';
+import type { StreamInfo, StreamStatus, GoLiveResponse, SetupStreamRequest, SetupStreamResponse } from '@/lib/api/stream';
 import { toast } from 'sonner';
 
 export function useStream() {
-  const [ingress, setIngress] = useState<StreamIngress | null>(null);
   const [streamInfo, setStreamInfo] = useState<StreamInfo | null>(null);
   const [streamStatus, setStreamStatus] = useState<StreamStatus | null>(null);
+  const [liveData, setLiveData] = useState<GoLiveResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-    // Fetch stream info
+  // Fetch stream info
   const fetchStreamInfo = useCallback(async () => {
     try {
       setLoading(true);
       const response = await streamApi.getStreamInfo();
       
       if (response.success && response.data) {
-        // Preserve existing credentials when updating stream info
-        setStreamInfo(prev => {
-          if (prev?.streamKey && prev?.serverUrl) {
-            // Keep existing credentials, only update other fields
-            return {
-              ...response.data!,
-              streamKey: prev.streamKey,
-              serverUrl: prev.serverUrl,
-              ingressId: prev.ingressId,
-            };
-          }
-          return response.data!;
-        });
+        setStreamInfo(response.data);
       }
     } catch (err) {
       console.error('Error fetching stream info:', err);
@@ -46,76 +34,46 @@ export function useStream() {
       
       if (response.success && response.data) {
         setStreamStatus(response.data);
-        
-        // Preserve existing credentials when updating from status
-        setStreamInfo(prev => {
-          if (prev?.streamKey && prev?.serverUrl) {
-            // Keep existing credentials, only update other fields
-            return {
-              ...response.data!.stream,
-              streamKey: prev.streamKey,
-              serverUrl: prev.serverUrl,
-              ingressId: prev.ingressId,
-            };
-          }
-          return response.data!.stream;
-        });
+        setStreamInfo(response.data.stream);
       }
     } catch (err) {
       console.error('Error fetching stream status:', err);
     }
   }, []);
 
-  // Create ingress (generate stream key)
-  const createIngress = useCallback(async (ingressType: 'RTMP' | 'WHIP' = 'RTMP') => {
+  // Setup stream - Create or update stream metadata before going live
+  // Requirements: 5.2
+  const setupStream = useCallback(async (data: SetupStreamRequest): Promise<SetupStreamResponse | null> => {
     try {
       setLoading(true);
       setError(null);
-      const response = await streamApi.createIngress(ingressType);
+      const response = await streamApi.setupStream(data);
       
       if (response.success && response.data) {
-        setIngress(response.data);
-        
-        // Fetch the latest stream info first
-        const infoResponse = await streamApi.getStreamInfo();
-        
-        // Merge the credentials with the stream info
-        if (infoResponse.success && infoResponse.data) {
-          const mergedData = {
-            ...infoResponse.data,
-            streamKey: response.data.streamKey,
-            serverUrl: response.data.serverUrl,
-            ingressId: response.data.ingressId,
-          };
-          setStreamInfo(mergedData);
-        } else {
-          // If fetching info fails, create minimal stream info with credentials
-          setStreamInfo(prev => ({
-            id: prev?.id || '',
-            title: prev?.title || 'My Stream',
-            thumbnail: null,
-            isLive: false,
-            isChatEnabled: true,
-            isChatDelayed: false,
-            isChatFollowersOnly: false,
-            userId: '',
-            streamKey: response.data!.streamKey,
-            serverUrl: response.data!.serverUrl,
-            ingressId: response.data!.ingressId,
-          }));
-        }
-        
-        toast.success('Stream key generated successfully!');
+        // Update stream info with the setup response
+        setStreamInfo(prev => ({
+          ...prev,
+          id: response.data!.id,
+          title: response.data!.title,
+          description: response.data!.description,
+          isLive: response.data!.isLive,
+          isChatEnabled: response.data!.isChatEnabled,
+          isChatDelayed: response.data!.isChatDelayed,
+          isChatFollowersOnly: response.data!.isChatFollowersOnly,
+          thumbnail: prev?.thumbnail ?? null,
+          userId: prev?.userId ?? '',
+        }));
+        toast.success('Stream setup complete!');
         return response.data;
       } else {
-        const errorMsg = response.error || 'Failed to generate stream key';
+        const errorMsg = response.error || 'Failed to setup stream';
         setError(errorMsg);
         toast.error(errorMsg);
         return null;
       }
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to generate stream key';
-      console.error('[useStream] createIngress error:', err);
+      const errorMsg = err instanceof Error ? err.message : 'Failed to setup stream';
+      console.error('[useStream] setupStream error:', err);
       setError(errorMsg);
       toast.error(errorMsg);
       return null;
@@ -124,30 +82,74 @@ export function useStream() {
     }
   }, []);
 
-  // Delete ingress (reset stream key)
-  const deleteIngress = useCallback(async () => {
+  // Go live - Get publish token and set stream status to live
+  // Requirements: 1.1, 1.3
+  const goLive = useCallback(async (): Promise<GoLiveResponse | null> => {
     try {
       setLoading(true);
       setError(null);
-      const response = await streamApi.deleteIngress();
+      const response = await streamApi.goLive();
       
-      if (response.success) {
-        setIngress(null);
-        toast.success('Stream key deleted successfully');
-        await fetchStreamInfo();
+      if (response.success && response.data) {
+        setLiveData(response.data);
+        // Update stream info with live status
+        setStreamInfo(prev => prev ? {
+          ...prev,
+          isLive: true,
+          title: response.data!.stream.title,
+        } : null);
+        toast.success('You are now live!');
+        return response.data;
       } else {
-        const errorMsg = response.error || 'Failed to delete stream key';
+        const errorMsg = response.error || response.message || 'Failed to go live';
         setError(errorMsg);
         toast.error(errorMsg);
+        return null;
       }
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to delete stream key';
+      const errorMsg = err instanceof Error ? err.message : 'Failed to go live';
+      console.error('[useStream] goLive error:', err);
       setError(errorMsg);
       toast.error(errorMsg);
+      return null;
     } finally {
       setLoading(false);
     }
-  }, [fetchStreamInfo]);
+  }, []);
+
+  // End stream - Set stream status to offline
+  // Requirements: 2.3
+  const endStream = useCallback(async (): Promise<boolean> => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await streamApi.endStream();
+      
+      if (response.success) {
+        setLiveData(null);
+        // Update stream info with offline status
+        setStreamInfo(prev => prev ? {
+          ...prev,
+          isLive: false,
+        } : null);
+        toast.success('Stream ended');
+        return true;
+      } else {
+        const errorMsg = response.error || 'Failed to end stream';
+        setError(errorMsg);
+        toast.error(errorMsg);
+        return false;
+      }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to end stream';
+      console.error('[useStream] endStream error:', err);
+      setError(errorMsg);
+      toast.error(errorMsg);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   // Update stream info
   const updateStreamInfo = useCallback(async (data: { title?: string; thumbnail?: string }) => {
@@ -213,13 +215,14 @@ export function useStream() {
   }, [fetchStreamInfo]);
 
   return {
-    ingress,
     streamInfo,
     streamStatus,
+    liveData,
     loading,
     error,
-    createIngress,
-    deleteIngress,
+    setupStream,
+    goLive,
+    endStream,
     updateStreamInfo,
     updateChatSettings,
     fetchStreamInfo,

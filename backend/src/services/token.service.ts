@@ -7,7 +7,7 @@ import { prisma } from '../lib/db';
  */
 export class TokenService {
   /**
-   * Generate token for creator (with publish permissions)
+   * Generate token for creator (with publish permissions for WebRTC streaming)
    * @param userId - Creator's user ID
    * @param roomId - Room ID (typically the creator's userId)
    * @returns JWT token
@@ -44,7 +44,7 @@ export class TokenService {
       token.addGrant({
         room: roomId,
         roomJoin: true,
-        canPublish: true, // Creator can publish video/audio
+        canPublish: true, // Creator can publish video/audio (WebRTC)
         canPublishData: true, // Creator can send chat messages
         canSubscribe: true, // Creator can receive data
       });
@@ -60,63 +60,6 @@ export class TokenService {
     }
   }
 
-  /**
-   * Generate viewer token for creator watching their own stream
-   * Uses "Host-{userId}" identity prefix to distinguish from regular viewers
-   * Creator views via OBS stream, not publishing from browser
-   * @param userId - Creator's user ID
-   * @param roomId - Room ID (typically the creator's userId)
-   * @returns JWT token
-   */
-  static async generateCreatorViewerToken(
-    userId: string,
-    roomId: string
-  ): Promise<string> {
-    try {
-      const apiKey = process.env.LIVEKIT_API_KEY;
-      const apiSecret = process.env.LIVEKIT_API_SECRET;
-
-      if (!apiKey || !apiSecret) {
-        throw new Error('Missing LiveKit API credentials');
-      }
-
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { username: true, name: true },
-      });
-
-      if (!user) {
-        throw new Error('User not found');
-      }
-
-      console.log(`[TokenService] Generating creator self-view token for ${user.username}`);
-
-      // Use "Host-" prefix to identify creator in participant list
-      const hostIdentity = `Host-${userId}`;
-
-      const token = new AccessToken(apiKey, apiSecret, {
-        identity: hostIdentity,
-        name: user.name || user.username,
-      });
-
-      token.addGrant({
-        room: roomId,
-        roomJoin: true,
-        canPublish: false, // Creator views via OBS, not browser
-        canPublishData: true, // Can send chat messages
-        canSubscribe: true, // Can see video/audio from OBS
-      });
-
-      const jwt = await token.toJwt();
-      console.log(`[TokenService] Creator self-view token generated for ${user.username}`);
-      return jwt;
-    } catch (error) {
-      console.error('[TokenService] Error generating creator self-view token:', error);
-      throw new Error(
-        `Failed to generate creator self-view token: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-    }
-  }
 
   /**
    * Generate token for viewer (without publish permissions)
@@ -188,7 +131,7 @@ export class TokenService {
         throw new Error('Missing LiveKit API credentials');
       }
 
-      // Generate a unique guest ID
+      // Generate a unique guest ID with guest- prefix
       const guestId = `guest-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
       console.log(`[TokenService] Generating guest token for ${guestName}`);

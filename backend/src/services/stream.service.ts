@@ -1,10 +1,9 @@
 import { prisma } from '../lib/db';
-import { LiveKitService } from './livekit.service';
 import type { Stream } from '@prisma/client';
 
 /**
  * Stream Service - Business logic for stream management
- * Handles stream creation, updates, and status management
+ * Handles stream creation, updates, and status management for WebRTC streaming
  */
 export class StreamService {
   /**
@@ -65,93 +64,57 @@ export class StreamService {
     });
   }
 
+
   /**
-   * Create stream ingress for a creator
+   * Create or update stream metadata (for WebRTC flow)
    * @param userId - Creator's user ID
-   * @param ingressType - Type of ingress (RTMP or WHIP)
-   * @returns Stream configuration with ingress details
+   * @param data - Stream metadata
+   * @returns Created or updated stream
    */
-  static async createStreamIngress(
+  static async createOrUpdateStream(
     userId: string,
-    ingressType: 'RTMP' | 'WHIP' = 'RTMP'
+    data: {
+      title: string;
+      description?: string;
+      thumbnail?: string;
+      isChatEnabled?: boolean;
+      isChatDelayed?: boolean;
+      isChatFollowersOnly?: boolean;
+    }
   ): Promise<Stream> {
     try {
       // Validate user is approved creator
       await this.validateCreatorApproved(userId);
 
-      console.log(`[StreamService] Creating ingress for user: ${userId}`);
+      console.log(`[StreamService] Creating/updating stream for user: ${userId}`);
 
-      // Get or create stream record
-      let stream = await this.getCreatorStream(userId);
-
-      // If stream exists with ingress, reset it first
-      if (stream?.ingressId) {
-        console.log(`[StreamService] Existing ingress found, resetting...`);
-        await LiveKitService.resetUserIngresses(userId);
-      }
-
-      // Create new ingress in LiveKit
-      const ingress = await LiveKitService.createIngress(userId, ingressType);
-
-      // Update or create stream record in database
-      stream = await prisma.stream.upsert({
+      // Create or update stream with metadata
+      const stream = await prisma.stream.upsert({
         where: { userId },
         update: {
-          ingressId: ingress.ingressId,
-          serverUrl: ingress.url,
-          streamKey: ingress.streamKey,
+          title: data.title,
+          description: data.description,
+          thumbnail: data.thumbnail,
+          isChatEnabled: data.isChatEnabled ?? true,
+          isChatDelayed: data.isChatDelayed ?? false,
+          isChatFollowersOnly: data.isChatFollowersOnly ?? false,
         },
         create: {
           userId,
-          title: 'Untitled Stream',
-          ingressId: ingress.ingressId,
-          serverUrl: ingress.url,
-          streamKey: ingress.streamKey,
+          title: data.title,
+          description: data.description,
+          thumbnail: data.thumbnail,
+          isChatEnabled: data.isChatEnabled ?? true,
+          isChatDelayed: data.isChatDelayed ?? false,
+          isChatFollowersOnly: data.isChatFollowersOnly ?? false,
           isLive: false,
-          isChatEnabled: true,
-          isChatDelayed: false,
-          isChatFollowersOnly: false,
         },
       });
 
-      console.log(`[StreamService] Ingress created successfully for user: ${userId}`);
+      console.log(`[StreamService] Stream created/updated for user: ${userId}`);
       return stream;
     } catch (error) {
-      console.error('[StreamService] Error creating stream ingress:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Delete stream ingress and reset configuration
-   * @param userId - Creator's user ID
-   */
-  static async deleteStreamIngress(userId: string): Promise<void> {
-    try {
-      console.log(`[StreamService] Deleting ingress for user: ${userId}`);
-
-      const stream = await this.getCreatorStream(userId);
-      if (!stream) {
-        throw new Error('Stream not found');
-      }
-
-      // Reset ingresses in LiveKit
-      await LiveKitService.resetUserIngresses(userId);
-
-      // Update stream record to remove ingress details
-      await prisma.stream.update({
-        where: { userId },
-        data: {
-          ingressId: null,
-          serverUrl: null,
-          streamKey: null,
-          isLive: false,
-        },
-      });
-
-      console.log(`[StreamService] Ingress deleted successfully for user: ${userId}`);
-    } catch (error) {
-      console.error('[StreamService] Error deleting stream ingress:', error);
+      console.error('[StreamService] Error creating/updating stream:', error);
       throw error;
     }
   }
@@ -164,7 +127,7 @@ export class StreamService {
    */
   static async updateStreamInfo(
     userId: string,
-    data: { title?: string; thumbnail?: string }
+    data: { title?: string; thumbnail?: string; description?: string }
   ): Promise<Stream> {
     try {
       console.log(`[StreamService] Updating stream info for user: ${userId}`);
@@ -217,42 +180,41 @@ export class StreamService {
   }
 
   /**
-   * Set stream live status
-   * Called by webhook when stream starts/stops
-   * @param ingressId - Ingress ID from webhook
+   * Set stream live status (for WebRTC flow)
+   * Called when creator goes live or ends stream
+   * @param userId - Creator's user ID
    * @param isLive - Live status
+   * @returns Updated stream
    */
-  static async setStreamLive(
-    ingressId: string,
-    isLive: boolean
-  ): Promise<void> {
+  static async setStreamLive(userId: string, isLive: boolean): Promise<Stream> {
     try {
       console.log(
-        `[StreamService] Setting stream ${isLive ? 'LIVE' : 'OFFLINE'} for ingress: ${ingressId}`
+        `[StreamService] Setting stream ${isLive ? 'LIVE' : 'OFFLINE'} for user: ${userId}`
       );
 
       const stream = await prisma.stream.findUnique({
-        where: { ingressId },
+        where: { userId },
       });
 
       if (!stream) {
-        console.warn(`[StreamService] Stream not found for ingress: ${ingressId}`);
-        return;
+        throw new Error('Stream not found');
       }
 
-      await prisma.stream.update({
-        where: { ingressId },
+      const updatedStream = await prisma.stream.update({
+        where: { userId },
         data: { isLive },
       });
 
       console.log(
-        `[StreamService] Stream ${isLive ? 'is now LIVE' : 'went OFFLINE'} for user: ${stream.userId}`
+        `[StreamService] Stream ${isLive ? 'is now LIVE' : 'went OFFLINE'} for user: ${userId}`
       );
+      return updatedStream;
     } catch (error) {
       console.error('[StreamService] Error setting stream live status:', error);
       throw error;
     }
   }
+
 
   /**
    * Get stream status
@@ -267,25 +229,11 @@ export class StreamService {
         throw new Error('Stream not found');
       }
 
-      // Get viewer count from LiveKit if stream is live
-      let viewerCount = 0;
-      if (stream.isLive && stream.ingressId) {
-        try {
-          const participants = await LiveKitService.listParticipants(userId);
-          // Exclude the creator from viewer count
-          viewerCount = participants.filter(
-            (p) => p.identity !== userId
-          ).length;
-        } catch (error) {
-          console.error('[StreamService] Error getting viewer count:', error);
-          // Continue without viewer count if there's an error
-        }
-      }
-
       return {
         isLive: stream.isLive,
-        viewerCount,
+        viewerCount: 0, // Viewer count will be managed by LiveKit room events
         title: stream.title,
+        description: stream.description,
         thumbnail: stream.thumbnail,
         isChatEnabled: stream.isChatEnabled,
         isChatDelayed: stream.isChatDelayed,
@@ -407,7 +355,7 @@ export class StreamService {
   /**
    * Validate stream ownership
    * @param userId - User ID to check
-   * @param streamId - Stream ID or userId to validate
+   * @param streamUserId - Stream owner's userId to validate
    * @returns true if user owns the stream
    */
   static async validateStreamOwnership(
@@ -418,120 +366,14 @@ export class StreamService {
   }
 
   /**
-   * Create stream with metadata (NEW FLOW)
-   * @param userId - Creator's user ID
-   * @param data - Stream metadata
-   * @returns Created stream
-   */
-  static async createStreamWithMetadata(
-    userId: string,
-    data: {
-      title: string;
-      description?: string;
-      thumbnail?: string;
-      isChatEnabled?: boolean;
-      isChatDelayed?: boolean;
-      isChatFollowersOnly?: boolean;
-    }
-  ): Promise<Stream> {
-    try {
-      // Validate user is approved creator
-      await this.validateCreatorApproved(userId);
-
-      console.log(`[StreamService] Creating stream with metadata for user: ${userId}`);
-
-      // Create or update stream with metadata (no ingress yet)
-      const stream = await prisma.stream.upsert({
-        where: { userId },
-        update: {
-          title: data.title,
-          description: data.description,
-          thumbnail: data.thumbnail,
-          isChatEnabled: data.isChatEnabled ?? true,
-          isChatDelayed: data.isChatDelayed ?? false,
-          isChatFollowersOnly: data.isChatFollowersOnly ?? false,
-        },
-        create: {
-          userId,
-          title: data.title,
-          description: data.description,
-          thumbnail: data.thumbnail,
-          isChatEnabled: data.isChatEnabled ?? true,
-          isChatDelayed: data.isChatDelayed ?? false,
-          isChatFollowersOnly: data.isChatFollowersOnly ?? false,
-          isLive: false,
-        },
-      });
-
-      console.log(`[StreamService] Stream created with metadata for user: ${userId}`);
-      return stream;
-    } catch (error) {
-      console.error('[StreamService] Error creating stream with metadata:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update stream with ingress details after metadata is set
-   * @param userId - Creator's user ID
-   * @param ingressType - Type of ingress (RTMP or WHIP)
-   * @returns Updated stream with ingress details
-   */
-  static async addIngressToStream(
-    userId: string,
-    ingressType: 'RTMP' | 'WHIP' = 'RTMP'
-  ): Promise<Stream> {
-    try {
-      console.log(`[StreamService] Adding ingress to stream for user: ${userId}`);
-
-      // Get existing stream
-      const stream = await this.getCreatorStream(userId);
-      if (!stream) {
-        throw new Error('Stream not found. Create stream metadata first.');
-      }
-
-      // If stream exists with ingress, reset it first
-      if (stream.ingressId) {
-        console.log(`[StreamService] Existing ingress found, resetting...`);
-        await LiveKitService.resetUserIngresses(userId);
-      }
-
-      // Create new ingress in LiveKit
-      const ingress = await LiveKitService.createIngress(userId, ingressType);
-
-      // Update stream with ingress details
-      const updatedStream = await prisma.stream.update({
-        where: { userId },
-        data: {
-          ingressId: ingress.ingressId,
-          serverUrl: ingress.url,
-          streamKey: ingress.streamKey,
-        },
-      });
-
-      console.log(`[StreamService] Ingress added to stream for user: ${userId}`);
-      return updatedStream;
-    } catch (error) {
-      console.error('[StreamService] Error adding ingress to stream:', error);
-      throw error;
-    }
-  }
-
-  /**
    * Get past streams for a creator
    * Note: Current schema only supports one stream per user
    * This returns the stream if it exists and was live before
    * TODO: Add StreamSession model for proper stream history
    * @param userId - Creator's user ID
-   * @param limit - Number of streams to return
-   * @param offset - Offset for pagination
    * @returns Past streams with metadata
    */
-  static async getPastStreams(
-    userId: string,
-    limit: number = 10,
-    offset: number = 0
-  ) {
+  static async getPastStreams(userId: string) {
     try {
       // For now, return current stream if it exists and is not live
       const stream = await prisma.stream.findUnique({

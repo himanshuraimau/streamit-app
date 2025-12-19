@@ -28,6 +28,15 @@ export const createStreamSchema = z.object({
   streamMethod: z.enum(['browser', 'obs']).default('obs'),
 });
 
+// Setup stream for WebRTC (simplified flow)
+export const setupStreamSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(200, 'Title is too long'),
+  description: z.string().max(1000, 'Description is too long').optional(),
+  isChatEnabled: z.boolean().optional(),
+  isChatDelayed: z.boolean().optional(),
+  isChatFollowersOnly: z.boolean().optional(),
+});
+
 // Update chat settings request
 export const updateChatSettingsSchema = z.object({
   isChatEnabled: z.boolean().optional(),
@@ -45,6 +54,7 @@ export const getViewerTokenSchema = z.object({
 // Export types for TypeScript
 export type CreateIngressRequest = z.infer<typeof createIngressSchema>;
 export type CreateStreamRequest = z.infer<typeof createStreamSchema>;
+export type SetupStreamRequest = z.infer<typeof setupStreamSchema>;
 export type UpdateStreamInfoRequest = z.infer<typeof updateStreamInfoSchema>;
 export type UpdateChatSettingsRequest = z.infer<typeof updateChatSettingsSchema>;
 export type GetViewerTokenRequest = z.infer<typeof getViewerTokenSchema>;

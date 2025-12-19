@@ -1,9 +1,9 @@
 import { WebhookReceiver } from 'livekit-server-sdk';
-import { StreamService } from './stream.service';
 
 /**
  * Webhook Service - Process LiveKit webhook events
- * Handles stream status updates based on LiveKit events
+ * Handles room and participant events for analytics
+ * Note: Stream live status is now managed via WebRTC go-live/end-stream endpoints
  */
 export class WebhookService {
   private static receiver: WebhookReceiver | null = null;
@@ -42,50 +42,6 @@ export class WebhookService {
     } catch (error) {
       console.error('[WebhookService] Invalid webhook signature:', error);
       throw new Error('Invalid webhook signature');
-    }
-  }
-
-  /**
-   * Handle ingress started event
-   * Sets stream as live when broadcaster starts streaming
-   * @param event - Webhook event
-   */
-  static async handleIngressStarted(event: any): Promise<void> {
-    try {
-      const ingressId = event.ingressInfo?.ingressId;
-      
-      if (!ingressId) {
-        console.warn('[WebhookService] No ingressId in ingress_started event');
-        return;
-      }
-
-      console.log(`[WebhookService] Stream started for ingress: ${ingressId}`);
-      await StreamService.setStreamLive(ingressId, true);
-    } catch (error) {
-      console.error('[WebhookService] Error handling ingress_started:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Handle ingress ended event
-   * Sets stream as offline when broadcaster stops streaming
-   * @param event - Webhook event
-   */
-  static async handleIngressEnded(event: any): Promise<void> {
-    try {
-      const ingressId = event.ingressInfo?.ingressId;
-      
-      if (!ingressId) {
-        console.warn('[WebhookService] No ingressId in ingress_ended event');
-        return;
-      }
-
-      console.log(`[WebhookService] Stream ended for ingress: ${ingressId}`);
-      await StreamService.setStreamLive(ingressId, false);
-    } catch (error) {
-      console.error('[WebhookService] Error handling ingress_ended:', error);
-      throw error;
     }
   }
 
@@ -198,6 +154,8 @@ export class WebhookService {
   /**
    * Process webhook event
    * Routes event to appropriate handler based on event type
+   * Note: ingress_started and ingress_ended events are no longer handled
+   * as stream status is managed via WebRTC go-live/end-stream endpoints
    * @param event - Validated webhook event
    */
   static async processEvent(event: any): Promise<void> {
@@ -206,14 +164,6 @@ export class WebhookService {
       console.log(`[WebhookService] Processing event: ${eventType}`);
 
       switch (eventType) {
-        case 'ingress_started':
-          await this.handleIngressStarted(event);
-          break;
-        
-        case 'ingress_ended':
-          await this.handleIngressEnded(event);
-          break;
-        
         case 'room_finished':
           await this.handleRoomFinished(event);
           break;

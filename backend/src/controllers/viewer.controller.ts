@@ -88,12 +88,9 @@ export class ViewerController {
         });
       }
 
-      // Don't expose sensitive information
-      const { streamKey, ingressId, serverUrl, ...publicStreamInfo } = stream;
-
       res.json({
         success: true,
-        data: publicStreamInfo,
+        data: stream,
       });
     } catch (error) {
       console.error('[ViewerController] Error getting stream:', error);
@@ -150,9 +147,9 @@ export class ViewerController {
       let name: string;
 
       if (isCreator) {
-        // Creator watching their own stream - use special token with Host- prefix
+        // Creator watching their own stream - use viewer token with Host- prefix
         console.log(`[ViewerController] Detected creator self-view for ${viewerName}`);
-        token = await TokenService.generateCreatorViewerToken(viewerId!, hostId);
+        token = await TokenService.generateViewerToken(viewerId!, hostId, viewerName!);
         identity = `Host-${viewerId}`;
         name = viewerName!;
       } else if (viewerId && viewerName) {
@@ -232,16 +229,10 @@ export class ViewerController {
 
       const streams = await StreamService.getLiveStreams();
 
-      // Remove sensitive information
-      const publicStreams = streams.map((stream) => {
-        const { streamKey, ingressId, serverUrl, ...publicInfo } = stream;
-        return publicInfo;
-      });
-
       res.json({
         success: true,
-        data: publicStreams,
-        count: publicStreams.length,
+        data: streams,
+        count: streams.length,
       });
     } catch (error) {
       console.error('[ViewerController] Error getting live streams:', error);
@@ -273,16 +264,10 @@ export class ViewerController {
       // - Similar viewers' preferences
       const streams = await StreamService.getLiveStreams();
 
-      // Remove sensitive information
-      const publicStreams = streams.map((stream) => {
-        const { streamKey, ingressId, serverUrl, ...publicInfo } = stream;
-        return publicInfo;
-      });
-
       res.json({
         success: true,
-        data: publicStreams,
-        count: publicStreams.length,
+        data: streams,
+        count: streams.length,
         message: 'Basic recommendation (live streams only)',
       });
     } catch (error) {
@@ -314,16 +299,10 @@ export class ViewerController {
 
       const streams = await StreamService.getFollowedStreams(userId);
 
-      // Remove sensitive information
-      const publicStreams = streams.map((stream) => {
-        const { streamKey, ingressId, serverUrl, ...publicInfo } = stream;
-        return publicInfo;
-      });
-
       res.json({
         success: true,
-        data: publicStreams,
-        count: publicStreams.length,
+        data: streams,
+        count: streams.length,
       });
     } catch (error) {
       console.error('[ViewerController] Error getting followed streams:', error);
@@ -354,16 +333,10 @@ export class ViewerController {
 
       const streams = await StreamService.searchStreams(query);
 
-      // Remove sensitive information
-      const publicStreams = streams.map((stream) => {
-        const { streamKey, ingressId, serverUrl, ...publicInfo } = stream;
-        return publicInfo;
-      });
-
       res.json({
         success: true,
-        data: publicStreams,
-        count: publicStreams.length,
+        data: streams,
+        count: streams.length,
         query,
       });
     } catch (error) {
