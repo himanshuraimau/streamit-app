@@ -33,8 +33,9 @@ app.use(cors({
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
+      callback(null, origin); // Return the specific origin, not true
     } else {
+      console.warn(`CORS blocked origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -50,6 +51,8 @@ app.use(cors({
     'Origin'
   ],
   exposedHeaders: ['Set-Cookie', 'set-auth-token'], // Expose Bearer token header
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 
 // Mount webhook routes with raw body parser (before express.json())

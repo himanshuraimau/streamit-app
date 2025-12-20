@@ -39,6 +39,8 @@ export class TokenService {
       const token = new AccessToken(apiKey, apiSecret, {
         identity: userId,
         name: user.name || user.username,
+        // Token valid for 24 hours
+        ttl: '24h',
       });
 
       token.addGrant({
@@ -92,6 +94,8 @@ export class TokenService {
       const token = new AccessToken(apiKey, apiSecret, {
         identity: viewerId,
         name: username,
+        // Token valid for 24 hours
+        ttl: '24h',
       });
 
       token.addGrant({
@@ -139,6 +143,8 @@ export class TokenService {
       const token = new AccessToken(apiKey, apiSecret, {
         identity: guestId,
         name: guestName,
+        // Token valid for 24 hours
+        ttl: '24h',
       });
 
       token.addGrant({

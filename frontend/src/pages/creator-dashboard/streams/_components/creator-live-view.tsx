@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   LiveKitRoom, 
   useLocalParticipant,
@@ -44,12 +44,65 @@ export function CreatorLiveView({
   onUpdateChatSettings,
 }: CreatorLiveViewProps) {
   const [isEnding, setIsEnding] = useState(false);
+  const [connectionState, setConnectionState] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
+  
+  // Prevent multiple connection attempts (React Strict Mode protection)
+  const hasConnectedRef = useRef(false);
+  const roomIdRef = useRef(liveData.roomId);
+  
+  // ✅ Generate stable room key once that never changes
+  const stableRoomKeyRef = useRef(`livekit-${liveData.roomId}-${Date.now()}`);
+
+  // Debug: Log component lifecycle
+  useEffect(() => {
+    console.log('🔄 [CreatorLiveView] Component mounted');
+    return () => {
+      console.log('🔄 [CreatorLiveView] Component unmounted');
+    };
+  }, []);
+
+  // Reset connection flag if roomId changes
+  useEffect(() => {
+    if (roomIdRef.current !== liveData.roomId) {
+      console.log('[CreatorLiveView] 🔄 Room ID changed, resetting connection flag');
+      hasConnectedRef.current = false;
+      roomIdRef.current = liveData.roomId;
+      stableRoomKeyRef.current = `livekit-${liveData.roomId}-${Date.now()}`;
+    }
+  }, [liveData.roomId]);
 
   const handleEndStream = async () => {
     setIsEnding(true);
     await onEndStream();
     setIsEnding(false);
+    // Reset connection flag when stream ends
+    hasConnectedRef.current = false;
   };
+
+  // ✅ Memoized callbacks to prevent unnecessary re-renders
+  const handleConnected = useCallback(() => {
+    if (hasConnectedRef.current) {
+      console.log('[CreatorLiveView] ⚠️ Already connected, ignoring duplicate connection event');
+      return;
+    }
+    console.log('[CreatorLiveView] ✅ Connected to LiveKit room:', liveData.roomId);
+    hasConnectedRef.current = true;
+    setConnectionState('connected');
+  }, [liveData.roomId]);
+
+  const handleDisconnected = useCallback((reason?: any) => {
+    console.log('[CreatorLiveView] ⚠️ Disconnected from LiveKit room. Reason:', reason);
+    setConnectionState('disconnected');
+    // Allow reconnection after disconnect
+    hasConnectedRef.current = false;
+  }, []);
+
+  const handleError = useCallback((error: Error) => {
+    console.error('[CreatorLiveView] ❌ LiveKit error:', error);
+    setConnectionState('disconnected');
+    // Allow reconnection after error
+    hasConnectedRef.current = false;
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -57,24 +110,49 @@ export function CreatorLiveView({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">You're Live!</h1>
-          <p className="text-zinc-400">Broadcasting to your audience</p>
+          <p className="text-zinc-400">
+            {connectionState === 'connecting' && 'Connecting to LiveKit...'}
+            {connectionState === 'connected' && 'Broadcasting to your audience'}
+            {connectionState === 'disconnected' && 'Connection lost, reconnecting...'}
+          </p>
         </div>
       </div>
 
       {/* LiveKit Room */}
       <LiveKitRoom
+        key={stableRoomKeyRef.current} // ✅ Stable key that never changes during session
         token={liveData.token}
         serverUrl={liveData.wsUrl}
         connect={true}
         video={true}
         audio={true}
         className="w-full"
-        onConnected={() => {
-          console.log('[CreatorLiveView] Connected to LiveKit room:', liveData.roomId);
+        options={{
+          // Optimize for better connection stability
+          publishDefaults: {
+            simulcast: true,
+            videoCodec: 'vp8',
+            stopMicTrackOnMute: false, // Keep mic track alive when muted
+          },
+          // Adaptive streaming for better quality
+          adaptiveStream: true,
+          dynacast: true,
+          // Reconnection policy
+          reconnectPolicy: {
+            nextRetryDelayInMs: (context) => {
+              // Stop after 5 attempts
+              if (context.retryCount > 5) {
+                console.error('[CreatorLiveView] ❌ Max reconnection attempts reached');
+                return null;
+              }
+              // Exponential backoff: 1s, 2s, 4s, 8s, max 15s
+              return Math.min(1000 * Math.pow(2, context.retryCount), 15000);
+            },
+          },
         }}
-        onDisconnected={() => {
-          console.log('[CreatorLiveView] Disconnected from LiveKit room');
-        }}
+        onConnected={handleConnected}
+        onDisconnected={handleDisconnected}
+        onError={handleError}
       >
         <LiveViewContent
           streamInfo={streamInfo}
@@ -235,7 +313,7 @@ function LiveViewContent(props: LiveViewContentProps) {
                     publication: localParticipant.getTrackPublication(Track.Source.Microphone)!,
                     source: Track.Source.Microphone,
                   }}
-                  volume={0} // Mute local playback to prevent echo
+                  // Don't set volume on local track - it causes warnings
                 />
               )}
 

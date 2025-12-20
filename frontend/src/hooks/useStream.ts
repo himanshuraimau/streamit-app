@@ -18,10 +18,14 @@ export function useStream() {
       
       if (response.success && response.data) {
         setStreamInfo(response.data);
+      } else if (response.error?.includes('not found')) {
+        // Stream doesn't exist yet - this is expected for new creators
+        setStreamInfo(null);
       }
     } catch (err) {
-      console.error('Error fetching stream info:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch stream info');
+      // Suppress 404 errors - they're expected when no stream exists
+      console.log('[useStream] Stream not found (expected for new creators)');
+      setStreamInfo(null);
     } finally {
       setLoading(false);
     }

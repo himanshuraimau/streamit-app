@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useStream } from '@/hooks/useStream';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
@@ -15,10 +15,13 @@ import {
   Settings,
 } from 'lucide-react';
 import { CreatorLiveView } from './creator-live-view';
+import { StreamEndedView } from './stream-ended-view';
+import type { GoLiveResponse, StreamInfo } from '@/lib/api/stream';
+
+type StreamState = 'idle' | 'connecting' | 'live' | 'ended';
 
 interface GoLivePageState {
-  isLive: boolean;
-  isConnecting: boolean;
+  streamState: StreamState;
   permissionError: string | null;
 }
 
@@ -37,10 +40,13 @@ export function GoLivePage() {
   } = useStream();
 
   const [state, setState] = useState<GoLivePageState>({
-    isLive: false,
-    isConnecting: false,
+    streamState: 'idle',
     permissionError: null,
   });
+
+  // ✅ CRITICAL: Stable references to prevent CreatorLiveView remounting
+  const stableLiveDataRef = useRef<GoLiveResponse | null>(null);
+  const stableStreamInfoRef = useRef<StreamInfo | null>(null);
 
   // Setup form state
   const [setupForm, setSetupForm] = useState({
@@ -51,32 +57,52 @@ export function GoLivePage() {
     isChatFollowersOnly: false,
   });
 
+  // Debug: Log when props change
+  useEffect(() => {
+    console.log('🔍 [GoLivePage] State changed:', {
+      streamState: state.streamState,
+      hasLiveData: !!liveData,
+      hasStreamInfo: !!streamInfo,
+      hasStableLiveData: !!stableLiveDataRef.current,
+      hasStableStreamInfo: !!stableStreamInfoRef.current,
+    });
+  }, [state.streamState, liveData, streamInfo]);
+
   // Update state when streamInfo changes
   useEffect(() => {
     if (streamInfo) {
+      // Update stream state based on isLive status
       setState(prev => ({
         ...prev,
-        isLive: streamInfo.isLive,
+        streamState: streamInfo.isLive ? 'live' : prev.streamState === 'ended' ? 'ended' : 'idle',
       }));
-      setSetupForm({
-        title: streamInfo.title || '',
-        description: streamInfo.description || '',
-        isChatEnabled: streamInfo.isChatEnabled,
-        isChatDelayed: streamInfo.isChatDelayed,
-        isChatFollowersOnly: streamInfo.isChatFollowersOnly,
-      });
+      // Only update form if not currently live (to avoid disrupting live stream)
+      if (!streamInfo.isLive) {
+        setSetupForm({
+          title: streamInfo.title || '',
+          description: streamInfo.description || '',
+          isChatEnabled: streamInfo.isChatEnabled,
+          isChatDelayed: streamInfo.isChatDelayed,
+          isChatFollowersOnly: streamInfo.isChatFollowersOnly,
+        });
+      }
+      
+      // Store stable reference for live view
+      if (!stableStreamInfoRef.current) {
+        stableStreamInfoRef.current = streamInfo;
+      }
     }
   }, [streamInfo]);
 
   // Poll for stream status when live
   useEffect(() => {
-    if (state.isLive) {
+    if (state.streamState === 'live') {
       const interval = setInterval(() => {
         fetchStreamStatus();
       }, 5000);
       return () => clearInterval(interval);
     }
-  }, [state.isLive, fetchStreamStatus]);
+  }, [state.streamState, fetchStreamStatus]);
 
   // Request camera/mic permissions
   // Requirements: 1.1, 1.5
@@ -132,31 +158,48 @@ export function GoLivePage() {
   // Handle go live
   // Requirements: 1.1, 1.2, 1.3
   const handleGoLive = async () => {
-    setState(prev => ({ ...prev, isConnecting: true, permissionError: null }));
+    setState(prev => ({ ...prev, streamState: 'connecting', permissionError: null }));
 
     // First request permissions
     const hasPermissions = await requestMediaPermissions();
     if (!hasPermissions) {
-      setState(prev => ({ ...prev, isConnecting: false }));
+      setState(prev => ({ ...prev, streamState: 'idle' }));
       return;
     }
 
     // Then go live
     const result = await goLive();
     if (result) {
-      setState(prev => ({ ...prev, isLive: true, isConnecting: false }));
+      // ✅ Store stable reference to prevent remounting
+      stableLiveDataRef.current = result;
+      if (streamInfo) {
+        stableStreamInfoRef.current = streamInfo;
+      }
+      setState(prev => ({ ...prev, streamState: 'live' }));
+      console.log('✅ [GoLivePage] Went live successfully');
     } else {
-      setState(prev => ({ ...prev, isConnecting: false }));
+      setState(prev => ({ ...prev, streamState: 'idle' }));
     }
   };
 
   // Handle end stream
   // Requirements: 2.3
   const handleEndStream = async () => {
+    console.log('🛑 [GoLivePage] Ending stream...');
     const success = await endStream();
     if (success) {
-      setState(prev => ({ ...prev, isLive: false }));
+      // ✅ Clear stable references
+      stableLiveDataRef.current = null;
+      stableStreamInfoRef.current = null;
+      setState(prev => ({ ...prev, streamState: 'ended' }));
+      console.log('✅ [GoLivePage] Stream ended successfully');
     }
+  };
+
+  // Handle start new stream
+  const handleStartNewStream = () => {
+    setState(prev => ({ ...prev, streamState: 'idle' }));
+    fetchStreamInfo();
   };
 
   // Loading state
@@ -179,18 +222,38 @@ export function GoLivePage() {
     );
   }
 
+  // If stream ended, show the ended view
+  if (state.streamState === 'ended') {
+    return <StreamEndedView onStartNewStream={handleStartNewStream} />;
+  }
+
   // If live, show the live view
-  if (state.isLive && liveData && streamInfo) {
+  // ✅ Use stable references to prevent remounting
+  if (state.streamState === 'live' && stableLiveDataRef.current && stableStreamInfoRef.current) {
     return (
       <CreatorLiveView
-        liveData={liveData}
-        streamInfo={streamInfo}
+        liveData={stableLiveDataRef.current}
+        streamInfo={stableStreamInfoRef.current}
         onEndStream={handleEndStream}
         onUpdateTitle={async (title) => {
           await updateStreamInfo({ title });
+          // Update stable ref with new title
+          if (stableStreamInfoRef.current) {
+            stableStreamInfoRef.current = {
+              ...stableStreamInfoRef.current,
+              title,
+            };
+          }
         }}
         onUpdateChatSettings={async (settings) => {
           await updateChatSettings(settings);
+          // Update stable ref with new settings
+          if (stableStreamInfoRef.current) {
+            stableStreamInfoRef.current = {
+              ...stableStreamInfoRef.current,
+              ...settings,
+            };
+          }
         }}
       />
     );
@@ -364,9 +427,9 @@ export function GoLivePage() {
         <Button
           onClick={handleGoLive}
           className="w-full bg-red-600 hover:bg-red-700 h-14 text-lg font-semibold"
-          disabled={state.isConnecting || loading}
+          disabled={state.streamState === 'connecting' || loading}
         >
-          {state.isConnecting ? (
+          {state.streamState === 'connecting' ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
               Connecting...
