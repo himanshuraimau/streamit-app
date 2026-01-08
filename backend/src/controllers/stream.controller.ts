@@ -7,7 +7,6 @@ import {
   setupStreamSchema,
 } from '../lib/validations/stream.validation';
 import { TokenService } from '../services/token.service';
-import { prisma } from '../lib/db';
 
 /**
  * Stream Controller - Handles HTTP requests for streaming operations
