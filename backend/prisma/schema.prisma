@@ -23,6 +23,17 @@ model User {
   sessions      Session[]
   accounts      Account[]
 
+  // Admin and moderation fields
+  role               UserRole       @default(USER)
+  isSuspended        Boolean        @default(false)
+  suspendedReason    String?        @db.Text
+  suspendedBy        String? // Admin user ID
+  suspendedAt        DateTime?
+  suspensionExpiresAt DateTime? // null = permanent suspension
+  adminNotes         String?        @db.Text
+  lastLoginAt        DateTime?
+  lastLoginIp        String?
+
   // Creator application relationship
   creatorApplication CreatorApplication?
 
@@ -51,7 +62,19 @@ model User {
   ownedDiscountCodes  DiscountCode[]       @relation("OwnedDiscountCodes")
   discountRedemptions DiscountRedemption[]
 
+  // Moderation relationships
+  reportsSubmitted Report[] @relation("ReportSubmitter")
+  reportsReceived  Report[] @relation("ReportedUser")
+
+  // Admin activity tracking
+  adminActionsPerformed AdminActivityLog[] @relation("AdminUser")
+  adminActionsReceived  AdminActivityLog[] @relation("AffectedUser")
+
   @@unique([email])
+  @@index([role])
+  @@index([isSuspended])
+  @@index([email])
+  @@index([username])
   @@map("user")
 }
 
@@ -288,6 +311,17 @@ model Post {
   isPublic      Boolean @default(true)
   allowComments Boolean @default(true)
 
+  // Moderation
+  isHidden        Boolean  @default(false) // Hidden by admin/moderation
+  hiddenReason    String?  @db.Text
+  hiddenBy        String? // Admin user ID
+  hiddenAt        DateTime?
+  
+  // Content flags
+  isFlagged       Boolean @default(false)
+  flagCount       Int     @default(0)
+  reports         Report[]
+
   // Author
   authorId String
   author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
@@ -299,6 +333,8 @@ model Post {
   @@index([createdAt])
   @@index([type])
   @@index([isPublic])
+  @@index([isHidden])
+  @@index([isFlagged])
   @@map("post")
 }
 
@@ -352,18 +388,26 @@ model Comment {
   content String @db.Text
 
   // Relationships
-  userId   String
-  postId   String
-  parentId String? // For nested comments/replies
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies Comment[] @relation("CommentReplies")
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  parentId String?
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentReplies")
 
   // Engagement
   likes      CommentLike[]
   likesCount Int           @default(0)
+
+  // Moderation
+  isHidden     Boolean  @default(false)
+  hiddenReason String?  @db.Text
+  hiddenBy     String? // Admin user ID
+  hiddenAt     DateTime?
+  reports      Report[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -372,6 +416,7 @@ model Comment {
   @@index([postId])
   @@index([parentId])
   @@index([createdAt])
+  @@index([isHidden])
   @@map("comment")
 }
 
@@ -655,7 +700,203 @@ model DiscountCode {
   @@map("discount_code")
 }
 
-// Track code redemptions
+
+// ============================================
+// ADMIN & MODERATION MODELS
+// ============================================
+
+// User reports for moderation
+model Report {
+  id String @id @default(cuid())
+
+  // Report details
+  reason      ReportReason
+  description String?      @db.Text
+
+  // Parties involved
+  reporterId String
+  reporter   User   @relation("ReportSubmitter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  reportedUserId String
+  reportedUser   User   @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
+
+  // Content being reported (one of these will be set)
+  postId    String?
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: SetNull)
+  commentId String?
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: SetNull)
+  streamId  String? // For reporting streams
+
+  // Report status
+  status     ReportStatus @default(PENDING)
+  reviewedBy String? // Admin user ID
+  reviewedAt DateTime?
+  resolution String?      @db.Text // Admin notes on resolution
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([reporterId])
+  @@index([reportedUserId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([postId])
+  @@index([commentId])
+  @@map("report")
+}
+
+// Admin activity log for audit trail
+model AdminActivityLog {
+  id String @id @default(cuid())
+
+  // Admin who performed the action
+  adminId String
+  admin   User   @relation("AdminUser", fields: [adminId], references: [id], onDelete: Cascade)
+
+  // Action details
+  action      AdminAction
+  targetType  String // "user", "post", "comment", "stream", "payment", etc.
+  targetId    String // ID of the affected resource
+  description String      @db.Text
+
+  // Affected user (if applicable)
+  affectedUserId String?
+  affectedUser   User?   @relation("AffectedUser", fields: [affectedUserId], references: [id], onDelete: SetNull)
+
+  // Additional context
+  metadata Json? // Store additional data as JSON
+  ipAddress String?
+
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+  @@index([affectedUserId])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("admin_activity_log")
+}
+
+// System settings that admins can configure
+model SystemSetting {
+  id String @id @default(cuid())
+
+  key         String  @unique
+  value       String  @db.Text
+  description String? @db.Text
+  isPublic    Boolean @default(false) // Whether setting is visible to non-admins
+
+  updatedBy String // Admin user ID
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@index([key])
+  @@index([isPublic])
+  @@map("system_setting")
+}
+
+// Platform announcements
+model Announcement {
+  id String @id @default(cuid())
+
+  title   String
+  content String   @db.Text
+  type    AnnouncementType @default(INFO)
+
+  // Visibility
+  isActive Boolean @default(true)
+  startsAt DateTime?
+  endsAt   DateTime?
+
+  // Targeting
+  targetRole UserRole? // null = all users
+  isPinned   Boolean   @default(false)
+
+  createdBy String // Admin user ID
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, startsAt, endsAt])
+  @@index([type])
+  @@index([isPinned])
+  @@map("announcement")
+}
+
+// ============================================
+// ADMIN ENUMS
+// ============================================
+
+enum UserRole {
+  USER
+  CREATOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  HATE_SPEECH
+  NUDITY
+  VIOLENCE
+  COPYRIGHT
+  MISINFORMATION
+  SELF_HARM
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum AdminAction {
+  // User actions
+  USER_SUSPENDED
+  USER_UNSUSPENDED
+  USER_ROLE_CHANGED
+  USER_DELETED
+  USER_UPDATED
+  
+  // Content moderation
+  POST_HIDDEN
+  POST_UNHIDDEN
+  POST_DELETED
+  COMMENT_HIDDEN
+  COMMENT_UNHIDDEN
+  COMMENT_DELETED
+  
+  // Creator management
+  CREATOR_APPLICATION_APPROVED
+  CREATOR_APPLICATION_REJECTED
+  CREATOR_STATUS_REVOKED
+  
+  // Payment management
+  PAYMENT_REFUNDED
+  PAYMENT_VERIFIED
+  DISCOUNT_CODE_CREATED
+  DISCOUNT_CODE_DEACTIVATED
+  
+  // Report handling
+  REPORT_REVIEWED
+  REPORT_DISMISSED
+  
+  // System management
+  SETTING_UPDATED
+  ANNOUNCEMENT_CREATED
+  ANNOUNCEMENT_UPDATED
+  ANNOUNCEMENT_DELETED
+}
+
+enum AnnouncementType {
+  INFO
+  WARNING
+  MAINTENANCE
+  FEATURE
+  PROMOTION
+}
 model DiscountRedemption {
   id String @id @default(cuid())
 
