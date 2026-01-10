@@ -48,6 +48,7 @@ model User {
 
   // Content relationships
   posts        Post[]
+  postViews    PostView[] // NEW: Track user's post views
   likes        Like[]
   comments     Comment[]
   commentLikes CommentLike[]
@@ -304,12 +305,16 @@ model Post {
   // Engagement
   likes         Like[]
   comments      Comment[]
+  views         PostView[] // NEW: Track individual views for analytics
   likesCount    Int       @default(0)
   commentsCount Int       @default(0)
+  viewsCount    Int       @default(0) // NEW: Track post views
+  sharesCount   Int       @default(0) // NEW: Track post shares
 
   // Visibility and settings
   isPublic      Boolean @default(true)
   allowComments Boolean @default(true)
+  isShort       Boolean @default(false) // NEW: Mark as short-form video (< 60s)
 
   // Moderation
   isHidden        Boolean  @default(false) // Hidden by admin/moderation
@@ -335,6 +340,12 @@ model Post {
   @@index([isPublic])
   @@index([isHidden])
   @@index([isFlagged])
+  // NEW: Indexes for shorts queries
+  @@index([isShort, createdAt])
+  @@index([isShort, type, isPublic])
+  @@index([isShort, viewsCount, likesCount])
+  // Composite index for trending algorithm
+  @@index([createdAt, likesCount, commentsCount, viewsCount, sharesCount])
   @@map("post")
 }
 
@@ -362,6 +373,21 @@ model PostMedia {
   @@index([postId])
   @@index([type])
   @@map("post_media")
+}
+
+// Post view tracking for analytics
+model PostView {
+  id       String   @id @default(cuid())
+  postId   String
+  post     Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId   String?  // Null for anonymous views
+  user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  viewedAt DateTime @default(now())
+
+  @@index([postId])
+  @@index([userId])
+  @@index([viewedAt])
+  @@map("post_view")
 }
 
 // Likes system

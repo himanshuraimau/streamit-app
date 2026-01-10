@@ -611,6 +611,8 @@ export class ContentService {
             allowComments: post.allowComments,
             likesCount: post._count?.likes || post.likesCount || 0,
             commentsCount: post._count?.comments || post.commentsCount || 0,
+            viewsCount: post.viewsCount || 0,
+            sharesCount: post.sharesCount || 0,
             createdAt: post.createdAt,
             updatedAt: post.updatedAt,
             author: post.author,
@@ -627,6 +629,359 @@ export class ContentService {
                 createdAt: m.createdAt,
             })) || [],
             isLiked: requestingUserId ? (post.likes?.length > 0) : undefined,
+        };
+    }
+
+    // NEW: Get trending content
+    static async getTrendingContent(
+        query: { page?: number; limit?: number; timeRange?: string },
+        requestingUserId?: string
+    ): Promise<PostFeedResponse> {
+        const page = query.page || 1;
+        const limit = query.limit || 20;
+        const timeRange = query.timeRange || '7d';
+
+        // Calculate date threshold based on timeRange
+        const dateThreshold = this.getDateThreshold(timeRange);
+
+        // Trending algorithm: weighted score
+        // Formula: (likes * 1.0) + (comments * 2.0) + (views * 0.1) + (shares * 3.0) - (age_in_hours * 0.1)
+        const posts = await prisma.$queryRaw<any[]>`
+            SELECT 
+                p.*,
+                json_build_object(
+                    'id', u.id,
+                    'username', u.username,
+                    'name', u.name,
+                    'image', u.image
+                ) as author,
+                (
+                    (p."likesCount" * 1.0) +
+                    (p."commentsCount" * 2.0) +
+                    (p."viewsCount" * 0.1) +
+                    (p."sharesCount" * 3.0) +
+                    (EXTRACT(EPOCH FROM (NOW() - p."createdAt")) / 3600 * -0.1)
+                ) as "trendingScore"
+            FROM "post" p
+            JOIN "user" u ON p."authorId" = u.id
+            WHERE p."createdAt" >= ${dateThreshold}
+                AND p."isPublic" = true
+                AND p."isHidden" = false
+            ORDER BY "trendingScore" DESC
+            LIMIT ${limit}
+            OFFSET ${(page - 1) * limit}
+        `;
+
+        // Get media for each post
+        const postsWithMedia = await Promise.all(
+            posts.map(async (post) => {
+                const media = await prisma.postMedia.findMany({
+                    where: { postId: post.id }
+                });
+
+                return {
+                    ...post,
+                    media,
+                    _count: {
+                        likes: post.likesCount,
+                        comments: post.commentsCount
+                    }
+                };
+            })
+        );
+
+        // Get total count for pagination
+        const totalCount = await prisma.post.count({
+            where: {
+                createdAt: { gte: dateThreshold },
+                isPublic: true,
+                isHidden: false
+            }
+        });
+
+        const hasMore = (page * limit) < totalCount;
+
+        return {
+            posts: postsWithMedia.map(post => this.formatPostResponse(post, requestingUserId)),
+            hasMore,
+            nextCursor: hasMore ? new Date(posts[posts.length - 1]?.createdAt).toISOString() : undefined
+        };
+    }
+
+    // NEW: Track post view
+    static async trackPostView(postId: string, userId?: string): Promise<void> {
+        try {
+            // Increment view count
+            await prisma.post.update({
+                where: { id: postId },
+                data: {
+                    viewsCount: {
+                        increment: 1
+                    }
+                }
+            });
+
+            // Track individual view for analytics (optional)
+            if (userId) {
+                // Check if user already viewed this post recently (within last hour)
+                const recentView = await prisma.postView.findFirst({
+                    where: {
+                        postId,
+                        userId,
+                        viewedAt: {
+                            gte: new Date(Date.now() - 60 * 60 * 1000) // Last hour
+                        }
+                    }
+                });
+
+                // Only create new view record if no recent view exists
+                if (!recentView) {
+                    await prisma.postView.create({
+                        data: {
+                            postId,
+                            userId
+                        }
+                    });
+                }
+            } else {
+                // Track anonymous view
+                await prisma.postView.create({
+                    data: {
+                        postId,
+                        userId: null
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error tracking post view:', error);
+            // Don't throw error as view tracking is not critical
+        }
+    }
+
+    // NEW: Track post share
+    static async trackPostShare(postId: string): Promise<void> {
+        try {
+            await prisma.post.update({
+                where: { id: postId },
+                data: {
+                    sharesCount: {
+                        increment: 1
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error tracking post share:', error);
+            // Don't throw error as share tracking is not critical
+        }
+    }
+
+    // Helper: Get date threshold based on time range
+    private static getDateThreshold(timeRange: string): Date {
+        const now = new Date();
+        switch (timeRange) {
+            case '24h':
+                return new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            case '7d':
+                return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            case '30d':
+                return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            default:
+                return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        }
+    }
+
+    // NEW: Get shorts from followed creators
+    static async getFollowingShorts(
+        userId: string,
+        query: FeedQuery = {}
+    ): Promise<PostFeedResponse> {
+        try {
+            // Get list of users the current user is following
+            const following = await prisma.follow.findMany({
+                where: { followerId: userId },
+                select: { followingId: true }
+            });
+
+            const followingIds = following.map(f => f.followingId);
+
+            if (followingIds.length === 0) {
+                return {
+                    posts: [],
+                    hasMore: false
+                };
+            }
+
+            const limit = query.limit || 20;
+            const posts = await prisma.post.findMany({
+                where: {
+                    authorId: { in: followingIds },
+                    type: 'VIDEO',
+                    isShort: true,
+                    isPublic: true,
+                    isHidden: false
+                },
+                include: {
+                    author: {
+                        select: {
+                            id: true,
+                            username: true,
+                            name: true,
+                            image: true
+                        }
+                    },
+                    media: true,
+                    _count: {
+                        select: {
+                            likes: true,
+                            comments: true
+                        }
+                    }
+                },
+                orderBy: { createdAt: 'desc' },
+                take: limit + 1,
+                ...(query.cursor && {
+                    cursor: { id: query.cursor },
+                    skip: 1
+                })
+            });
+
+            const hasMore = posts.length > limit;
+            const postsToReturn = hasMore ? posts.slice(0, -1) : posts;
+
+            return {
+                posts: postsToReturn.map(post => this.formatPostResponse(post, userId)),
+                hasMore,
+                nextCursor: hasMore ? postsToReturn[postsToReturn.length - 1]?.id : undefined
+            };
+        } catch (error) {
+            console.error('Error fetching following shorts:', error);
+            throw error;
+        }
+    }
+
+    // NEW: Get trending shorts
+    static async getTrendingShorts(
+        query: { page?: number; limit?: number; timeRange?: string },
+        requestingUserId?: string
+    ): Promise<PostFeedResponse> {
+        const page = query.page || 1;
+        const limit = query.limit || 20;
+        const timeRange = query.timeRange || '7d';
+
+        const dateThreshold = this.getDateThreshold(timeRange);
+
+        // Trending algorithm for shorts
+        const posts = await prisma.$queryRaw<any[]>`
+            SELECT 
+                p.*,
+                json_build_object(
+                    'id', u.id,
+                    'username', u.username,
+                    'name', u.name,
+                    'image', u.image
+                ) as author,
+                (
+                    (p."likesCount" * 1.0) +
+                    (p."commentsCount" * 2.0) +
+                    (p."viewsCount" * 0.1) +
+                    (p."sharesCount" * 3.0) +
+                    (EXTRACT(EPOCH FROM (NOW() - p."createdAt")) / 3600 * -0.1)
+                ) as "trendingScore"
+            FROM "post" p
+            JOIN "user" u ON p."authorId" = u.id
+            WHERE p."createdAt" >= ${dateThreshold}
+                AND p."type" = 'VIDEO'
+                AND p."isShort" = true
+                AND p."isPublic" = true
+                AND p."isHidden" = false
+            ORDER BY "trendingScore" DESC
+            LIMIT ${limit}
+            OFFSET ${(page - 1) * limit}
+        `;
+
+        // Get media for each post
+        const postsWithMedia = await Promise.all(
+            posts.map(async (post) => {
+                const media = await prisma.postMedia.findMany({
+                    where: { postId: post.id }
+                });
+
+                return {
+                    ...post,
+                    media,
+                    _count: {
+                        likes: post.likesCount,
+                        comments: post.commentsCount
+                    }
+                };
+            })
+        );
+
+        const totalCount = await prisma.post.count({
+            where: {
+                createdAt: { gte: dateThreshold },
+                type: 'VIDEO',
+                isShort: true,
+                isPublic: true,
+                isHidden: false
+            }
+        });
+
+        const hasMore = (page * limit) < totalCount;
+
+        return {
+            posts: postsWithMedia.map(post => this.formatPostResponse(post, requestingUserId)),
+            hasMore,
+            nextCursor: hasMore ? new Date(posts[posts.length - 1]?.createdAt).toISOString() : undefined
+        };
+    }
+
+    // NEW: Get all public shorts (discover)
+    static async getAllShorts(
+        query: FeedQuery = {},
+        requestingUserId?: string
+    ): Promise<PostFeedResponse> {
+        const limit = query.limit || 20;
+
+        const posts = await prisma.post.findMany({
+            where: {
+                type: 'VIDEO',
+                isShort: true,
+                isPublic: true,
+                isHidden: false
+            },
+            include: {
+                author: {
+                    select: {
+                        id: true,
+                        username: true,
+                        name: true,
+                        image: true
+                    }
+                },
+                media: true,
+                _count: {
+                    select: {
+                        likes: true,
+                        comments: true
+                    }
+                }
+            },
+            orderBy: { createdAt: 'desc' },
+            take: limit + 1,
+            ...(query.cursor && {
+                cursor: { id: query.cursor },
+                skip: 1
+            })
+        });
+
+        const hasMore = posts.length > limit;
+        const postsToReturn = hasMore ? posts.slice(0, -1) : posts;
+
+        return {
+            posts: postsToReturn.map(post => this.formatPostResponse(post, requestingUserId)),
+            hasMore,
+            nextCursor: hasMore ? postsToReturn[postsToReturn.length - 1]?.id : undefined
         };
     }
 }

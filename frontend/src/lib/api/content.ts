@@ -18,7 +18,7 @@ const getAuthHeaders = async () => {
   if (!session?.data?.session?.token) {
     throw new Error('No authentication token found');
   }
-  
+
   return {
     'Authorization': `Bearer ${session.data.session.token}`,
     'Content-Type': 'application/json',
@@ -31,7 +31,7 @@ const getAuthHeadersForUpload = async () => {
   if (!session?.data?.session?.token) {
     throw new Error('No authentication token found');
   }
-  
+
   return {
     'Authorization': `Bearer ${session.data.session.token}`,
   };
@@ -47,7 +47,7 @@ export interface ApiResponse<T> {
 
 export const contentApi = {
   // Public endpoints (no auth required)
-  
+
   // Get public feed
   async getPublicFeed(query: FeedQuery = {}): Promise<ApiResponse<PostFeedResponse>> {
     try {
@@ -55,7 +55,7 @@ export const contentApi = {
       if (query.cursor) params.append('cursor', query.cursor);
       if (query.limit) params.append('limit', query.limit.toString());
       if (query.type) params.append('type', query.type);
-      
+
       const response = await fetch(`${API_BASE_URL}/api/content/feed/public?${params}`, {
         method: 'GET',
         headers: {
@@ -110,7 +110,7 @@ export const contentApi = {
       const params = new URLSearchParams();
       if (query.cursor) params.append('cursor', query.cursor);
       if (query.limit) params.append('limit', query.limit.toString());
-      
+
       const response = await fetch(`${API_BASE_URL}/api/content/users/${userId}/posts?${params}`, {
         method: 'GET',
         headers: {
@@ -132,13 +132,13 @@ export const contentApi = {
     try {
       const headers = await getAuthHeadersForUpload();
       const formData = new FormData();
-      
+
       // Add text data
       if (data.content) formData.append('content', data.content);
       formData.append('type', data.type);
       if (data.isPublic !== undefined) formData.append('isPublic', data.isPublic.toString());
       if (data.allowComments !== undefined) formData.append('allowComments', data.allowComments.toString());
-      
+
       // Add media files
       if (data.media && data.media.length > 0) {
         data.media.forEach((file) => {
@@ -167,7 +167,7 @@ export const contentApi = {
       if (query.cursor) params.append('cursor', query.cursor);
       if (query.limit) params.append('limit', query.limit.toString());
       if (query.type) params.append('type', query.type);
-      
+
       const response = await fetch(`${API_BASE_URL}/api/content/posts?${params}`, {
         method: 'GET',
         headers,
@@ -254,7 +254,7 @@ export const contentApi = {
       if (query.cursor) params.append('cursor', query.cursor);
       if (query.limit) params.append('limit', query.limit.toString());
       if (query.type) params.append('type', query.type);
-      
+
       const response = await fetch(`${API_BASE_URL}/api/content/feed?${params}`, {
         method: 'GET',
         headers,
@@ -263,6 +263,135 @@ export const contentApi = {
       return await response.json();
     } catch (error) {
       console.error('Error fetching feed:', error);
+      throw error;
+    }
+  },
+
+  // NEW: Get trending content
+  async getTrending(params: {
+    page?: number;
+    limit?: number;
+    timeRange?: '24h' | '7d' | '30d';
+  } = {}): Promise<ApiResponse<PostFeedResponse>> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.page) queryParams.append('page', params.page.toString());
+      if (params.limit) queryParams.append('limit', params.limit.toString());
+      if (params.timeRange) queryParams.append('timeRange', params.timeRange);
+
+      const response = await fetch(`${API_BASE_URL}/api/content/trending?${queryParams}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching trending content:', error);
+      throw error;
+    }
+  },
+
+  // NEW: Track post view
+  async trackView(postId: string): Promise<ApiResponse<{ message: string }>> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/content/posts/${postId}/view`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error tracking post view:', error);
+      // Don't throw error for tracking - it's not critical
+      return { success: false, error: 'Failed to track view' };
+    }
+  },
+
+  // NEW: Track post share
+  async trackShare(postId: string): Promise<ApiResponse<{ message: string }>> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/content/posts/${postId}/share`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error tracking post share:', error);
+      // Don't throw error for tracking - it's not critical
+      return { success: false, error: 'Failed to track share' };
+    }
+  },
+
+  // NEW: Get shorts from followed creators
+  async getFollowingShorts(params: { cursor?: string; limit?: number } = {}): Promise<ApiResponse<PostFeedResponse>> {
+    try {
+      const headers = await getAuthHeaders();
+      const queryParams = new URLSearchParams();
+      if (params.cursor) queryParams.append('cursor', params.cursor);
+      if (params.limit) queryParams.append('limit', params.limit.toString());
+
+      const response = await fetch(`${API_BASE_URL}/api/content/shorts/following?${queryParams}`, {
+        method: 'GET',
+        headers,
+      });
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching following shorts:', error);
+      throw error;
+    }
+  },
+
+  // NEW: Get trending shorts
+  async getTrendingShorts(params: {
+    page?: number;
+    limit?: number;
+    timeRange?: '24h' | '7d' | '30d';
+  } = {}): Promise<ApiResponse<PostFeedResponse>> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.page) queryParams.append('page', params.page.toString());
+      if (params.limit) queryParams.append('limit', params.limit.toString());
+      if (params.timeRange) queryParams.append('timeRange', params.timeRange);
+
+      const response = await fetch(`${API_BASE_URL}/api/content/shorts/trending?${queryParams}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching trending shorts:', error);
+      throw error;
+    }
+  },
+
+  // NEW: Get all public shorts (discover)
+  async getAllShorts(params: { cursor?: string; limit?: number } = {}): Promise<ApiResponse<PostFeedResponse>> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.cursor) queryParams.append('cursor', params.cursor);
+      if (params.limit) queryParams.append('limit', params.limit.toString());
+
+      const response = await fetch(`${API_BASE_URL}/api/content/shorts?${queryParams}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching all shorts:', error);
       throw error;
     }
   },

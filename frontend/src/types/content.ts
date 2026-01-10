@@ -26,6 +26,8 @@ export interface PostResponse {
   allowComments: boolean;
   likesCount: number;
   commentsCount: number;
+  viewsCount: number; // NEW
+  sharesCount: number; // NEW
   createdAt: string;
   updatedAt: string;
   author: {

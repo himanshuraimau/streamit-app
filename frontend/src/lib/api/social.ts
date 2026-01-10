@@ -130,4 +130,38 @@ export const socialApi = {
       throw err;
     }
   },
+
+  // NEW: Get live followed creators
+  async getLiveFollowedCreators(): Promise<{
+    success: boolean;
+    data?: {
+      creators: Array<{
+        id: string;
+        username: string;
+        name: string;
+        image: string | null;
+        stream: {
+          id: string;
+          title: string;
+          thumbnail: string | null;
+          isLive: boolean;
+          updatedAt: string;
+        } | null;
+      }>;
+      count: number;
+    };
+    error?: string;
+  }> {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${API_BASE_URL}/api/social/following/live`, {
+        method: 'GET',
+        headers,
+      });
+      return await response.json();
+    } catch (err) {
+      console.error('Error fetching live followed creators:', err);
+      throw err;
+    }
+  },
 };

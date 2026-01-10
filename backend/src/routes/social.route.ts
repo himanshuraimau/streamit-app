@@ -37,6 +37,13 @@ router.get(
   SocialController.getFollowing
 );
 
+// NEW: Get live followed creators (requires auth)
+router.get(
+  '/following/live',
+  requireAuth,
+  SocialController.getLiveFollowedCreators
+);
+
 // Block/unblock users (requires auth)
 router.post(
   '/block/:userId',

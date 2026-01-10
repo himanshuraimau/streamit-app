@@ -363,4 +363,173 @@ export class ContentController {
       });
     }
   }
+
+  // NEW: Get trending content
+  static async getTrendingContent(req: Request, res: Response) {
+    try {
+      const requestingUserId = req.user?.id;
+      const { page, limit, timeRange } = req.query;
+
+      const query = {
+        page: page ? parseInt(page as string) : 1,
+        limit: limit ? parseInt(limit as string) : 20,
+        timeRange: (timeRange as string) || '7d'
+      };
+
+      // Validate timeRange
+      if (!['24h', '7d', '30d'].includes(query.timeRange)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid timeRange. Must be 24h, 7d, or 30d'
+        });
+      }
+
+      const result = await ContentService.getTrendingContent(query, requestingUserId);
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Error fetching trending content:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error'
+      });
+    }
+  }
+
+  // NEW: Track post view
+  static async trackPostView(req: Request, res: Response) {
+    try {
+      const { postId } = req.params;
+      if (!postId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Post ID is required'
+        });
+      }
+
+      const userId = req.user?.id;
+      await ContentService.trackPostView(postId, userId);
+
+      res.json({
+        success: true,
+        message: 'View tracked successfully'
+      });
+    } catch (error) {
+      console.error('Error tracking post view:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error'
+      });
+    }
+  }
+
+  // NEW: Track post share
+  static async trackPostShare(req: Request, res: Response) {
+    try {
+      const { postId } = req.params;
+      if (!postId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Post ID is required'
+        });
+      }
+
+      await ContentService.trackPostShare(postId);
+
+      res.json({
+        success: true,
+        message: 'Share tracked successfully'
+      });
+    } catch (error) {
+      console.error('Error tracking post share:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error'
+      });
+    }
+  }
+
+  // NEW: Get shorts from followed creators
+  static async getFollowingShorts(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required'
+        });
+      }
+
+      const { cursor, limit } = req.query;
+      const result = await ContentService.getFollowingShorts(userId, {
+        cursor: cursor as string,
+        limit: limit ? parseInt(limit as string) : undefined
+      });
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Error fetching following shorts:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error'
+      });
+    }
+  }
+
+  // NEW: Get trending shorts
+  static async getTrendingShorts(req: Request, res: Response) {
+    try {
+      const { page, limit, timeRange } = req.query;
+      const result = await ContentService.getTrendingShorts(
+        {
+          page: page ? parseInt(page as string) : undefined,
+          limit: limit ? parseInt(limit as string) : undefined,
+          timeRange: timeRange as string
+        },
+        req.user?.id
+      );
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Error fetching trending shorts:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error'
+      });
+    }
+  }
+
+  // NEW: Get all public shorts (discover)
+  static async getAllShorts(req: Request, res: Response) {
+    try {
+      const { cursor, limit } = req.query;
+      const result = await ContentService.getAllShorts(
+        {
+          cursor: cursor as string,
+          limit: limit ? parseInt(limit as string) : undefined
+        },
+        req.user?.id
+      );
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Error fetching all shorts:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error'
+      });
+    }
+  }
 }

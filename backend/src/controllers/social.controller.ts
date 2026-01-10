@@ -674,4 +674,72 @@ export class SocialController {
       });
     }
   }
+
+  /**
+   * NEW: Get live followed creators
+   * GET /api/social/following/live
+   */
+  static async getLiveFollowedCreators(req: Request, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+        });
+      }
+
+      const userId = req.user.id;
+
+      console.log(`[SocialController] Getting live followed creators for user ${userId}`);
+
+      // Get all followed creators who are currently live
+      const liveCreators = await prisma.user.findMany({
+        where: {
+          followedBy: {
+            some: {
+              followerId: userId,
+            },
+          },
+          stream: {
+            isLive: true,
+          },
+        },
+        select: {
+          id: true,
+          username: true,
+          name: true,
+          image: true,
+          stream: {
+            select: {
+              id: true,
+              title: true,
+              thumbnail: true,
+              isLive: true,
+              updatedAt: true,
+            },
+          },
+        },
+        orderBy: {
+          stream: {
+            updatedAt: 'desc', // Most recently went live first
+          },
+        },
+      });
+
+      res.json({
+        success: true,
+        data: {
+          creators: liveCreators,
+          count: liveCreators.length,
+        },
+      });
+    } catch (error) {
+      console.error('[SocialController] Error getting live followed creators:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get live followed creators',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
 }
