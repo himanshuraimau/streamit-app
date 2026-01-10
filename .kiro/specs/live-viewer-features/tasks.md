@@ -56,8 +56,8 @@ This implementation plan breaks down the Live Streaming Viewer Features into dis
     - Implement rate limiting (5 reports/hour per user)
     - _Requirements: 2.3, 2.4_
 
-- [-] 4. Backend API - Stream Summary Endpoint
-  - [ ] 4.1 Create stream summary service function
+- [x] 4. Backend API - Stream Summary Endpoint
+  - [x] 4.1 Create stream summary service function
     - Implement getStreamSummary in StreamService
     - Calculate totalViewers, peakViewers from StreamStats
     - Calculate topGifter from GiftTransaction aggregation
@@ -65,7 +65,7 @@ This implementation plan breaks down the Live Streaming Viewer Features into dis
   - [ ]* 4.2 Write property test for top gifter calculation
     - **Property 11: Top Gifter Calculation**
     - **Validates: Requirements 9.3**
-  - [ ] 4.3 Create summary controller and route
+  - [x] 4.3 Create summary controller and route
     - Add GET /api/stream/:streamId/summary endpoint
     - Return stream statistics
     - _Requirements: 9.2, 9.3_

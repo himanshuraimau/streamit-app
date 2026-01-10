@@ -376,6 +376,48 @@ export class StreamController {
   }
 
   /**
+   * Get stream summary with statistics
+   * GET /api/stream/:streamId/summary
+   * Requirements: 9.2, 9.3
+   */
+  static async getStreamSummary(req: Request, res: Response) {
+    try {
+      const { streamId } = req.params;
+
+      if (!streamId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Stream ID is required',
+        });
+      }
+
+      console.log(`[StreamController] Getting stream summary for: ${streamId}`);
+
+      const summary = await StreamService.getStreamSummary(streamId);
+
+      res.json({
+        success: true,
+        data: summary,
+      });
+    } catch (error) {
+      console.error('[StreamController] Error getting stream summary:', error);
+
+      if (error instanceof Error && error.message === 'Stream not found') {
+        return res.status(404).json({
+          success: false,
+          error: 'Stream not found',
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get stream summary',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  /**
    * Report a stream
    * POST /api/stream/report
    * Requirements: 2.3, 2.4

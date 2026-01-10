@@ -84,4 +84,14 @@ router.post(
   StreamController.reportStream
 );
 
+/**
+ * Stream Summary - Get stream statistics
+ * Public endpoint (no authentication required)
+ * Requirements: 9.2, 9.3
+ */
+router.get(
+  '/:streamId/summary',
+  StreamController.getStreamSummary
+);
+
 export default router;

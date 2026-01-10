@@ -61,7 +61,7 @@ export const reportStreamSchema = z.object({
     'VIOLENCE',
     'COPYRIGHT',
     'OTHER',
-  ], { errorMap: () => ({ message: 'Invalid report reason' }) }),
+  ], { message: 'Invalid report reason' }),
   description: z.string().max(1000, 'Description is too long').optional(),
 });
 

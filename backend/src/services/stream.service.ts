@@ -405,6 +405,116 @@ export class StreamService {
   }
 
   /**
+   * Get stream summary with statistics
+   * @param streamId - Stream ID to get summary for
+   * @returns Stream summary with totalViewers, peakViewers, topGifter
+   * Requirements: 9.2, 9.3
+   */
+  static async getStreamSummary(streamId: string) {
+    try {
+      console.log(`[StreamService] Getting stream summary for: ${streamId}`);
+
+      // Get stream with stats
+      const stream = await prisma.stream.findUnique({
+        where: { id: streamId },
+        include: {
+          stats: true,
+          user: {
+            select: {
+              id: true,
+              username: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+      });
+
+      if (!stream) {
+        throw new Error('Stream not found');
+      }
+
+      // Calculate top gifter from GiftTransaction aggregation
+      const topGifterResult = await prisma.giftTransaction.groupBy({
+        by: ['senderId'],
+        where: { streamId },
+        _sum: {
+          coinAmount: true,
+        },
+        orderBy: {
+          _sum: {
+            coinAmount: 'desc',
+          },
+        },
+        take: 1,
+      });
+
+      let topGifter = null;
+      const topGifterData = topGifterResult[0];
+      if (topGifterData) {
+        const totalCoins = topGifterData._sum.coinAmount;
+        
+        if (totalCoins && totalCoins > 0) {
+          const topGifterUser = await prisma.user.findUnique({
+            where: { id: topGifterData.senderId },
+            select: {
+              id: true,
+              username: true,
+              name: true,
+              image: true,
+            },
+          });
+
+          if (topGifterUser) {
+            topGifter = {
+              userId: topGifterUser.id,
+              username: topGifterUser.username,
+              name: topGifterUser.name,
+              image: topGifterUser.image,
+              totalCoins: totalCoins,
+            };
+          }
+        }
+      }
+
+      // Calculate duration if stream has started and ended
+      let duration: number | null = null;
+      if (stream.stats?.startedAt && stream.stats?.endedAt) {
+        duration = Math.floor(
+          (stream.stats.endedAt.getTime() - stream.stats.startedAt.getTime()) / 1000
+        );
+      } else if (stream.stats?.startedAt && stream.isLive) {
+        // Stream is still live, calculate current duration
+        duration = Math.floor(
+          (Date.now() - stream.stats.startedAt.getTime()) / 1000
+        );
+      }
+
+      const summary = {
+        streamId: stream.id,
+        title: stream.title,
+        creator: stream.user,
+        totalViewers: stream.stats?.totalViewers ?? 0,
+        peakViewers: stream.stats?.peakViewers ?? 0,
+        totalGifts: stream.stats?.totalGifts ?? 0,
+        totalCoins: stream.stats?.totalCoins ?? 0,
+        totalLikes: stream.stats?.totalLikes ?? 0,
+        topGifter,
+        duration,
+        startedAt: stream.stats?.startedAt ?? null,
+        endedAt: stream.stats?.endedAt ?? null,
+        isLive: stream.isLive,
+      };
+
+      console.log(`[StreamService] Stream summary retrieved for: ${streamId}`);
+      return summary;
+    } catch (error) {
+      console.error('[StreamService] Error getting stream summary:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Create a stream report
    * @param reporterId - User ID of the reporter
    * @param streamId - Stream ID being reported
