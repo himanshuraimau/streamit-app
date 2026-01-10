@@ -60,6 +60,11 @@ export class StreamService {
             image: true,
           },
         },
+        stats: {
+          select: {
+            startedAt: true,
+          },
+        },
       },
     });
   }

@@ -8,3 +8,4 @@ export type { EngagementEvent } from './engagement-popup';
 export { ChatVisibilityToggle, useChatVisibility } from './chat-visibility-toggle';
 export { ImmersiveModeOverlay, useImmersiveMode, useSwipeToImmersive } from './immersive-mode-overlay';
 export { PostStreamSummary } from './post-stream-summary';
+export { ScreenRecordingProtection, useScreenRecordingDetection } from './screen-recording-protection';

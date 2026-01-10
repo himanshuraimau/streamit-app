@@ -88,9 +88,16 @@ export class ViewerController {
         });
       }
 
+      // Transform response to include startedAt at top level
+      const responseData = {
+        ...stream,
+        startedAt: stream.stats?.startedAt?.toISOString() ?? null,
+        stats: undefined, // Remove nested stats from response
+      };
+
       res.json({
         success: true,
-        data: stream,
+        data: responseData,
       });
     } catch (error) {
       console.error('[ViewerController] Error getting stream:', error);

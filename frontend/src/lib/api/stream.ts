@@ -391,6 +391,7 @@ export interface StreamByUsername {
   isChatDelayed: boolean;
   isChatFollowersOnly: boolean;
   userId: string;
+  startedAt: string | null;
   user: {
     id: string;
     username: string;

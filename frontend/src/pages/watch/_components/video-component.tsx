@@ -6,21 +6,32 @@ import {
   VideoTrack,
   AudioTrack,
 } from '@livekit/components-react';
-import { Loader2, Video as VideoIcon, Signal } from 'lucide-react';
+import { Loader2, Video as VideoIcon, Signal, Flag } from 'lucide-react';
+import { StreamDurationTimer } from '@/components/stream/stream-duration-timer';
+import { LikeButton } from '@/components/payment/LikeButton';
+import { ReportStreamDialog } from '@/components/stream/report-stream-dialog';
+import { Button } from '@/components/ui/button';
 
 interface VideoComponentProps {
   hostIdentity: string;
   hostName: string;
   showControls?: boolean;
+  /** Stream ID for reporting and penny tips */
+  streamId?: string;
+  /** When the stream started (for duration timer) */
+  startedAt?: string | null;
 }
 
 export function VideoComponent({ 
   hostIdentity, 
   hostName,
-  showControls = true 
+  showControls = true,
+  streamId,
+  startedAt,
 }: VideoComponentProps) {
   const participant = useRemoteParticipant(hostIdentity);
   const [isLoading, setIsLoading] = useState(true);
+  const [showReportDialog, setShowReportDialog] = useState(false);
   const timeoutRef = useRef<number | null>(null);
 
   const tracks = useTracks([
@@ -107,12 +118,13 @@ export function VideoComponent({
 
       {showControls && (
         <>
-          {/* Live Indicator */}
+          {/* Live Indicator with Duration Timer - Requirements: 1.1, 1.2, 1.3 */}
           <div className="absolute top-4 left-4 z-10">
-            <div className="flex items-center gap-2 bg-red-600/90 backdrop-blur-sm text-white px-3 py-1.5 rounded-full font-semibold text-sm shadow-lg">
-              <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-              LIVE
-            </div>
+            <StreamDurationTimer 
+              startedAt={startedAt} 
+              showLiveIndicator={true}
+              size="md"
+            />
           </div>
 
           {/* Connection Quality Indicator */}
@@ -130,10 +142,43 @@ export function VideoComponent({
             </div>
           </div>
 
+          {/* Stream Controls - Requirements: 2.1, 3.1 */}
+          {streamId && (
+            <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2">
+              {/* Like/Penny Tip Button - Requirements: 3.1, 3.2, 3.3, 3.4, 3.5 */}
+              <LikeButton
+                creatorId={hostIdentity}
+                streamId={streamId}
+                className="bg-black/70 backdrop-blur-sm hover:bg-black/80"
+              />
+              
+              {/* Report Button - Requirements: 2.1 */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowReportDialog(true)}
+                className="bg-black/70 backdrop-blur-sm hover:bg-black/80 text-zinc-300 hover:text-red-400"
+                aria-label="Report stream"
+              >
+                <Flag className="w-5 h-5" />
+              </Button>
+            </div>
+          )}
+
           {/* Gradient Overlays for better readability */}
           <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/50 to-transparent pointer-events-none" />
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
         </>
+      )}
+
+      {/* Report Stream Dialog - Requirements: 2.2, 2.3, 2.4 */}
+      {streamId && (
+        <ReportStreamDialog
+          streamId={streamId}
+          creatorId={hostIdentity}
+          open={showReportDialog}
+          onClose={() => setShowReportDialog(false)}
+        />
       )}
     </div>
   );

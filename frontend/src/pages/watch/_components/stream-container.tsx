@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import { StreamPlayer } from '@/components/stream/stream-player';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,11 +16,20 @@ interface StreamContainerProps {
 
 export function StreamContainer({ 
   stream,
-  isFollowing = false,
+  isFollowing: initialIsFollowing = false,
   onFollow,
   onShare
 }: StreamContainerProps) {
   const navigate = useNavigate();
+  const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
+  
+  // Handle follow state changes from StreamPlayer
+  const handleFollowChange = useCallback((newIsFollowing: boolean) => {
+    setIsFollowing(newIsFollowing);
+    if (newIsFollowing && onFollow) {
+      onFollow();
+    }
+  }, [onFollow]);
 
   if (!stream.isLive) {
     return (
@@ -64,13 +74,18 @@ export function StreamContainer({
       <StreamPlayer
         hostId={stream.userId}
         hostName={stream.user.name || stream.user.username}
+        hostUsername={stream.user.username}
+        hostImage={stream.user.image}
         streamInfo={{
+          id: stream.id,
           title: stream.title,
           isChatEnabled: stream.isChatEnabled,
           isChatDelayed: stream.isChatDelayed,
           isChatFollowersOnly: stream.isChatFollowersOnly,
+          startedAt: stream.startedAt,
         }}
         isFollowing={isFollowing}
+        onFollowChange={handleFollowChange}
       />
 
       {/* Stream Info */}

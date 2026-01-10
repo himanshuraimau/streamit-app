@@ -7,14 +7,19 @@ import type { ViewerTokenResponse } from '@/lib/api/stream';
 interface StreamPlayerProps {
   hostId: string;
   hostName: string;
+  hostUsername?: string;
+  hostImage?: string | null;
   streamInfo?: {
+    id?: string;
     title: string;
     description?: string;
     isChatEnabled: boolean;
     isChatDelayed: boolean;
     isChatFollowersOnly: boolean;
+    startedAt?: string | null;
   };
   isFollowing?: boolean;
+  onFollowChange?: (isFollowing: boolean) => void;
 }
 
 // Generate a random guest name
@@ -30,8 +35,11 @@ const generateGuestName = () => {
 export function StreamPlayer({ 
   hostId, 
   hostName,
+  hostUsername,
+  hostImage,
   streamInfo: providedStreamInfo,
-  isFollowing = false
+  isFollowing = false,
+  onFollowChange
 }: StreamPlayerProps) {
   const [token, setToken] = useState<ViewerTokenResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,8 +97,11 @@ export function StreamPlayer({
       streamInfo={streamInfo}
       hostName={hostName}
       hostIdentity={hostId}
+      hostUsername={hostUsername}
+      hostImage={hostImage}
       isFollowing={isFollowing}
       onRetry={fetchToken}
+      onFollowChange={onFollowChange}
       variant="viewer"
     />
   );

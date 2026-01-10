@@ -7,11 +7,6 @@
 
 ## 🔴 Critical Missing Features
 
-### 1. User Registration Fields
-- [ ] **Age field** - Required during signup
-- [ ] **Phone number field** - Required during signup
-- [ ] **Phone/SMS OTP verification** - Currently only email OTP
-
 ### 2. Homepage Features
 - [x] **Trending Creators Section** ✅ IMPLEMENTED
   - Display photos and shorts from creators across platform
