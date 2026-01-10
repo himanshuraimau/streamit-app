@@ -426,4 +426,153 @@ export class PaymentService {
 
     return { gifts, total };
   }
+
+  /**
+   * Send penny tip to creator (1 coin)
+   * Deducts 1 coin from sender and credits 1 coin to creator
+   * 
+   * Requirements: 3.3, 3.4, 3.6
+   */
+  static async sendPennyTip(
+    senderId: string,
+    creatorId: string,
+    streamId: string
+  ) {
+    const PENNY_TIP_AMOUNT = 1;
+
+    // Verify the stream exists and is live
+    const stream = await prisma.stream.findUnique({
+      where: { id: streamId },
+      include: { user: true },
+    });
+
+    if (!stream) {
+      throw new Error('Stream not found');
+    }
+
+    if (!stream.isLive) {
+      throw new Error('Stream is not live');
+    }
+
+    // Verify the stream belongs to the creator
+    if (stream.userId !== creatorId) {
+      throw new Error('Stream does not belong to this creator');
+    }
+
+    // Verify receiver is an approved creator
+    const creator = await prisma.user.findUnique({
+      where: { id: creatorId },
+      include: { creatorApplication: true },
+    });
+
+    if (!creator || creator.creatorApplication?.status !== 'APPROVED') {
+      throw new Error('Receiver is not an approved creator');
+    }
+
+    // Cannot tip yourself
+    if (senderId === creatorId) {
+      throw new Error('You cannot tip yourself');
+    }
+
+    return await prisma.$transaction(async (tx) => {
+      // Check sender's wallet balance
+      const senderWallet = await tx.coinWallet.findUnique({
+        where: { userId: senderId },
+      });
+
+      if (!senderWallet || senderWallet.balance < PENNY_TIP_AMOUNT) {
+        throw new Error('Insufficient balance');
+      }
+
+      // Deduct 1 coin from sender
+      await tx.coinWallet.update({
+        where: { userId: senderId },
+        data: {
+          balance: { decrement: PENNY_TIP_AMOUNT },
+          totalSpent: { increment: PENNY_TIP_AMOUNT },
+        },
+      });
+
+      // Credit 1 coin to creator (no platform commission for penny tips)
+      await tx.coinWallet.upsert({
+        where: { userId: creatorId },
+        create: {
+          userId: creatorId,
+          balance: PENNY_TIP_AMOUNT,
+          totalEarned: PENNY_TIP_AMOUNT,
+        },
+        update: {
+          balance: { increment: PENNY_TIP_AMOUNT },
+          totalEarned: { increment: PENNY_TIP_AMOUNT },
+        },
+      });
+
+      // Create GiftTransaction record for penny tip (giftId is null for penny tips)
+      const transaction = await tx.giftTransaction.create({
+        data: {
+          senderId,
+          receiverId: creatorId,
+          giftId: await PaymentService.getPennyTipGiftId(tx),
+          coinAmount: PENNY_TIP_AMOUNT,
+          streamId,
+          message: 'Penny tip',
+        },
+        include: {
+          sender: { select: { id: true, username: true, name: true, image: true } },
+          receiver: { select: { id: true, username: true, name: true } },
+        },
+      });
+
+      // Update stream stats if they exist
+      await tx.streamStats.updateMany({
+        where: { streamId },
+        data: {
+          totalLikes: { increment: 1 },
+          totalCoins: { increment: PENNY_TIP_AMOUNT },
+        },
+      });
+
+      // Get updated sender wallet balance
+      const updatedWallet = await tx.coinWallet.findUnique({
+        where: { userId: senderId },
+      });
+
+      console.log(`💰 Penny tip sent: ${senderId} -> ${creatorId} (1 coin)`);
+
+      return {
+        transactionId: transaction.id,
+        remainingBalance: updatedWallet?.balance ?? 0,
+        transaction,
+      };
+    });
+  }
+
+  /**
+   * Get or create a special "Penny Tip" gift for tracking penny tips
+   * This is a helper to ensure penny tips are recorded as gift transactions
+   */
+  private static async getPennyTipGiftId(tx: any): Promise<string> {
+    const PENNY_TIP_GIFT_NAME = 'Penny Tip';
+    
+    // Try to find existing penny tip gift
+    let pennyTipGift = await tx.gift.findFirst({
+      where: { name: PENNY_TIP_GIFT_NAME },
+    });
+
+    // Create if doesn't exist
+    if (!pennyTipGift) {
+      pennyTipGift = await tx.gift.create({
+        data: {
+          name: PENNY_TIP_GIFT_NAME,
+          description: 'A small tip to show appreciation',
+          coinPrice: 1,
+          imageUrl: '/gifts/penny-tip.png',
+          isActive: true,
+          sortOrder: 0,
+        },
+      });
+    }
+
+    return pennyTipGift.id;
+  }
 }

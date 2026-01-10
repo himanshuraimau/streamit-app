@@ -15,6 +15,11 @@ const sendGiftSchema = z.object({
   message: z.string().max(200).optional(),
 });
 
+const sendPennyTipSchema = z.object({
+  creatorId: z.string().min(1, 'Creator ID is required'),
+  streamId: z.string().min(1, 'Stream ID is required'),
+});
+
 export class PaymentController {
   /**
    * Get user's coin wallet
@@ -258,6 +263,56 @@ export class PaymentController {
       res.status(500).json({ 
         success: false, 
         error: 'Failed to fetch gifts received' 
+      });
+    }
+  }
+
+  /**
+   * Send penny tip to creator (1 coin)
+   * POST /api/payment/penny-tip
+   * 
+   * Requirements: 3.3, 3.4
+   */
+  static async sendPennyTip(req: Request, res: Response) {
+    try {
+      const senderId = req.user!.id;
+      const { creatorId, streamId } = sendPennyTipSchema.parse(req.body);
+
+      // Can't tip yourself
+      if (senderId === creatorId) {
+        return res.status(400).json({
+          success: false,
+          error: 'You cannot send a penny tip to yourself'
+        });
+      }
+
+      const result = await PaymentService.sendPennyTip(senderId, creatorId, streamId);
+
+      res.json({
+        success: true,
+        data: {
+          transactionId: result.transactionId,
+          remainingBalance: result.remainingBalance,
+        },
+        message: 'Penny tip sent successfully'
+      });
+    } catch (error) {
+      console.error('Error sending penny tip:', error);
+
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          error: 'Validation error',
+          details: error.issues
+        });
+      }
+
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send penny tip';
+      const status = errorMessage === 'Insufficient balance' ? 400 : 500;
+      
+      res.status(status).json({
+        success: false,
+        error: errorMessage
       });
     }
   }

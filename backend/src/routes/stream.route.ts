@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { requireCreator } from '../middleware/creator.middleware';
 import { StreamController } from '../controllers/stream.controller';
+import { streamReportRateLimiter } from '../middleware/rate-limit.middleware';
 
 const router = Router();
 
@@ -69,6 +70,18 @@ router.get(
   requireAuth,
   requireCreator,
   StreamController.getPastStreams
+);
+
+/**
+ * Stream Report - Viewer endpoint for reporting streams
+ * Requires authentication and rate limiting (5 reports/hour per user)
+ * Requirements: 2.3, 2.4
+ */
+router.post(
+  '/report',
+  requireAuth,
+  streamReportRateLimiter,
+  StreamController.reportStream
 );
 
 export default router;

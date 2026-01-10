@@ -24,15 +24,15 @@ model User {
   accounts      Account[]
 
   // Admin and moderation fields
-  role               UserRole       @default(USER)
-  isSuspended        Boolean        @default(false)
-  suspendedReason    String?        @db.Text
-  suspendedBy        String? // Admin user ID
-  suspendedAt        DateTime?
+  role                UserRole  @default(USER)
+  isSuspended         Boolean   @default(false)
+  suspendedReason     String?   @db.Text
+  suspendedBy         String? // Admin user ID
+  suspendedAt         DateTime?
   suspensionExpiresAt DateTime? // null = permanent suspension
-  adminNotes         String?        @db.Text
-  lastLoginAt        DateTime?
-  lastLoginIp        String?
+  adminNotes          String?   @db.Text
+  lastLoginAt         DateTime?
+  lastLoginIp         String?
 
   // Creator application relationship
   creatorApplication CreatorApplication?
@@ -66,6 +66,9 @@ model User {
   // Moderation relationships
   reportsSubmitted Report[] @relation("ReportSubmitter")
   reportsReceived  Report[] @relation("ReportedUser")
+
+  // Stream report relationships
+  streamReportsSubmitted StreamReport[]
 
   // Admin activity tracking
   adminActionsPerformed AdminActivityLog[] @relation("AdminUser")
@@ -234,7 +237,8 @@ model Stream {
   thumbnail   String? @db.Text
 
   // Stream status
-  isLive Boolean @default(false)
+  isLive    Boolean   @default(false)
+  startedAt DateTime? // When stream went live
 
   // Chat settings
   isChatEnabled       Boolean @default(true)
@@ -248,6 +252,12 @@ model Stream {
   // Gift relationships
   giftTransactions GiftTransaction[]
 
+  // Stream reports
+  streamReports StreamReport[]
+
+  // Stream statistics
+  stats StreamStats?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -255,6 +265,45 @@ model Stream {
   @@index([title])
   @@index([isLive])
   @@map("stream")
+}
+
+// Stream-specific reports from viewers
+model StreamReport {
+  id          String             @id @default(cuid())
+  streamId    String
+  stream      Stream             @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  reporterId  String
+  reporter    User               @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  reason      StreamReportReason
+  description String?            @db.Text
+  status      StreamReportStatus @default(PENDING)
+  reviewedAt  DateTime?
+  reviewedBy  String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([streamId])
+  @@index([reporterId])
+  @@index([status])
+  @@map("stream_report")
+}
+
+// Stream statistics for tracking viewer metrics
+model StreamStats {
+  id           String    @id @default(cuid())
+  streamId     String    @unique
+  stream       Stream    @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  peakViewers  Int       @default(0)
+  totalViewers Int       @default(0)
+  totalLikes   Int       @default(0)
+  totalGifts   Int       @default(0)
+  totalCoins   Int       @default(0)
+  startedAt    DateTime?
+  endedAt      DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("stream_stats")
 }
 
 // Social following system
@@ -306,10 +355,10 @@ model Post {
   likes         Like[]
   comments      Comment[]
   views         PostView[] // NEW: Track individual views for analytics
-  likesCount    Int       @default(0)
-  commentsCount Int       @default(0)
-  viewsCount    Int       @default(0) // NEW: Track post views
-  sharesCount   Int       @default(0) // NEW: Track post shares
+  likesCount    Int        @default(0)
+  commentsCount Int        @default(0)
+  viewsCount    Int        @default(0) // NEW: Track post views
+  sharesCount   Int        @default(0) // NEW: Track post shares
 
   // Visibility and settings
   isPublic      Boolean @default(true)
@@ -317,15 +366,15 @@ model Post {
   isShort       Boolean @default(false) // NEW: Mark as short-form video (< 60s)
 
   // Moderation
-  isHidden        Boolean  @default(false) // Hidden by admin/moderation
-  hiddenReason    String?  @db.Text
-  hiddenBy        String? // Admin user ID
-  hiddenAt        DateTime?
-  
+  isHidden     Boolean   @default(false) // Hidden by admin/moderation
+  hiddenReason String?   @db.Text
+  hiddenBy     String? // Admin user ID
+  hiddenAt     DateTime?
+
   // Content flags
-  isFlagged       Boolean @default(false)
-  flagCount       Int     @default(0)
-  reports         Report[]
+  isFlagged Boolean  @default(false)
+  flagCount Int      @default(0)
+  reports   Report[]
 
   // Author
   authorId String
@@ -380,7 +429,7 @@ model PostView {
   id       String   @id @default(cuid())
   postId   String
   post     Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  userId   String?  // Null for anonymous views
+  userId   String? // Null for anonymous views
   user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   viewedAt DateTime @default(now())
 
@@ -429,8 +478,8 @@ model Comment {
   likesCount Int           @default(0)
 
   // Moderation
-  isHidden     Boolean  @default(false)
-  hiddenReason String?  @db.Text
+  isHidden     Boolean   @default(false)
+  hiddenReason String?   @db.Text
   hiddenBy     String? // Admin user ID
   hiddenAt     DateTime?
   reports      Report[]
@@ -726,7 +775,6 @@ model DiscountCode {
   @@map("discount_code")
 }
 
-
 // ============================================
 // ADMIN & MODERATION MODELS
 // ============================================
@@ -790,7 +838,7 @@ model AdminActivityLog {
   affectedUser   User?   @relation("AffectedUser", fields: [affectedUserId], references: [id], onDelete: SetNull)
 
   // Additional context
-  metadata Json? // Store additional data as JSON
+  metadata  Json? // Store additional data as JSON
   ipAddress String?
 
   createdAt DateTime @default(now())
@@ -826,11 +874,11 @@ model Announcement {
   id String @id @default(cuid())
 
   title   String
-  content String   @db.Text
+  content String           @db.Text
   type    AnnouncementType @default(INFO)
 
   // Visibility
-  isActive Boolean @default(true)
+  isActive Boolean   @default(true)
   startsAt DateTime?
   endsAt   DateTime?
 
@@ -885,7 +933,7 @@ enum AdminAction {
   USER_ROLE_CHANGED
   USER_DELETED
   USER_UPDATED
-  
+
   // Content moderation
   POST_HIDDEN
   POST_UNHIDDEN
@@ -893,22 +941,22 @@ enum AdminAction {
   COMMENT_HIDDEN
   COMMENT_UNHIDDEN
   COMMENT_DELETED
-  
+
   // Creator management
   CREATOR_APPLICATION_APPROVED
   CREATOR_APPLICATION_REJECTED
   CREATOR_STATUS_REVOKED
-  
+
   // Payment management
   PAYMENT_REFUNDED
   PAYMENT_VERIFIED
   DISCOUNT_CODE_CREATED
   DISCOUNT_CODE_DEACTIVATED
-  
+
   // Report handling
   REPORT_REVIEWED
   REPORT_DISMISSED
-  
+
   // System management
   SETTING_UPDATED
   ANNOUNCEMENT_CREATED
@@ -923,6 +971,24 @@ enum AnnouncementType {
   FEATURE
   PROMOTION
 }
+
+// Stream report specific enums
+enum StreamReportReason {
+  INAPPROPRIATE_CONTENT
+  HARASSMENT
+  SPAM
+  VIOLENCE
+  COPYRIGHT
+  OTHER
+}
+
+enum StreamReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
+}
+
 model DiscountRedemption {
   id String @id @default(cuid())
 

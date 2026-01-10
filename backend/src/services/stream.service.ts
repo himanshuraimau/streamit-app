@@ -1,5 +1,5 @@
 import { prisma } from '../lib/db';
-import type { Stream } from '@prisma/client';
+import type { Stream, StreamReportReason } from '@prisma/client';
 
 /**
  * Stream Service - Business logic for stream management
@@ -400,6 +400,63 @@ export class StreamService {
       };
     } catch (error) {
       console.error('[StreamService] Error getting past streams:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a stream report
+   * @param reporterId - User ID of the reporter
+   * @param streamId - Stream ID being reported
+   * @param reason - Report reason
+   * @param description - Optional description
+   * @returns Created stream report
+   * Requirements: 2.3
+   */
+  static async createReport(
+    reporterId: string,
+    streamId: string,
+    reason: StreamReportReason,
+    description?: string
+  ) {
+    try {
+      console.log(`[StreamService] Creating report for stream: ${streamId} by user: ${reporterId}`);
+
+      // Validate stream exists and is live
+      const stream = await prisma.stream.findUnique({
+        where: { id: streamId },
+        select: { id: true, isLive: true },
+      });
+
+      if (!stream) {
+        throw new Error('Stream not found');
+      }
+
+      if (!stream.isLive) {
+        throw new Error('Can only report live streams');
+      }
+
+      // Create the stream report
+      const report = await prisma.streamReport.create({
+        data: {
+          streamId,
+          reporterId,
+          reason,
+          description,
+        },
+        select: {
+          id: true,
+          streamId: true,
+          reason: true,
+          status: true,
+          createdAt: true,
+        },
+      });
+
+      console.log(`[StreamService] Report created: ${report.id}`);
+      return report;
+    } catch (error) {
+      console.error('[StreamService] Error creating report:', error);
       throw error;
     }
   }

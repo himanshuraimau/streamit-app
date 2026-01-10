@@ -51,6 +51,20 @@ export const getViewerTokenSchema = z.object({
   guestName: z.string().min(1).max(50).optional(), // For anonymous guests
 });
 
+// Stream report request
+export const reportStreamSchema = z.object({
+  streamId: z.string().min(1, 'Stream ID is required'),
+  reason: z.enum([
+    'INAPPROPRIATE_CONTENT',
+    'HARASSMENT',
+    'SPAM',
+    'VIOLENCE',
+    'COPYRIGHT',
+    'OTHER',
+  ], { errorMap: () => ({ message: 'Invalid report reason' }) }),
+  description: z.string().max(1000, 'Description is too long').optional(),
+});
+
 // Export types for TypeScript
 export type CreateIngressRequest = z.infer<typeof createIngressSchema>;
 export type CreateStreamRequest = z.infer<typeof createStreamSchema>;
@@ -58,3 +72,4 @@ export type SetupStreamRequest = z.infer<typeof setupStreamSchema>;
 export type UpdateStreamInfoRequest = z.infer<typeof updateStreamInfoSchema>;
 export type UpdateChatSettingsRequest = z.infer<typeof updateChatSettingsSchema>;
 export type GetViewerTokenRequest = z.infer<typeof getViewerTokenSchema>;
+export type ReportStreamRequest = z.infer<typeof reportStreamSchema>;

@@ -21,6 +21,9 @@ router.post('/purchase', requireAuth, PaymentController.createPurchase);
 router.get('/gifts', PaymentController.getGifts); // Public - view available gifts
 router.post('/gift', requireAuth, PaymentController.sendGift); // Send gift to creator
 
+// Penny tip endpoint (requires auth)
+router.post('/penny-tip', requireAuth, PaymentController.sendPennyTip);
+
 // Transaction history (requires auth)
 router.get('/purchases', requireAuth, PaymentController.getPurchases);
 router.get('/gifts-sent', requireAuth, PaymentController.getGiftsSent);

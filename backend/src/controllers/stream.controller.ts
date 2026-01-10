@@ -5,8 +5,10 @@ import {
   updateStreamInfoSchema,
   updateChatSettingsSchema,
   setupStreamSchema,
+  reportStreamSchema,
 } from '../lib/validations/stream.validation';
 import { TokenService } from '../services/token.service';
+import type { StreamReportReason } from '@prisma/client';
 
 /**
  * Stream Controller - Handles HTTP requests for streaming operations
@@ -368,6 +370,68 @@ export class StreamController {
       res.status(500).json({
         success: false,
         error: 'Failed to get past streams',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  /**
+   * Report a stream
+   * POST /api/stream/report
+   * Requirements: 2.3, 2.4
+   */
+  static async reportStream(req: Request, res: Response) {
+    try {
+      const userId = req.user!.id;
+
+      // Validate request body
+      const data = reportStreamSchema.parse(req.body);
+
+      console.log(`[StreamController] User ${userId} reporting stream: ${data.streamId}`);
+
+      const report = await StreamService.createReport(
+        userId,
+        data.streamId,
+        data.reason as StreamReportReason,
+        data.description
+      );
+
+      res.status(201).json({
+        success: true,
+        data: {
+          reportId: report.id,
+        },
+        message: 'Report submitted successfully',
+      });
+    } catch (error) {
+      console.error('[StreamController] Error reporting stream:', error);
+
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          error: 'Validation error',
+          details: error.issues,
+        });
+      }
+
+      if (error instanceof Error) {
+        if (error.message === 'Stream not found') {
+          return res.status(404).json({
+            success: false,
+            error: 'Stream not found',
+          });
+        }
+        if (error.message === 'Can only report live streams') {
+          return res.status(400).json({
+            success: false,
+            error: error.message,
+          });
+        }
+      }
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to submit report',
         message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
