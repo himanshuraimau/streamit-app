@@ -4,6 +4,8 @@ import { ChatComponent } from './chat-component';
 import { Card } from '@/components/ui/card';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { EngagementPopup } from '@/components/stream/engagement-popup';
+import { useDataChannelEvents } from '@/hooks/useDataChannelEvents';
 
 interface StreamLayoutProps {
   token: {
@@ -26,6 +28,106 @@ interface StreamLayoutProps {
   isFollowing?: boolean;
   onRetry?: () => void;
   variant?: 'viewer' | 'creator';
+}
+
+/**
+ * Inner content component that uses LiveKit room context
+ * Must be rendered inside LiveKitRoom to access room context
+ * 
+ * Requirements: 4.1, 4.2, 4.3
+ */
+interface StreamLayoutContentProps {
+  streamInfo: {
+    title: string;
+    description?: string;
+    isChatEnabled: boolean;
+    isChatDelayed: boolean;
+    isChatFollowersOnly: boolean;
+  };
+  hostName: string;
+  hostIdentity: string;
+  isFollowing: boolean;
+  variant: 'viewer' | 'creator';
+}
+
+function StreamLayoutContent({
+  streamInfo,
+  hostName,
+  hostIdentity,
+  isFollowing,
+  variant,
+}: StreamLayoutContentProps) {
+  // Use data channel events hook to listen for engagement events
+  // Requirements: 4.1, 4.2, 4.3
+  const { events, dismissEvent } = useDataChannelEvents();
+
+  return (
+    <>
+      {/* Engagement Popup Overlay - Requirements: 4.1, 4.2, 4.3, 4.4, 4.5 */}
+      <EngagementPopup events={events} onDismiss={dismissEvent} />
+
+      <div className="grid lg:grid-cols-3 gap-6 h-full">
+        {/* Video Section - Takes 2 columns */}
+        <div className="lg:col-span-2 space-y-4">
+          <VideoComponent 
+            hostIdentity={hostIdentity}
+            hostName={hostName}
+          />
+          
+          {/* Stream Info Card */}
+          <Card className="bg-zinc-900 border-zinc-800 p-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-white">{streamInfo.title}</h3>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                  <span className="text-sm font-medium text-red-400">LIVE</span>
+                </div>
+              </div>
+              {streamInfo.description && (
+                <p className="text-sm text-zinc-400 leading-relaxed">{streamInfo.description}</p>
+              )}
+            </div>
+          </Card>
+        </div>
+
+        {/* Chat Section - Takes 1 column */}
+        {streamInfo.isChatEnabled && (
+          <div className="lg:col-span-1 h-[700px]">
+            <ChatComponent
+              hostName={hostName}
+              isChatEnabled={streamInfo.isChatEnabled}
+              isChatDelayed={streamInfo.isChatDelayed}
+              isChatFollowersOnly={streamInfo.isChatFollowersOnly}
+              isFollowing={isFollowing}
+              variant={variant === 'creator' ? 'default' : 'default'}
+            />
+          </div>
+        )}
+
+        {/* Chat Disabled Message */}
+        {!streamInfo.isChatEnabled && (
+          <div className="lg:col-span-1">
+            <Card className="bg-zinc-900 border-zinc-800 h-[700px] flex items-center justify-center">
+              <div className="text-center space-y-3 px-6">
+                <div className="w-16 h-16 rounded-full bg-zinc-800/50 flex items-center justify-center mx-auto">
+                  <svg className="w-8 h-8 text-zinc-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 className="text-lg font-medium text-white mb-2">Chat Disabled</h4>
+                  <p className="text-sm text-zinc-500">
+                    The streamer has disabled chat for this stream.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+      </div>
+    </>
+  );
 }
 
 export function StreamLayout({
@@ -83,66 +185,13 @@ export function StreamLayout({
         connect={true}
         className="w-full h-full"
       >
-        <div className="grid lg:grid-cols-3 gap-6 h-full">
-          {/* Video Section - Takes 2 columns */}
-          <div className="lg:col-span-2 space-y-4">
-            <VideoComponent 
-              hostIdentity={hostIdentity}
-              hostName={hostName}
-            />
-            
-            {/* Stream Info Card */}
-            <Card className="bg-zinc-900 border-zinc-800 p-4">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-white">{streamInfo.title}</h3>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                    <span className="text-sm font-medium text-red-400">LIVE</span>
-                  </div>
-                </div>
-                {streamInfo.description && (
-                  <p className="text-sm text-zinc-400 leading-relaxed">{streamInfo.description}</p>
-                )}
-              </div>
-            </Card>
-          </div>
-
-          {/* Chat Section - Takes 1 column */}
-          {streamInfo.isChatEnabled && (
-            <div className="lg:col-span-1 h-[700px]">
-              <ChatComponent
-                hostName={hostName}
-                isChatEnabled={streamInfo.isChatEnabled}
-                isChatDelayed={streamInfo.isChatDelayed}
-                isChatFollowersOnly={streamInfo.isChatFollowersOnly}
-                isFollowing={isFollowing}
-                variant={variant === 'creator' ? 'default' : 'default'}
-              />
-            </div>
-          )}
-
-          {/* Chat Disabled Message */}
-          {!streamInfo.isChatEnabled && (
-            <div className="lg:col-span-1">
-              <Card className="bg-zinc-900 border-zinc-800 h-[700px] flex items-center justify-center">
-                <div className="text-center space-y-3 px-6">
-                  <div className="w-16 h-16 rounded-full bg-zinc-800/50 flex items-center justify-center mx-auto">
-                    <svg className="w-8 h-8 text-zinc-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-medium text-white mb-2">Chat Disabled</h4>
-                    <p className="text-sm text-zinc-500">
-                      The streamer has disabled chat for this stream.
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            </div>
-          )}
-        </div>
+        <StreamLayoutContent
+          streamInfo={streamInfo}
+          hostName={hostName}
+          hostIdentity={hostIdentity}
+          isFollowing={isFollowing}
+          variant={variant}
+        />
       </LiveKitRoom>
     </div>
   );

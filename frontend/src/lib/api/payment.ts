@@ -12,6 +12,16 @@ import type {
   SendGiftRequest,
 } from '@/types/payment.types';
 
+export interface PennyTipRequest {
+  creatorId: string;
+  streamId: string;
+}
+
+export interface PennyTipResponse {
+  transactionId: string;
+  remainingBalance: number;
+}
+
 /**
  * Payment API Client
  * All functions use the apiFetch wrapper with automatic Bearer token
@@ -201,6 +211,26 @@ export const paymentApi = {
         success: false,
         data: [],
         pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
+      };
+    }
+  },
+
+  /**
+   * Send a penny tip (1 coin) to a creator during a stream
+   * Requirements: 3.3, 3.4
+   */
+  async sendPennyTip(request: PennyTipRequest): Promise<ApiResponse<PennyTipResponse>> {
+    try {
+      const response = await apiPost<ApiResponse<PennyTipResponse>>(
+        '/api/payment/penny-tip',
+        request
+      );
+      return response;
+    } catch (error) {
+      console.error('Error sending penny tip:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to send penny tip',
       };
     }
   },

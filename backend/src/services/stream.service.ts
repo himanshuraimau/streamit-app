@@ -185,6 +185,7 @@ export class StreamService {
    * @param userId - Creator's user ID
    * @param isLive - Live status
    * @returns Updated stream
+   * Requirements: 1.1, 1.3, 9.2
    */
   static async setStreamLive(userId: string, isLive: boolean): Promise<Stream> {
     try {
@@ -194,21 +195,86 @@ export class StreamService {
 
       const stream = await prisma.stream.findUnique({
         where: { userId },
+        include: { stats: true },
       });
 
       if (!stream) {
         throw new Error('Stream not found');
       }
 
-      const updatedStream = await prisma.stream.update({
-        where: { userId },
-        data: { isLive },
-      });
+      if (isLive) {
+        // Going live: Set startedAt and create StreamStats record
+        const now = new Date();
+        
+        const updatedStream = await prisma.stream.update({
+          where: { userId },
+          data: { 
+            isLive: true,
+            startedAt: now,
+          },
+        });
 
-      console.log(
-        `[StreamService] Stream ${isLive ? 'is now LIVE' : 'went OFFLINE'} for user: ${userId}`
-      );
-      return updatedStream;
+        // Create or reset StreamStats for this stream session
+        await prisma.streamStats.upsert({
+          where: { streamId: stream.id },
+          create: {
+            streamId: stream.id,
+            startedAt: now,
+            peakViewers: 0,
+            totalViewers: 0,
+            totalLikes: 0,
+            totalGifts: 0,
+            totalCoins: 0,
+          },
+          update: {
+            startedAt: now,
+            endedAt: null,
+            peakViewers: 0,
+            totalViewers: 0,
+            totalLikes: 0,
+            totalGifts: 0,
+            totalCoins: 0,
+          },
+        });
+
+        console.log(
+          `[StreamService] Stream is now LIVE for user: ${userId}, startedAt: ${now.toISOString()}`
+        );
+        return updatedStream;
+      } else {
+        // Ending stream: Set endedAt in StreamStats and calculate final statistics
+        const now = new Date();
+        
+        const updatedStream = await prisma.stream.update({
+          where: { userId },
+          data: { isLive: false },
+        });
+
+        // Update StreamStats with endedAt and final statistics
+        if (stream.stats) {
+          // Calculate final statistics from gift transactions
+          const giftStats = await prisma.giftTransaction.aggregate({
+            where: { streamId: stream.id },
+            _sum: { coinAmount: true },
+            _count: { id: true },
+          });
+
+          await prisma.streamStats.update({
+            where: { streamId: stream.id },
+            data: {
+              endedAt: now,
+              totalGifts: giftStats._count.id,
+              totalCoins: giftStats._sum.coinAmount ?? 0,
+            },
+          });
+
+          console.log(
+            `[StreamService] Stream went OFFLINE for user: ${userId}, endedAt: ${now.toISOString()}`
+          );
+        }
+
+        return updatedStream;
+      }
     } catch (error) {
       console.error('[StreamService] Error setting stream live status:', error);
       throw error;

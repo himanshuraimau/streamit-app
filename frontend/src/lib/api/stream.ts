@@ -98,7 +98,105 @@ export interface ViewerTokenResponse {
   wsUrl: string;
 }
 
+// Report stream interfaces
+export type ReportReason = 
+  | 'INAPPROPRIATE_CONTENT'
+  | 'HARASSMENT'
+  | 'SPAM'
+  | 'VIOLENCE'
+  | 'COPYRIGHT'
+  | 'OTHER';
+
+export interface ReportStreamRequest {
+  streamId: string;
+  reason: ReportReason;
+  description?: string;
+}
+
+export interface ReportStreamResponse {
+  reportId: string;
+}
+
+// Stream summary interfaces
+// Requirements: 9.2, 9.3
+export interface StreamSummary {
+  streamId: string;
+  title: string;
+  creator: {
+    id: string;
+    username: string;
+    name: string | null;
+    image: string | null;
+  };
+  totalViewers: number;
+  peakViewers: number;
+  totalGifts: number;
+  totalCoins: number;
+  totalLikes: number;
+  topGifter: {
+    userId: string;
+    username: string;
+    name: string | null;
+    image: string | null;
+    totalCoins: number;
+  } | null;
+  duration: number | null;
+  startedAt: string | null;
+  endedAt: string | null;
+  isLive: boolean;
+}
+
+// Recommended stream interface
+export interface RecommendedStream {
+  id: string;
+  title: string;
+  thumbnail: string | null;
+  isLive: boolean;
+  user: {
+    id: string;
+    username: string;
+    name: string | null;
+    image: string | null;
+  };
+}
+
 export const streamApi = {
+  // Get stream summary
+  // Requirements: 9.2, 9.3
+  async getStreamSummary(streamId: string): Promise<ApiResponse<StreamSummary>> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/stream/${streamId}/summary`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching stream summary:', error);
+      throw error;
+    }
+  },
+
+  // Report a stream
+  // Requirements: 2.3, 2.4
+  async reportStream(data: ReportStreamRequest): Promise<ApiResponse<ReportStreamResponse>> {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${API_BASE_URL}/api/stream/report`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(data),
+      });
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error reporting stream:', error);
+      throw error;
+    }
+  },
+
   // Setup stream - Create or update stream metadata before going live
   // Requirements: 5.2
   async setupStream(data: SetupStreamRequest): Promise<ApiResponse<SetupStreamResponse>> {
@@ -315,6 +413,28 @@ export const viewerApi = {
       return await response.json();
     } catch (error) {
       console.error('Error fetching live streams:', error);
+      throw error;
+    }
+  },
+
+  // Get recommended streams (public)
+  // Requirements: 9.5
+  async getRecommendedStreams(excludeStreamId?: string, limit: number = 5): Promise<ApiResponse<LiveStream[]>> {
+    try {
+      const params = new URLSearchParams();
+      if (excludeStreamId) params.append('excludeStreamId', excludeStreamId);
+      params.append('limit', limit.toString());
+      
+      const response = await fetch(`${API_BASE_URL}/api/viewer/recommended?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching recommended streams:', error);
       throw error;
     }
   },

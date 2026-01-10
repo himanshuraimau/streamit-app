@@ -1,10 +1,18 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useChat, useConnectionState } from '@livekit/components-react';
 import { ConnectionState } from 'livekit-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, MessageSquare, Lock } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Send, MessageSquare, Lock, Ban, UserCheck, MoreVertical } from 'lucide-react';
 import { format } from 'date-fns';
+import { useBlockedUsers } from '@/contexts/BlockedUsersContext';
+import { filterBlockedMessages, type ChatMessage } from '@/lib/viewer-preferences';
 
 interface ChatProps {
   hostName: string;
@@ -25,14 +33,30 @@ export function Chat({
   const { chatMessages, send } = useChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const connectionState = useConnectionState();
+  
+  // Get blocked users context - may be null if not wrapped in provider
+  let blockedUsersContext: ReturnType<typeof useBlockedUsers> | null = null;
+  try {
+    blockedUsersContext = useBlockedUsers();
+  } catch {
+    // Context not available, blocking features will be disabled
+  }
 
   // Check if room is connected
   const isConnected = connectionState === ConnectionState.Connected;
 
+  // Filter out messages from blocked users
+  const filteredMessages = blockedUsersContext
+    ? filterBlockedMessages(
+        chatMessages as unknown as ChatMessage[],
+        blockedUsersContext.blockedUserIds
+      )
+    : chatMessages;
+
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatMessages]);
+  }, [filteredMessages]);
 
   const handleSendMessage = async () => {
     if (!message.trim() || !send || !isConnected) return;
@@ -51,6 +75,19 @@ export function Chat({
       handleSendMessage();
     }
   };
+
+  // Handle blocking/unblocking a user
+  const handleBlockUser = useCallback((userId: string) => {
+    if (blockedUsersContext) {
+      blockedUsersContext.blockUser(userId);
+    }
+  }, [blockedUsersContext]);
+
+  const handleUnblockUser = useCallback((userId: string) => {
+    if (blockedUsersContext) {
+      blockedUsersContext.unblockUser(userId);
+    }
+  }, [blockedUsersContext]);
 
   // Check if user can chat
   const canChat = () => {
@@ -82,7 +119,7 @@ export function Chat({
 
       {/* Messages Container */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {chatMessages.length === 0 ? (
+        {filteredMessages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center text-zinc-500">
               <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
@@ -92,25 +129,64 @@ export function Chat({
           </div>
         ) : (
           <>
-            {chatMessages.map((msg, index) => (
-              <div key={index} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="flex items-start gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline gap-2">
-                      <span className="font-medium text-purple-400 text-sm">
-                        {msg.from?.name || 'Anonymous'}
-                      </span>
-                      <span className="text-xs text-zinc-500">
-                        {format(msg.timestamp, 'HH:mm')}
-                      </span>
+            {(filteredMessages as typeof chatMessages).map((msg, index) => {
+              const senderId = msg.from?.identity;
+              const isBlocked = senderId && blockedUsersContext?.isBlocked(senderId);
+              
+              return (
+                <div key={index} className="animate-in fade-in slide-in-from-bottom-2 duration-300 group">
+                  <div className="flex items-start gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-medium text-purple-400 text-sm">
+                          {msg.from?.name || 'Anonymous'}
+                        </span>
+                        <span className="text-xs text-zinc-500">
+                          {format(msg.timestamp, 'HH:mm')}
+                        </span>
+                      </div>
+                      <p className="text-sm text-zinc-200 mt-0.5 wrap-break-word">
+                        {msg.message}
+                      </p>
                     </div>
-                    <p className="text-sm text-zinc-200 mt-0.5 wrap-break-word">
-                      {msg.message}
-                    </p>
+                    {/* Context menu for blocking users */}
+                    {blockedUsersContext && senderId && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-white hover:bg-zinc-700"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                            <span className="sr-only">Message options</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-zinc-800 border-zinc-700">
+                          {isBlocked ? (
+                            <DropdownMenuItem
+                              onClick={() => handleUnblockUser(senderId)}
+                              className="text-green-400 hover:text-green-300 focus:text-green-300 cursor-pointer"
+                            >
+                              <UserCheck className="mr-2 h-4 w-4" />
+                              Unblock User
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem
+                              onClick={() => handleBlockUser(senderId)}
+                              className="text-red-400 hover:text-red-300 focus:text-red-300 cursor-pointer"
+                            >
+                              <Ban className="mr-2 h-4 w-4" />
+                              Block User
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             <div ref={messagesEndRef} />
           </>
         )}

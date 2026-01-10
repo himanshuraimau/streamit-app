@@ -1,3 +1,10 @@
 export { StreamPlayer } from './stream-player';
 export { VideoPlayer } from './video-player';
 export { Chat } from './chat';
+export { StreamDurationTimer } from './stream-duration-timer';
+export { ReportStreamDialog } from './report-stream-dialog';
+export { EngagementPopup, useEngagementEvents } from './engagement-popup';
+export type { EngagementEvent } from './engagement-popup';
+export { ChatVisibilityToggle, useChatVisibility } from './chat-visibility-toggle';
+export { ImmersiveModeOverlay, useImmersiveMode, useSwipeToImmersive } from './immersive-mode-overlay';
+export { PostStreamSummary } from './post-stream-summary';
