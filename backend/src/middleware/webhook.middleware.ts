@@ -5,11 +5,7 @@ import { WebhookService } from '../services/webhook.service';
  * Middleware to verify LiveKit webhook signatures
  * Validates that webhook requests are actually from LiveKit
  */
-export const verifyLiveKitWebhook = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const verifyLiveKitWebhook = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Get signature from header
     const signature = req.headers['authorization'];
@@ -34,18 +30,21 @@ export const verifyLiveKitWebhook = async (
       rawBody = JSON.stringify(req.body);
     }
 
-    console.log('[WebhookMiddleware] Received webhook, signature:', signature.substring(0, 20) + '...');
+    console.log(
+      '[WebhookMiddleware] Received webhook, signature:',
+      signature.substring(0, 20) + '...'
+    );
     console.log('[WebhookMiddleware] Body length:', rawBody.length);
 
     try {
       // Validate and parse the webhook event
       const event = await WebhookService.validateAndParse(rawBody, signature);
-      
+
       console.log('[WebhookMiddleware] Webhook validated successfully:', event.event);
-      
+
       // Attach validated event to request for use in controller
-      (req as any).webhookEvent = event;
-      
+      req.webhookEvent = event;
+
       next();
     } catch (error) {
       console.error('[WebhookMiddleware] Invalid webhook signature:', error);

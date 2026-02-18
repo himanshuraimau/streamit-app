@@ -1,6 +1,9 @@
 import { prisma } from '../lib/db';
 import { deleteFileFromS3, extractFileNameFromUrl } from '../lib/s3';
-import type { CreateApplicationInput, UpdateApplicationInput } from '../lib/validations/creator.validation';
+import type {
+  CreateApplicationInput,
+  UpdateApplicationInput,
+} from '../lib/validations/creator.validation';
 
 export class ApplicationService {
   // Clean up old files when updating application
@@ -40,7 +43,7 @@ export class ApplicationService {
         try {
           const fileName = extractFileNameFromUrl(fileUrl);
           await deleteFileFromS3(fileName);
-          
+
           // Remove from file uploads table
           await prisma.fileUpload.deleteMany({
             where: { url: fileUrl },
@@ -57,7 +60,10 @@ export class ApplicationService {
   }
 
   // Validate that all required files exist and belong to user
-  static async validateApplicationFiles(userId: string, data: CreateApplicationInput | UpdateApplicationInput) {
+  static async validateApplicationFiles(
+    userId: string,
+    data: CreateApplicationInput | UpdateApplicationInput
+  ) {
     const fileUrls: string[] = [];
 
     if (data.identity) {
@@ -123,10 +129,7 @@ export class ApplicationService {
       const fileUrls: string[] = [];
 
       if (application.identity) {
-        fileUrls.push(
-          application.identity.idDocumentUrl,
-          application.identity.selfiePhotoUrl
-        );
+        fileUrls.push(application.identity.idDocumentUrl, application.identity.selfiePhotoUrl);
       }
 
       if (application.profile) {
@@ -138,7 +141,7 @@ export class ApplicationService {
         try {
           const fileName = extractFileNameFromUrl(fileUrl);
           await deleteFileFromS3(fileName);
-          
+
           await prisma.fileUpload.deleteMany({
             where: { url: fileUrl },
           });
@@ -162,7 +165,7 @@ export class ApplicationService {
     return {
       totalFiles: stats._count.id || 0,
       totalSize: stats._sum.size || 0,
-      totalSizeMB: Math.round((stats._sum.size || 0) / (1024 * 1024) * 100) / 100,
+      totalSizeMB: Math.round(((stats._sum.size || 0) / (1024 * 1024)) * 100) / 100,
     };
   }
 }

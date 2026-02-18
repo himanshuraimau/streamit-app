@@ -22,7 +22,7 @@ export class ViewerController {
       if (!userId) {
         return res.status(401).json({
           success: false,
-          error: 'Unauthorized'
+          error: 'Unauthorized',
         });
       }
 
@@ -44,7 +44,7 @@ export class ViewerController {
       if (!user) {
         return res.status(404).json({
           success: false,
-          error: 'User not found'
+          error: 'User not found',
         });
       }
 
@@ -153,18 +153,15 @@ export class ViewerController {
       let identity: string;
       let name: string;
 
-      if (isCreator) {
+      if (isCreator && viewerId) {
         // Creator watching their own stream - use viewer token with Host- prefix
         console.log(`[ViewerController] Detected creator self-view for ${viewerName}`);
-        token = await TokenService.generateViewerToken(viewerId!, hostId, viewerName!);
+        token = await TokenService.generateViewerToken(viewerId, hostId, viewerName ?? '');
         identity = `Host-${viewerId}`;
-        name = viewerName!;
+        name = viewerName ?? '';
       } else if (viewerId && viewerName) {
         // Regular authenticated viewer - validate access
-        const validation = await TokenService.validateTokenRequest(
-          hostId,
-          viewerId
-        );
+        const validation = await TokenService.validateTokenRequest(hostId, viewerId);
 
         if (!validation.valid) {
           return res.status(403).json({
@@ -173,11 +170,7 @@ export class ViewerController {
           });
         }
 
-        token = await TokenService.generateViewerToken(
-          viewerId,
-          hostId,
-          viewerName
-        );
+        token = await TokenService.generateViewerToken(viewerId, hostId, viewerName);
         identity = viewerId;
         name = viewerName;
       } else {
@@ -191,9 +184,9 @@ export class ViewerController {
           });
         }
 
-        token = await TokenService.generateGuestToken(hostId, guestName!);
+        token = await TokenService.generateGuestToken(hostId, guestName ?? '');
         identity = `guest-${Date.now()}`;
-        name = guestName!;
+        name = guestName ?? '';
       }
 
       res.json({
@@ -230,7 +223,7 @@ export class ViewerController {
    * Get all live streams (public endpoint)
    * GET /api/viewer/live
    */
-  static async getLiveStreams(req: Request, res: Response) {
+  static async getLiveStreams(_req: Request, res: Response) {
     try {
       console.log('[ViewerController] Getting all live streams');
 
@@ -567,7 +560,6 @@ export class ViewerController {
         });
       }
 
-      const userId = req.user.id;
       const email = req.user.email;
 
       // Validate request body
@@ -588,7 +580,7 @@ export class ViewerController {
             error: 'Current password is incorrect',
           });
         }
-      } catch (authError) {
+      } catch {
         return res.status(401).json({
           success: false,
           error: 'Current password is incorrect',
@@ -601,6 +593,7 @@ export class ViewerController {
           newPassword: validatedData.newPassword,
           currentPassword: validatedData.currentPassword,
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         headers: req.headers as any,
       });
 

@@ -607,7 +607,7 @@ export class SocialController {
           _count: {
             select: {
               followedBy: true, // Follower count
-              following: true,  // Following count
+              following: true, // Following count
             },
           },
         },
@@ -621,10 +621,7 @@ export class SocialController {
       }
 
       // Check if user is an approved creator
-      if (
-        !creator.creatorApplication ||
-        creator.creatorApplication.status !== 'APPROVED'
-      ) {
+      if (!creator.creatorApplication || creator.creatorApplication.status !== 'APPROVED') {
         return res.status(404).json({
           success: false,
           error: 'This user is not an approved creator',

@@ -1,11 +1,15 @@
 import express from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
+import swaggerUi from 'swagger-ui-express';
 import { prisma } from './lib/db';
 import { auth } from './lib/auth';
-import { toNodeHandler } from 'better-auth/node';
+import { toNodeHandler, fromNodeHeaders } from 'better-auth/node';
+import { ALLOWED_ORIGINS } from './lib/config';
+import { swaggerSpec } from './lib/swagger';
 import authRoutes from './routes/auth.route';
-import creatorRoutes from './routes/creator';
-import contentRoutes from './routes/content';
+import creatorRoutes from './routes/creator.route';
+import contentRoutes from './routes/content.route';
 import streamRoutes from './routes/stream.route';
 import webhookRoutes from './routes/webhook.route';
 import viewerRoutes from './routes/viewer.route';
@@ -16,44 +20,39 @@ import discountRoutes from './routes/discount.route';
 import { WebhookController } from './controllers/webhook.controller';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env['PORT'] ?? 3000;
 
 // CORS configuration - MUST be before Better Auth handler
-const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:5173',
-  'http://localhost:5173',
-  'https://voltstream.space', // Production frontend
-  'https://www.voltstream.space', // Production frontend with www
-  'https://binate-nonperceptively-celestina.ngrok-free.dev'
-];
+const allowedOrigins = ALLOWED_ORIGINS;
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, origin); // Return the specific origin, not true
-    } else {
-      console.warn(`CORS blocked origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true, // Allow cookies to be sent
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: [
-    'Content-Type', 
-    'Authorization', 
-    'Cookie', 
-    'ngrok-skip-browser-warning',
-    'X-Requested-With',
-    'Accept',
-    'Origin'
-  ],
-  exposedHeaders: ['Set-Cookie', 'set-auth-token'], // Expose Bearer token header
-  preflightContinue: false,
-  optionsSuccessStatus: 204
-}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, origin); // Return the specific origin, not true
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true, // Allow cookies to be sent
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Cookie',
+      'ngrok-skip-browser-warning',
+      'X-Requested-With',
+      'Accept',
+      'Origin',
+    ],
+    exposedHeaders: ['Set-Cookie', 'set-auth-token'], // Expose Bearer token header
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+  })
+);
 
 // Mount webhook routes with raw body parser (before express.json())
 // LiveKit webhook requires raw body for signature verification
@@ -61,13 +60,17 @@ app.use('/api/webhook', express.raw({ type: 'application/webhook+json' }));
 app.use('/api/webhook', webhookRoutes);
 
 // Mount Dodo webhook route (also needs raw body)
-app.post('/api/webhook/dodo', express.raw({ type: 'application/json' }), WebhookController.handleDodoWebhook);
+app.post(
+  '/api/webhook/dodo',
+  express.raw({ type: 'application/json' }),
+  WebhookController.handleDodoWebhook
+);
 
 // Mount express.json() for all other routes
 app.use(express.json());
 
 // Debug middleware to log all /api/auth requests
-app.use('/api/auth', (req, res, next) => {
+app.use('/api/auth', (req, _res, next) => {
   console.log(`[Auth Route] ${req.method} ${req.path}`);
   next();
 });
@@ -79,7 +82,7 @@ app.use('/api/auth', authRoutes);
 // Mount Better Auth handler as catch-all (after custom routes)
 // This handles Better Auth's built-in endpoints like /sign-up, /sign-in, /sign-out, /get-session
 // Use middleware wrapper instead of app.all() to avoid route pattern issues
-app.use("/api/auth", (req, res, next) => {
+app.use('/api/auth', (req, res, _next) => {
   // Only handle if no previous route matched
   return toNodeHandler(auth)(req, res);
 });
@@ -108,20 +111,27 @@ app.use('/api/payment', paymentRoutes);
 // Mount discount routes
 app.use('/api/discount', discountRoutes);
 
+// API Documentation (Swagger UI)
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get('/api/docs.json', (_req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
+
 // Health check
-app.get('/health', async (req, res) => {
+app.get('/health', async (_req, res) => {
   try {
     await prisma.$connect();
     res.json({
       status: 'ok',
       database: 'connected',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     res.status(500).json({
       status: 'error',
       database: 'disconnected',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -130,7 +140,7 @@ app.get('/health', async (req, res) => {
 app.get('/api/user/me', async (req, res) => {
   try {
     const session = await auth.api.getSession({
-      headers: req.headers as any,
+      headers: fromNodeHeaders(req.headers),
     });
 
     if (!session) {
@@ -138,21 +148,12 @@ app.get('/api/user/me', async (req, res) => {
     }
 
     res.json({ user: session.user });
-  } catch (error) {
+  } catch {
     res.status(401).json({ error: 'Unauthorized' });
   }
 });
 
 // Example: Public route to test sign up
-app.get('/test-auth', (req, res) => {
-  res.json({
-    message: 'Auth endpoints available at:',
-    signUp: 'POST /api/auth/sign-up/email',
-    signIn: 'POST /api/auth/sign-in/email',
-    signOut: 'POST /api/auth/sign-out',
-    session: 'GET /api/auth/get-session',
-  });
-});
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
@@ -171,4 +172,14 @@ process.on('SIGTERM', async () => {
   console.log('\nShutting down gracefully...');
   await prisma.$disconnect();
   process.exit(0);
+});
+
+// Global error handler - must be last middleware registered
+
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('[Global Error Handler]', err);
+  res.status(500).json({
+    success: false,
+    error: err.message ?? 'Internal server error',
+  });
 });

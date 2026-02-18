@@ -1,4 +1,4 @@
-import { PostType, MediaType } from '@prisma/client';
+import type { PostType, MediaType } from '@prisma/client';
 
 // Post creation types
 export interface CreatePostInput {

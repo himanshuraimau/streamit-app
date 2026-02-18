@@ -69,7 +69,6 @@ export class StreamService {
     });
   }
 
-
   /**
    * Create or update stream metadata (for WebRTC flow)
    * @param userId - Creator's user ID
@@ -147,7 +146,8 @@ export class StreamService {
     } catch (error) {
       console.error('[StreamService] Error updating stream info:', error);
       throw new Error(
-        `Failed to update stream info: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to update stream info: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { cause: error }
       );
     }
   }
@@ -179,7 +179,8 @@ export class StreamService {
     } catch (error) {
       console.error('[StreamService] Error updating chat settings:', error);
       throw new Error(
-        `Failed to update chat settings: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to update chat settings: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { cause: error }
       );
     }
   }
@@ -210,10 +211,10 @@ export class StreamService {
       if (isLive) {
         // Going live: Set startedAt and create StreamStats record
         const now = new Date();
-        
+
         const updatedStream = await prisma.stream.update({
           where: { userId },
-          data: { 
+          data: {
             isLive: true,
             startedAt: now,
           },
@@ -249,7 +250,7 @@ export class StreamService {
       } else {
         // Ending stream: Set endedAt in StreamStats and calculate final statistics
         const now = new Date();
-        
+
         const updatedStream = await prisma.stream.update({
           where: { userId },
           data: { isLive: false },
@@ -286,13 +287,21 @@ export class StreamService {
     }
   }
 
-
   /**
    * Get stream status
    * @param userId - Creator's user ID
    * @returns Stream status with viewer count
    */
-  static async getStreamStatus(userId: string) {
+  static async getStreamStatus(userId: string): Promise<{
+    isLive: boolean;
+    viewerCount: number;
+    title: string;
+    description: string | null;
+    thumbnail: string | null;
+    isChatEnabled: boolean;
+    isChatDelayed: boolean;
+    isChatFollowersOnly: boolean;
+  }> {
     try {
       const stream = await this.getCreatorStream(userId);
 
@@ -429,10 +438,7 @@ export class StreamService {
    * @param streamUserId - Stream owner's userId to validate
    * @returns true if user owns the stream
    */
-  static async validateStreamOwnership(
-    userId: string,
-    streamUserId: string
-  ): Promise<boolean> {
+  static async validateStreamOwnership(userId: string, streamUserId: string): Promise<boolean> {
     return userId === streamUserId;
   }
 
@@ -524,7 +530,7 @@ export class StreamService {
       const topGifterData = topGifterResult[0];
       if (topGifterData) {
         const totalCoins = topGifterData._sum.coinAmount;
-        
+
         if (totalCoins && totalCoins > 0) {
           const topGifterUser = await prisma.user.findUnique({
             where: { id: topGifterData.senderId },
@@ -556,9 +562,7 @@ export class StreamService {
         );
       } else if (stream.stats?.startedAt && stream.isLive) {
         // Stream is still live, calculate current duration
-        duration = Math.floor(
-          (Date.now() - stream.stats.startedAt.getTime()) / 1000
-        );
+        duration = Math.floor((Date.now() - stream.stats.startedAt.getTime()) / 1000);
       }
 
       const summary = {

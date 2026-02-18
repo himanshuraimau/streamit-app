@@ -1,18 +1,21 @@
 import type { Request, Response } from 'express';
+import { getAuthUser } from '../middleware/auth.middleware';
 import { z } from 'zod';
 import { ContentService } from '../services/content.service';
 import {
   createPostSchema,
   updatePostSchema,
   createCommentSchema,
-  feedQuerySchema
+  feedQuerySchema,
 } from '../lib/validations/content.validation';
 
 export class ContentController {
   // Create a new post
   static async createPost(req: Request, res: Response) {
     try {
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
       const data = createPostSchema.parse(req.body);
       const mediaFiles = req.files as Express.Multer.File[] | undefined;
 
@@ -20,7 +23,7 @@ export class ContentController {
       if (mediaFiles && mediaFiles.length > 10) {
         return res.status(400).json({
           success: false,
-          error: 'Maximum 10 media files allowed per post'
+          error: 'Maximum 10 media files allowed per post',
         });
       }
 
@@ -29,7 +32,7 @@ export class ContentController {
       res.status(201).json({
         success: true,
         data: post,
-        message: 'Post created successfully'
+        message: 'Post created successfully',
       });
     } catch (error) {
       console.error('Error creating post:', error);
@@ -38,13 +41,13 @@ export class ContentController {
         return res.status(400).json({
           success: false,
           error: 'Validation error',
-          details: error.issues
+          details: error.issues,
         });
       }
 
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Internal server error'
+        error: error instanceof Error ? error.message : 'Internal server error',
       });
     }
   }
@@ -56,7 +59,7 @@ export class ContentController {
       if (!userId) {
         return res.status(400).json({
           success: false,
-          error: 'User ID is required'
+          error: 'User ID is required',
         });
       }
 
@@ -67,7 +70,7 @@ export class ContentController {
 
       res.json({
         success: true,
-        data: result
+        data: result,
       });
     } catch (error) {
       console.error('Error fetching user posts:', error);
@@ -76,13 +79,13 @@ export class ContentController {
         return res.status(400).json({
           success: false,
           error: 'Invalid query parameters',
-          details: error.issues
+          details: error.issues,
         });
       }
 
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
@@ -97,7 +100,7 @@ export class ContentController {
 
       res.json({
         success: true,
-        data: result
+        data: result,
       });
     } catch (error) {
       console.error('Error fetching public feed:', error);
@@ -106,13 +109,13 @@ export class ContentController {
         return res.status(400).json({
           success: false,
           error: 'Invalid query parameters',
-          details: error.issues
+          details: error.issues,
         });
       }
 
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
@@ -124,7 +127,7 @@ export class ContentController {
       if (!postId) {
         return res.status(400).json({
           success: false,
-          error: 'Post ID is required'
+          error: 'Post ID is required',
         });
       }
 
@@ -134,19 +137,19 @@ export class ContentController {
       if (!post) {
         return res.status(404).json({
           success: false,
-          error: 'Post not found'
+          error: 'Post not found',
         });
       }
 
       res.json({
         success: true,
-        data: post
+        data: post,
       });
     } catch (error) {
       console.error('Error fetching post:', error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
@@ -158,11 +161,14 @@ export class ContentController {
       if (!postId) {
         return res.status(400).json({
           success: false,
-          error: 'Post ID is required'
+          error: 'Post ID is required',
         });
       }
 
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
+
       const data = updatePostSchema.parse(req.body);
 
       const post = await ContentService.updatePost(postId, userId, data);
@@ -170,7 +176,7 @@ export class ContentController {
       res.json({
         success: true,
         data: post,
-        message: 'Post updated successfully'
+        message: 'Post updated successfully',
       });
     } catch (error) {
       console.error('Error updating post:', error);
@@ -179,13 +185,13 @@ export class ContentController {
         return res.status(400).json({
           success: false,
           error: 'Validation error',
-          details: error.issues
+          details: error.issues,
         });
       }
 
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Internal server error'
+        error: error instanceof Error ? error.message : 'Internal server error',
       });
     }
   }
@@ -197,22 +203,24 @@ export class ContentController {
       if (!postId) {
         return res.status(400).json({
           success: false,
-          error: 'Post ID is required'
+          error: 'Post ID is required',
         });
       }
 
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
       await ContentService.deletePost(postId, userId);
 
       res.json({
         success: true,
-        message: 'Post deleted successfully'
+        message: 'Post deleted successfully',
       });
     } catch (error) {
       console.error('Error deleting post:', error);
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Internal server error'
+        error: error instanceof Error ? error.message : 'Internal server error',
       });
     }
   }
@@ -224,22 +232,24 @@ export class ContentController {
       if (!postId) {
         return res.status(400).json({
           success: false,
-          error: 'Post ID is required'
+          error: 'Post ID is required',
         });
       }
 
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
       const result = await ContentService.togglePostLike(postId, userId);
 
       res.json({
         success: true,
-        data: result
+        data: result,
       });
     } catch (error) {
       console.error('Error toggling post like:', error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
@@ -247,7 +257,9 @@ export class ContentController {
   // Add comment to post
   static async addComment(req: Request, res: Response) {
     try {
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
       const data = createCommentSchema.parse(req.body);
 
       const comment = await ContentService.addComment(userId, data);
@@ -255,7 +267,7 @@ export class ContentController {
       res.status(201).json({
         success: true,
         data: comment,
-        message: 'Comment added successfully'
+        message: 'Comment added successfully',
       });
     } catch (error) {
       console.error('Error adding comment:', error);
@@ -264,13 +276,13 @@ export class ContentController {
         return res.status(400).json({
           success: false,
           error: 'Validation error',
-          details: error.issues
+          details: error.issues,
         });
       }
 
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Internal server error'
+        error: error instanceof Error ? error.message : 'Internal server error',
       });
     }
   }
@@ -282,7 +294,7 @@ export class ContentController {
       if (!postId) {
         return res.status(400).json({
           success: false,
-          error: 'Post ID is required'
+          error: 'Post ID is required',
         });
       }
 
@@ -291,13 +303,13 @@ export class ContentController {
 
       res.json({
         success: true,
-        data: comments
+        data: comments,
       });
     } catch (error) {
       console.error('Error fetching comments:', error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
@@ -305,14 +317,16 @@ export class ContentController {
   // Get my posts (authenticated user's posts)
   static async getMyPosts(req: Request, res: Response) {
     try {
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
       const query = feedQuerySchema.parse(req.query);
 
       const result = await ContentService.getUserPosts(userId, query, userId);
 
       res.json({
         success: true,
-        data: result
+        data: result,
       });
     } catch (error) {
       console.error('Error fetching my posts:', error);
@@ -321,13 +335,13 @@ export class ContentController {
         return res.status(400).json({
           success: false,
           error: 'Invalid query parameters',
-          details: error.issues
+          details: error.issues,
         });
       }
 
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
@@ -344,7 +358,7 @@ export class ContentController {
 
       res.json({
         success: true,
-        data: result
+        data: result,
       });
     } catch (error) {
       console.error('Error fetching feed:', error);
@@ -353,13 +367,13 @@ export class ContentController {
         return res.status(400).json({
           success: false,
           error: 'Invalid query parameters',
-          details: error.issues
+          details: error.issues,
         });
       }
 
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
@@ -373,14 +387,14 @@ export class ContentController {
       const query = {
         page: page ? parseInt(page as string) : 1,
         limit: limit ? parseInt(limit as string) : 20,
-        timeRange: (timeRange as string) || '7d'
+        timeRange: (timeRange as string) || '7d',
       };
 
       // Validate timeRange
       if (!['24h', '7d', '30d'].includes(query.timeRange)) {
         return res.status(400).json({
           success: false,
-          error: 'Invalid timeRange. Must be 24h, 7d, or 30d'
+          error: 'Invalid timeRange. Must be 24h, 7d, or 30d',
         });
       }
 
@@ -388,13 +402,13 @@ export class ContentController {
 
       res.json({
         success: true,
-        data: result
+        data: result,
       });
     } catch (error) {
       console.error('Error fetching trending content:', error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
@@ -406,7 +420,7 @@ export class ContentController {
       if (!postId) {
         return res.status(400).json({
           success: false,
-          error: 'Post ID is required'
+          error: 'Post ID is required',
         });
       }
 
@@ -415,13 +429,13 @@ export class ContentController {
 
       res.json({
         success: true,
-        message: 'View tracked successfully'
+        message: 'View tracked successfully',
       });
     } catch (error) {
       console.error('Error tracking post view:', error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
@@ -433,7 +447,7 @@ export class ContentController {
       if (!postId) {
         return res.status(400).json({
           success: false,
-          error: 'Post ID is required'
+          error: 'Post ID is required',
         });
       }
 
@@ -441,13 +455,13 @@ export class ContentController {
 
       res.json({
         success: true,
-        message: 'Share tracked successfully'
+        message: 'Share tracked successfully',
       });
     } catch (error) {
       console.error('Error tracking post share:', error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
@@ -455,29 +469,25 @@ export class ContentController {
   // NEW: Get shorts from followed creators
   static async getFollowingShorts(req: Request, res: Response) {
     try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          error: 'Authentication required'
-        });
-      }
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
 
       const { cursor, limit } = req.query;
       const result = await ContentService.getFollowingShorts(userId, {
         cursor: cursor as string,
-        limit: limit ? parseInt(limit as string) : undefined
+        limit: limit ? parseInt(limit as string) : undefined,
       });
 
       res.json({
         success: true,
-        data: result
+        data: result,
       });
     } catch (error) {
       console.error('Error fetching following shorts:', error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
@@ -490,20 +500,20 @@ export class ContentController {
         {
           page: page ? parseInt(page as string) : undefined,
           limit: limit ? parseInt(limit as string) : undefined,
-          timeRange: timeRange as string
+          timeRange: timeRange as string,
         },
         req.user?.id
       );
 
       res.json({
         success: true,
-        data: result
+        data: result,
       });
     } catch (error) {
       console.error('Error fetching trending shorts:', error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
@@ -515,20 +525,20 @@ export class ContentController {
       const result = await ContentService.getAllShorts(
         {
           cursor: cursor as string,
-          limit: limit ? parseInt(limit as string) : undefined
+          limit: limit ? parseInt(limit as string) : undefined,
         },
         req.user?.id
       );
 
       res.json({
         success: true,
-        data: result
+        data: result,
       });
     } catch (error) {
       console.error('Error fetching all shorts:', error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }

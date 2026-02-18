@@ -1,5 +1,6 @@
 import DodoPayments from 'dodopayments';
 import { prisma } from '../lib/db';
+import type { Prisma } from '@prisma/client';
 import { DiscountService } from './discount.service';
 
 // Log environment for debugging
@@ -18,14 +19,14 @@ export class PaymentService {
   /**
    * Create checkout session for coin purchase
    * Accepts optional discountCode parameter to apply bonus coins
-   * 
+   *
    * Requirements: 1.4
    */
   static async createCheckout(userId: string, packageId: string, discountCode?: string) {
-    const pkg = await prisma.coinPackage.findUnique({ 
-      where: { id: packageId, isActive: true } 
+    const pkg = await prisma.coinPackage.findUnique({
+      where: { id: packageId, isActive: true },
     });
-    
+
     if (!pkg) {
       throw new Error('Package not found or inactive');
     }
@@ -41,7 +42,7 @@ export class PaymentService {
 
     if (discountCode) {
       const validationResult = await DiscountService.validateCode(discountCode, packageId, userId);
-      
+
       if (!validationResult.success) {
         throw new Error(validationResult.error || 'Invalid discount code');
       }
@@ -50,14 +51,14 @@ export class PaymentService {
       const discountCodeRecord = await DiscountService.getCodeByString(discountCode);
       if (discountCodeRecord) {
         discountCodeId = discountCodeRecord.id;
-        discountBonusCoins = validationResult.data!.bonusCoins;
+        discountBonusCoins = validationResult.data?.bonusCoins ?? 0;
       }
     }
 
     const orderId = `order_${Date.now()}_${userId.slice(0, 8)}`;
     // Total coins = base coins + package bonus + discount bonus
     const totalCoins = pkg.coins + pkg.bonusCoins + discountBonusCoins;
-    
+
     try {
       // Create checkout session with Dodo
       // Note: product_id should be the Dodo product ID from your Dodo dashboard
@@ -99,52 +100,77 @@ export class PaymentService {
         },
       });
 
-      console.log(`✅ Checkout session created: ${session.session_id} for user ${userId}${discountCode ? ` with discount code ${discountCode}` : ''}`);
+      console.log(
+        `✅ Checkout session created: ${session.session_id} for user ${userId}${discountCode ? ` with discount code ${discountCode}` : ''}`
+      );
 
-      return { 
-        checkoutUrl: session.checkout_url, 
+      return {
+        checkoutUrl: session.checkout_url,
         orderId,
         sessionId: session.session_id,
         discountBonusCoins,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Error creating checkout:', error);
+      const err = error as Record<string, unknown>;
       console.error('❌ Error details:', {
-        message: error?.message,
-        status: error?.status,
-        headers: error?.headers,
-        name: error?.name,
+        message: err?.['message'],
+        status: err?.['status'],
+        headers: err?.['headers'],
+        name: err?.['name'],
       });
-      
+
       // Provide more specific error messages
-      if (error?.status === 401) {
-        throw new Error('Invalid Dodo Payments API key. Please check your DODO_API_KEY environment variable and ensure it is a TEST MODE key.');
+      if (err?.['status'] === 401) {
+        throw new Error(
+          'Invalid Dodo Payments API key. Please check your DODO_API_KEY environment variable and ensure it is a TEST MODE key.',
+          { cause: error }
+        );
       }
-      
-      throw new Error(error?.message || 'Failed to create checkout session');
+
+      throw new Error(
+        typeof err?.['message'] === 'string' ? err['message'] : 'Failed to create checkout session',
+        { cause: error }
+      );
     }
   }
 
   /**
    * Process Dodo webhook payment confirmation
-   * 
+   *
    * On payment success:
    * - Credits base coins + package bonus + discount bonus to user wallet
    * - Creates discount redemption record if discount code was used
    * - Generates reward code for user
-   * 
+   *
    * Requirements: 2.1, 6.1
    */
-  static async processWebhook(payload: any) {
-    console.log('📦 Processing webhook:', payload.event_type, payload.data?.payment_id || payload.payment_id);
+  static async processWebhook(payload: Record<string, unknown>): Promise<void> {
+    // Helper to safely read a string field from an unknown object
+    const str = (obj: unknown, key: string): string | undefined => {
+      if (obj && typeof obj === 'object' && key in obj) {
+        const v = (obj as Record<string, unknown>)[key];
+        return typeof v === 'string' ? v : undefined;
+      }
+      return undefined;
+    };
+
+    const payloadData = payload['data'] as Record<string, unknown> | undefined;
+
+    console.log(
+      '📦 Processing webhook:',
+      payload['event_type'],
+      str(payloadData, 'payment_id') ?? str(payload, 'payment_id')
+    );
     console.log('📦 Full webhook data:', JSON.stringify(payload, null, 2));
 
     // Extract data from payload (Dodo sends nested data object)
-    const eventType = payload.event_type || payload.type;
-    const paymentData = payload.data || payload;
-    const paymentId = paymentData.payment_id;
-    const sessionId = paymentData.checkout_session_id || paymentData.session_id;
-    const status = paymentData.status || paymentData.payment_status;
+    const eventType = payload['event_type'] ?? payload['type'];
+    const paymentData: Record<string, unknown> = payloadData ?? payload;
+    const paymentId = str(paymentData, 'payment_id');
+    const sessionId = str(paymentData, 'checkout_session_id') ?? str(paymentData, 'session_id');
+    const status = str(paymentData, 'status') ?? str(paymentData, 'payment_status');
+    const failureReason = str(paymentData, 'failure_reason');
 
     if (!paymentId && !sessionId) {
       console.error('⚠️ No payment_id or session_id found in webhook payload');
@@ -152,11 +178,8 @@ export class PaymentService {
     }
 
     const purchase = await prisma.coinPurchase.findFirst({
-      where: { 
-        OR: [
-          { transactionId: paymentId },
-          { transactionId: sessionId }
-        ]
+      where: {
+        OR: [{ transactionId: paymentId }, { transactionId: sessionId }],
       },
       include: { user: true, package: true },
     });
@@ -175,26 +198,28 @@ export class PaymentService {
     // Handle payment success
     if (eventType === 'payment.succeeded' || status === 'succeeded' || status === 'paid') {
       console.log(`✅ Payment succeeded for purchase ${purchase.id}`);
-      
+
       // Update purchase status
       await prisma.coinPurchase.update({
         where: { id: purchase.id },
-        data: { 
-          status: 'COMPLETED', 
-          paymentData: payload,
-          transactionId: paymentId || sessionId,
+        data: {
+          status: 'COMPLETED',
+          paymentData: payload as Parameters<
+            typeof prisma.coinPurchase.update
+          >[0]['data']['paymentData'],
+          transactionId: paymentId ?? sessionId,
         },
       });
 
       // Credit coins to user's wallet (includes discount bonus coins)
       await prisma.coinWallet.upsert({
         where: { userId: purchase.userId },
-        create: { 
-          userId: purchase.userId, 
+        create: {
+          userId: purchase.userId,
           balance: purchase.totalCoins,
           totalSpent: purchase.totalCoins,
         },
-        update: { 
+        update: {
           balance: { increment: purchase.totalCoins },
           totalSpent: { increment: purchase.totalCoins },
         },
@@ -229,17 +254,19 @@ export class PaymentService {
         console.error('⚠️ Error generating reward code:', error);
         // Don't fail the webhook - coins are already credited
       }
-    } 
+    }
     // Handle payment failure
     else if (eventType === 'payment.failed' || status === 'failed') {
       console.log(`❌ Payment failed for purchase ${purchase.id}`);
-      
+
       await prisma.coinPurchase.update({
         where: { id: purchase.id },
-        data: { 
-          status: 'FAILED', 
-          failureReason: paymentData.failure_reason || 'Payment failed',
-          paymentData: payload,
+        data: {
+          status: 'FAILED',
+          failureReason: failureReason ?? 'Payment failed',
+          paymentData: payload as Parameters<
+            typeof prisma.coinPurchase.update
+          >[0]['data']['paymentData'],
         },
       });
     }
@@ -249,16 +276,16 @@ export class PaymentService {
    * Send gift to creator (deduct coins from sender, credit creator)
    */
   static async sendGift(
-    senderId: string, 
-    receiverId: string, 
-    giftId: string, 
+    senderId: string,
+    receiverId: string,
+    giftId: string,
     streamId?: string,
     message?: string
   ) {
-    const gift = await prisma.gift.findUnique({ 
-      where: { id: giftId, isActive: true } 
+    const gift = await prisma.gift.findUnique({
+      where: { id: giftId, isActive: true },
     });
-    
+
     if (!gift) {
       throw new Error('Gift not found or inactive');
     }
@@ -285,7 +312,7 @@ export class PaymentService {
 
       await tx.coinWallet.update({
         where: { userId: senderId },
-        data: { 
+        data: {
           balance: { decrement: gift.coinPrice },
           totalSpent: { increment: gift.coinPrice },
         },
@@ -293,7 +320,7 @@ export class PaymentService {
 
       // Credit creator (70% after 30% platform commission)
       const creatorAmount = Math.floor(gift.coinPrice * 0.7);
-      
+
       await tx.coinWallet.upsert({
         where: { userId: receiverId },
         create: {
@@ -301,7 +328,7 @@ export class PaymentService {
           balance: creatorAmount,
           totalEarned: creatorAmount,
         },
-        update: { 
+        update: {
           balance: { increment: creatorAmount },
           totalEarned: { increment: creatorAmount },
         },
@@ -309,11 +336,11 @@ export class PaymentService {
 
       // Record gift transaction
       const transaction = await tx.giftTransaction.create({
-        data: { 
-          senderId, 
-          receiverId, 
-          giftId, 
-          coinAmount: gift.coinPrice, 
+        data: {
+          senderId,
+          receiverId,
+          giftId,
+          coinAmount: gift.coinPrice,
           streamId,
           message,
         },
@@ -430,14 +457,10 @@ export class PaymentService {
   /**
    * Send penny tip to creator (1 coin)
    * Deducts 1 coin from sender and credits 1 coin to creator
-   * 
+   *
    * Requirements: 3.3, 3.4, 3.6
    */
-  static async sendPennyTip(
-    senderId: string,
-    creatorId: string,
-    streamId: string
-  ) {
+  static async sendPennyTip(senderId: string, creatorId: string, streamId: string) {
     const PENNY_TIP_AMOUNT = 1;
 
     // Verify the stream exists and is live
@@ -551,9 +574,9 @@ export class PaymentService {
    * Get or create a special "Penny Tip" gift for tracking penny tips
    * This is a helper to ensure penny tips are recorded as gift transactions
    */
-  private static async getPennyTipGiftId(tx: any): Promise<string> {
+  private static async getPennyTipGiftId(tx: Prisma.TransactionClient): Promise<string> {
     const PENNY_TIP_GIFT_NAME = 'Penny Tip';
-    
+
     // Try to find existing penny tip gift
     let pennyTipGift = await tx.gift.findFirst({
       where: { name: PENNY_TIP_GIFT_NAME },

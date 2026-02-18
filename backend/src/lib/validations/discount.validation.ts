@@ -5,7 +5,10 @@ import { z } from 'zod';
  * Requirements: 1.1
  */
 export const validateCodeSchema = z.object({
-  code: z.string().min(1, 'Discount code is required').transform((val) => val.toUpperCase()),
+  code: z
+    .string()
+    .min(1, 'Discount code is required')
+    .transform((val) => val.toUpperCase()),
   packageId: z.string().min(1, 'Package ID is required'),
 });
 

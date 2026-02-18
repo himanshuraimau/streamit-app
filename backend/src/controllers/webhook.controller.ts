@@ -10,7 +10,7 @@ export class WebhookController {
   /**
    * Handle LiveKit webhook events
    * POST /api/webhook/livekit
-   * 
+   *
    * This endpoint receives events from LiveKit server:
    * - ingress_started: When a stream starts
    * - ingress_ended: When a stream ends
@@ -21,7 +21,7 @@ export class WebhookController {
   static async handleLiveKitWebhook(req: Request, res: Response) {
     try {
       // The webhook event is attached to req by the middleware after validation
-      const event = (req as any).webhookEvent;
+      const event = req.webhookEvent;
 
       if (!event) {
         console.error('[WebhookController] No webhook event found in request');
@@ -31,9 +31,7 @@ export class WebhookController {
         });
       }
 
-      console.log(
-        `[WebhookController] Processing webhook event: ${event.event}`
-      );
+      console.log(`[WebhookController] Processing webhook event: ${event.event}`);
 
       // Process the event through the webhook service
       await WebhookService.processEvent(event);
@@ -62,7 +60,7 @@ export class WebhookController {
    * Health check endpoint for webhook
    * GET /api/webhook/livekit/health
    */
-  static async webhookHealth(req: Request, res: Response) {
+  static async webhookHealth(_req: Request, res: Response) {
     res.json({
       success: true,
       message: 'LiveKit webhook endpoint is ready',
@@ -73,7 +71,7 @@ export class WebhookController {
   /**
    * Handle Dodo Payments webhook events
    * POST /api/webhook/dodo
-   * 
+   *
    * This endpoint receives payment notifications from Dodo Payments:
    * - payment.succeeded: When a payment is successfully completed
    * - payment.failed: When a payment fails
@@ -81,7 +79,7 @@ export class WebhookController {
   static async handleDodoWebhook(req: Request, res: Response) {
     try {
       const webhookSecret = process.env.DODO_WEBHOOK_SECRET;
-      
+
       if (!webhookSecret) {
         console.error('[WebhookController] DODO_WEBHOOK_SECRET not configured');
         return res.status(500).json({
@@ -91,7 +89,7 @@ export class WebhookController {
       }
 
       const webhook = new Webhook(webhookSecret);
-      
+
       // Get raw body and headers for verification
       const rawBody = req.body.toString();
       const headers = {
@@ -124,7 +122,7 @@ export class WebhookController {
       });
     } catch (error) {
       console.error('[WebhookController] Error processing Dodo webhook:', error);
-      
+
       res.status(500).json({
         success: false,
         error: 'Error processing webhook',

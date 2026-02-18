@@ -1,5 +1,5 @@
 import { prisma } from '../lib/db';
-import type { DiscountCode, CoinPackage, DiscountType, CodeType } from '@prisma/client';
+import type { DiscountCode, CoinPackage, DiscountType } from '@prisma/client';
 
 // Error codes for discount validation
 export const DiscountErrorCodes = {
@@ -11,7 +11,7 @@ export const DiscountErrorCodes = {
   INACTIVE_CODE: 'INACTIVE_CODE',
 } as const;
 
-export type DiscountErrorCode = typeof DiscountErrorCodes[keyof typeof DiscountErrorCodes];
+export type DiscountErrorCode = (typeof DiscountErrorCodes)[keyof typeof DiscountErrorCodes];
 
 export interface ValidationResult {
   success: boolean;
@@ -40,7 +40,7 @@ export class DiscountService {
    * Calculate bonus coins based on discount type and value
    * For PERCENTAGE: bonusCoins = floor(baseCoins * discountValue / 100)
    * For FIXED: bonusCoins = floor(discountValue / pricePerCoin)
-   * 
+   *
    * Requirements: 1.2, 3.3
    */
   static calculateBonusCoins(
@@ -49,7 +49,7 @@ export class DiscountService {
   ): number {
     if (discountCode.discountType === 'PERCENTAGE') {
       // Percentage discount: bonus = floor(baseCoins * percentage / 100)
-      return Math.floor(coinPackage.coins * discountCode.discountValue / 100);
+      return Math.floor((coinPackage.coins * discountCode.discountValue) / 100);
     } else {
       // Fixed discount: bonus = floor(discountValue / pricePerCoin)
       // discountValue is in paise, price is in paise, coins is count
@@ -59,11 +59,10 @@ export class DiscountService {
     }
   }
 
-
   /**
    * Validate a discount code for a specific package and user
    * Checks: existence, active status, expiration, user usage, redemption limits, min purchase
-   * 
+   *
    * Requirements: 1.1, 1.3, 1.5, 5.1, 5.2, 5.3
    */
   static async validateCode(
@@ -178,11 +177,10 @@ export class DiscountService {
     };
   }
 
-
   /**
    * Apply a discount code to a purchase
    * Creates DiscountRedemption record and increments currentRedemptions
-   * 
+   *
    * Requirements: 6.1, 6.2
    */
   static async applyDiscount(
@@ -217,13 +215,10 @@ export class DiscountService {
   /**
    * Generate a reward code for a user after successful purchase
    * Creates a new DiscountCode with codeType REWARD
-   * 
+   *
    * Requirements: 2.1, 2.2
    */
-  static async generateRewardCode(
-    userId: string,
-    purchaseAmount: number
-  ): Promise<DiscountCode> {
+  static async generateRewardCode(userId: string, purchaseAmount: number): Promise<DiscountCode> {
     // Generate unique code string
     const codeString = this.generateUniqueCodeString();
 
@@ -267,11 +262,10 @@ export class DiscountService {
     return code;
   }
 
-
   /**
    * Get all discount codes owned by a user
    * Includes usage status and expiration info
-   * 
+   *
    * Requirements: 4.1, 4.2
    */
   static async getUserCodes(userId: string): Promise<DiscountCodeWithStatus[]> {
@@ -293,9 +287,7 @@ export class DiscountService {
       ...code,
       isExpired: code.expiresAt !== null && code.expiresAt < new Date(),
       isUsedByUser: usedCodeIds.has(code.id),
-      isMaxedOut:
-        code.maxRedemptions !== null &&
-        code.currentRedemptions >= code.maxRedemptions,
+      isMaxedOut: code.maxRedemptions !== null && code.currentRedemptions >= code.maxRedemptions,
     }));
   }
 
@@ -311,7 +303,7 @@ export class DiscountService {
   /**
    * Get the latest reward code generated for a user
    * Used to display the reward code on the purchase success page
-   * 
+   *
    * Requirements: 2.1, 2.3
    */
   static async getLatestRewardCode(userId: string): Promise<DiscountCode | null> {

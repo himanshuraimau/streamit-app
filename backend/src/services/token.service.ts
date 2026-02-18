@@ -12,10 +12,7 @@ export class TokenService {
    * @param roomId - Room ID (typically the creator's userId)
    * @returns JWT token
    */
-  static async generateCreatorToken(
-    userId: string,
-    roomId: string
-  ): Promise<string> {
+  static async generateCreatorToken(userId: string, roomId: string): Promise<string> {
     try {
       const apiKey = process.env.LIVEKIT_API_KEY;
       const apiSecret = process.env.LIVEKIT_API_SECRET;
@@ -57,11 +54,11 @@ export class TokenService {
     } catch (error) {
       console.error('[TokenService] Error generating creator token:', error);
       throw new Error(
-        `Failed to generate creator token: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to generate creator token: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { cause: error }
       );
     }
   }
-
 
   /**
    * Generate token for viewer (without publish permissions)
@@ -112,7 +109,8 @@ export class TokenService {
     } catch (error) {
       console.error('[TokenService] Error generating viewer token:', error);
       throw new Error(
-        `Failed to generate viewer token: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to generate viewer token: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { cause: error }
       );
     }
   }
@@ -123,10 +121,7 @@ export class TokenService {
    * @param guestName - Guest's display name
    * @returns JWT token
    */
-  static async generateGuestToken(
-    hostId: string,
-    guestName: string
-  ): Promise<string> {
+  static async generateGuestToken(hostId: string, guestName: string): Promise<string> {
     try {
       const apiKey = process.env.LIVEKIT_API_KEY;
       const apiSecret = process.env.LIVEKIT_API_SECRET;
@@ -161,7 +156,8 @@ export class TokenService {
     } catch (error) {
       console.error('[TokenService] Error generating guest token:', error);
       throw new Error(
-        `Failed to generate guest token: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to generate guest token: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { cause: error }
       );
     }
   }
@@ -172,10 +168,7 @@ export class TokenService {
    * @param blockerId - User ID who might have blocked
    * @returns true if blocked, false otherwise
    */
-  private static async isUserBlocked(
-    userId: string,
-    blockerId: string
-  ): Promise<boolean> {
+  private static async isUserBlocked(userId: string, blockerId: string): Promise<boolean> {
     const block = await prisma.block.findUnique({
       where: {
         blockerId_blockedId: {
@@ -194,10 +187,7 @@ export class TokenService {
    * @param followingId - User being followed
    * @returns true if following, false otherwise
    */
-  static async isFollowing(
-    followerId: string,
-    followingId: string
-  ): Promise<boolean> {
+  static async isFollowing(followerId: string, followingId: string): Promise<boolean> {
     const follow = await prisma.follow.findUnique({
       where: {
         followerId_followingId: {

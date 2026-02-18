@@ -1,4 +1,4 @@
-import { ApplicationStatus, IDType, ContentCategory, FilePurpose } from '@prisma/client';
+import type { ApplicationStatus, IDType, ContentCategory } from '@prisma/client';
 
 // Frontend-compatible types
 export type ApplicationStep = 'welcome' | 'identity' | 'financial' | 'profile' | 'review';
@@ -68,7 +68,7 @@ export interface ApplicationResponse {
   financial?: {
     id: string;
     accountHolderName: string;
-    accountNumber: string; 
+    accountNumber: string;
     ifscCode: string;
     panNumber: string;
     isVerified: boolean;
@@ -87,7 +87,7 @@ export interface ApplicationResponse {
 // Draft saving request
 export interface SaveDraftRequest {
   step: 'identity' | 'financial' | 'profile';
-  data: any;
+  data: Record<string, unknown>;
 }
 
 export interface FileUploadResponse {
@@ -103,5 +103,5 @@ export interface MaskedFinancialData {
   accountHolderName: string;
   accountNumber: string;
   ifscCode: string;
-  panNumber: string; 
+  panNumber: string;
 }

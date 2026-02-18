@@ -1,4 +1,5 @@
 import { WebhookReceiver } from 'livekit-server-sdk';
+import type { WebhookEvent } from 'livekit-server-sdk';
 
 /**
  * Webhook Service - Process LiveKit webhook events
@@ -41,7 +42,7 @@ export class WebhookService {
       return event;
     } catch (error) {
       console.error('[WebhookService] Invalid webhook signature:', error);
-      throw new Error('Invalid webhook signature');
+      throw new Error('Invalid webhook signature', { cause: error });
     }
   }
 
@@ -50,10 +51,10 @@ export class WebhookService {
    * Called when a room is closed
    * @param event - Webhook event
    */
-  static async handleRoomFinished(event: any): Promise<void> {
+  static async handleRoomFinished(event: WebhookEvent): Promise<void> {
     try {
       const roomName = event.room?.name;
-      
+
       if (!roomName) {
         console.warn('[WebhookService] No room name in room_finished event');
         return;
@@ -72,14 +73,12 @@ export class WebhookService {
    * Can be used for analytics/tracking
    * @param event - Webhook event
    */
-  static async handleParticipantJoined(event: any): Promise<void> {
+  static async handleParticipantJoined(event: WebhookEvent): Promise<void> {
     try {
       const roomName = event.room?.name;
       const participantIdentity = event.participant?.identity;
-      
-      console.log(
-        `[WebhookService] Participant ${participantIdentity} joined room ${roomName}`
-      );
+
+      console.log(`[WebhookService] Participant ${participantIdentity} joined room ${roomName}`);
       // Can add analytics tracking here
     } catch (error) {
       console.error('[WebhookService] Error handling participant_joined:', error);
@@ -92,14 +91,12 @@ export class WebhookService {
    * Can be used for analytics/tracking
    * @param event - Webhook event
    */
-  static async handleParticipantLeft(event: any): Promise<void> {
+  static async handleParticipantLeft(event: WebhookEvent): Promise<void> {
     try {
       const roomName = event.room?.name;
       const participantIdentity = event.participant?.identity;
-      
-      console.log(
-        `[WebhookService] Participant ${participantIdentity} left room ${roomName}`
-      );
+
+      console.log(`[WebhookService] Participant ${participantIdentity} left room ${roomName}`);
       // Can add analytics tracking here
     } catch (error) {
       console.error('[WebhookService] Error handling participant_left:', error);
@@ -112,13 +109,13 @@ export class WebhookService {
    * Called when a participant publishes a track (audio/video)
    * @param event - Webhook event
    */
-  static async handleTrackPublished(event: any): Promise<void> {
+  static async handleTrackPublished(event: WebhookEvent): Promise<void> {
     try {
       const roomName = event.room?.name;
       const participantIdentity = event.participant?.identity;
       const trackSid = event.track?.sid;
       const trackType = event.track?.type; // 'AUDIO' or 'VIDEO'
-      
+
       console.log(
         `[WebhookService] Track published - Room: ${roomName}, Participant: ${participantIdentity}, Type: ${trackType}, SID: ${trackSid}`
       );
@@ -134,13 +131,13 @@ export class WebhookService {
    * Called when a participant unpublishes a track
    * @param event - Webhook event
    */
-  static async handleTrackUnpublished(event: any): Promise<void> {
+  static async handleTrackUnpublished(event: WebhookEvent): Promise<void> {
     try {
       const roomName = event.room?.name;
       const participantIdentity = event.participant?.identity;
       const trackSid = event.track?.sid;
       const trackType = event.track?.type;
-      
+
       console.log(
         `[WebhookService] Track unpublished - Room: ${roomName}, Participant: ${participantIdentity}, Type: ${trackType}, SID: ${trackSid}`
       );
@@ -158,7 +155,7 @@ export class WebhookService {
    * as stream status is managed via WebRTC go-live/end-stream endpoints
    * @param event - Validated webhook event
    */
-  static async processEvent(event: any): Promise<void> {
+  static async processEvent(event: WebhookEvent): Promise<void> {
     try {
       const eventType = event.event;
       console.log(`[WebhookService] Processing event: ${eventType}`);
@@ -167,23 +164,23 @@ export class WebhookService {
         case 'room_finished':
           await this.handleRoomFinished(event);
           break;
-        
+
         case 'participant_joined':
           await this.handleParticipantJoined(event);
           break;
-        
+
         case 'participant_left':
           await this.handleParticipantLeft(event);
           break;
-        
+
         case 'track_published':
           await this.handleTrackPublished(event);
           break;
-        
+
         case 'track_unpublished':
           await this.handleTrackUnpublished(event);
           break;
-        
+
         default:
           console.log(`[WebhookService] Unhandled event type: ${eventType}`);
       }

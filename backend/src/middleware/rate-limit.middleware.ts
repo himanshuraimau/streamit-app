@@ -14,14 +14,17 @@ interface RateLimitEntry {
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
 // Clean up expired entries periodically (every 5 minutes)
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of rateLimitStore.entries()) {
-    if (entry.resetTime < now) {
-      rateLimitStore.delete(key);
+setInterval(
+  () => {
+    const now = Date.now();
+    for (const [key, entry] of rateLimitStore.entries()) {
+      if (entry.resetTime < now) {
+        rateLimitStore.delete(key);
+      }
     }
-  }
-}, 5 * 60 * 1000);
+  },
+  5 * 60 * 1000
+);
 
 /**
  * Create a rate limiter middleware
@@ -29,11 +32,7 @@ setInterval(() => {
  * @param windowMs - Time window in milliseconds
  * @param keyPrefix - Prefix for the rate limit key (to differentiate endpoints)
  */
-export const createRateLimiter = (
-  maxRequests: number,
-  windowMs: number,
-  keyPrefix: string
-) => {
+export const createRateLimiter = (maxRequests: number, windowMs: number, keyPrefix: string) => {
   return (req: Request, res: Response, next: NextFunction) => {
     // Use user ID if authenticated, otherwise use IP
     const userId = req.user?.id;

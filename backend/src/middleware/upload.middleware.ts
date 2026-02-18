@@ -1,14 +1,15 @@
 import multer from 'multer';
+import type { ErrorRequestHandler, Request } from 'express';
 
 // Configure multer for memory storage (files will be uploaded to S3)
 const storage = multer.memoryStorage();
 
 // File filter for content uploads (more permissive than creator applications)
-const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   const allowedMimeTypes = [
     // Images
     'image/jpeg',
-    'image/jpg', 
+    'image/jpg',
     'image/png',
     'image/webp',
     'image/gif',
@@ -24,7 +25,11 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCa
   if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error(`Invalid file type: ${file.mimetype}. Allowed types: ${allowedMimeTypes.join(', ')}`));
+    cb(
+      new Error(
+        `Invalid file type: ${file.mimetype}. Allowed types: ${allowedMimeTypes.join(', ')}`
+      )
+    );
   }
 };
 
@@ -37,7 +42,7 @@ export const upload = multer({
 });
 
 // Middleware to handle multer errors
-export const handleUploadError = (error: any, req: any, res: any, next: any) => {
+export const handleUploadError: ErrorRequestHandler = (error, _req, res, next) => {
   if (error instanceof multer.MulterError) {
     if (error.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
@@ -50,13 +55,13 @@ export const handleUploadError = (error: any, req: any, res: any, next: any) => 
       error: `Upload error: ${error.message}`,
     });
   }
-  
+
   if (error) {
     return res.status(400).json({
       success: false,
       error: error.message,
     });
   }
-  
+
   next();
 };

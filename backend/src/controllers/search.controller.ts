@@ -1,71 +1,30 @@
 import type { Request, Response } from 'express';
 import { prisma } from '../lib/db';
-
-export interface SearchQuery {
-  q: string;
-  type?: 'all' | 'streams' | 'users' | 'categories';
-  live?: string | boolean;
-  category?: string;
-  sort?: 'relevance' | 'viewers' | 'recent';
-  limit?: string | number;
-  offset?: string | number;
-}
-
-export interface SearchResults {
-  streams: Array<{
-    id: string;
-    name: string;
-    thumbnailUrl: string | null;
-    isLive: boolean;
-    viewerCount: number;
-    category: string | null;
-    user: {
-      id: string;
-      username: string | null;
-      imageUrl: string | null;
-    };
-  }>;
-  users: Array<{
-    id: string;
-    username: string | null;
-    imageUrl: string | null;
-    bio: string | null;
-    isLive: boolean;
-    followerCount: number;
-  }>;
-  categories: Array<{
-    name: string;
-    streamCount: number;
-    viewerCount: number;
-  }>;
-  total: {
-    streams: number;
-    users: number;
-    categories: number;
-  };
-}
+import type { Prisma } from '@prisma/client';
+import type { SearchQuery, SearchResults } from '../types/search.types';
 
 export class SearchController {
   /**
    * Search across streams, users, and categories
    */
-  async search(req: Request, res: Response) {
+  static async search(req: Request, res: Response): Promise<void> {
     try {
       const {
         q,
         type = 'all',
         live,
-        category,
+        category: _category,
         sort = 'relevance',
         limit = 20,
         offset = 0,
       } = req.query as unknown as SearchQuery;
 
       if (!q || typeof q !== 'string' || q.trim().length === 0) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: 'Search query is required',
         });
+        return;
       }
 
       const searchTerm = q.trim().toLowerCase();
@@ -85,7 +44,7 @@ export class SearchController {
 
       // Search Streams
       if (type === 'all' || type === 'streams') {
-        const streamWhereClause: any = {
+        const streamWhereClause: Prisma.StreamWhereInput = {
           OR: [
             { title: { contains: searchTerm, mode: 'insensitive' } },
             { description: { contains: searchTerm, mode: 'insensitive' } },
@@ -106,7 +65,9 @@ export class SearchController {
         });
 
         // Build order by clause
-        let orderBy: any = {};
+        let orderBy:
+          | Prisma.StreamOrderByWithRelationInput
+          | Prisma.StreamOrderByWithRelationInput[] = {};
         switch (sort) {
           case 'viewers':
             // Can't sort by viewers since we don't have viewerCount in schema
@@ -144,7 +105,7 @@ export class SearchController {
         });
 
         // Transform to match expected response format
-        results.streams = streams.map((stream: any) => ({
+        results.streams = streams.map((stream) => ({
           id: stream.id,
           name: stream.title,
           thumbnailUrl: stream.thumbnail,
@@ -161,7 +122,7 @@ export class SearchController {
 
       // Search Users
       if (type === 'all' || type === 'users') {
-        const userWhereClause: any = {
+        const userWhereClause: Prisma.UserWhereInput = {
           OR: [
             { username: { contains: searchTerm, mode: 'insensitive' } },
             { name: { contains: searchTerm, mode: 'insensitive' } },
@@ -210,7 +171,7 @@ export class SearchController {
         });
 
         // Transform to include isLive at user level
-        results.users = users.map((user: any) => ({
+        results.users = users.map((user) => ({
           id: user.id,
           username: user.username,
           imageUrl: user.image,
@@ -250,7 +211,7 @@ export class SearchController {
 
         // Count categories
         const categoryMap = new Map<string, { streamCount: number; viewerCount: number }>();
-        
+
         profiles.forEach((profile) => {
           profile.categories.forEach((category) => {
             const catStr = category.toString();
@@ -258,8 +219,10 @@ export class SearchController {
               if (!categoryMap.has(catStr)) {
                 categoryMap.set(catStr, { streamCount: 0, viewerCount: 0 });
               }
-              const stats = categoryMap.get(catStr)!;
-              stats.streamCount += 1;
+              const stats = categoryMap.get(catStr);
+              if (stats) {
+                stats.streamCount += 1;
+              }
               // ViewerCount will be 0 for now as we don't have it in the schema
             }
           });
@@ -275,13 +238,13 @@ export class SearchController {
           .slice(offsetNum, offsetNum + limitNum);
       }
 
-      return res.json({
+      res.json({
         success: true,
         data: results,
       });
     } catch (error) {
       console.error('[SearchController] Search error:', error);
-      return res.status(500).json({
+      res.status(500).json({
         success: false,
         error: 'Failed to perform search',
       });
@@ -291,15 +254,16 @@ export class SearchController {
   /**
    * Get search suggestions based on partial query
    */
-  async suggestions(req: Request, res: Response) {
+  static async suggestions(req: Request, res: Response): Promise<void> {
     try {
       const { q } = req.query;
 
       if (!q || typeof q !== 'string' || q.trim().length < 2) {
-        return res.json({
+        res.json({
           success: true,
           data: [],
         });
+        return;
       }
 
       const searchTerm = q.trim().toLowerCase();
@@ -336,13 +300,13 @@ export class SearchController {
       // Remove duplicates and limit to 10
       const uniqueSuggestions = [...new Set(suggestions)].slice(0, 10);
 
-      return res.json({
+      res.json({
         success: true,
         data: uniqueSuggestions,
       });
     } catch (error) {
       console.error('[SearchController] Suggestions error:', error);
-      return res.status(500).json({
+      res.status(500).json({
         success: false,
         error: 'Failed to get suggestions',
       });

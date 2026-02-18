@@ -20,11 +20,13 @@ export const createStreamSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title is too long'),
   description: z.string().max(1000, 'Description is too long').optional(),
   thumbnail: z.string().url('Invalid thumbnail URL').optional(),
-  chatSettings: z.object({
-    isChatEnabled: z.boolean().optional(),
-    isChatDelayed: z.boolean().optional(),
-    isChatFollowersOnly: z.boolean().optional(),
-  }).optional(),
+  chatSettings: z
+    .object({
+      isChatEnabled: z.boolean().optional(),
+      isChatDelayed: z.boolean().optional(),
+      isChatFollowersOnly: z.boolean().optional(),
+    })
+    .optional(),
   streamMethod: z.enum(['browser', 'obs']).default('obs'),
 });
 
@@ -54,14 +56,10 @@ export const getViewerTokenSchema = z.object({
 // Stream report request
 export const reportStreamSchema = z.object({
   streamId: z.string().min(1, 'Stream ID is required'),
-  reason: z.enum([
-    'INAPPROPRIATE_CONTENT',
-    'HARASSMENT',
-    'SPAM',
-    'VIOLENCE',
-    'COPYRIGHT',
-    'OTHER',
-  ], { message: 'Invalid report reason' }),
+  reason: z.enum(
+    ['INAPPROPRIATE_CONTENT', 'HARASSMENT', 'SPAM', 'VIOLENCE', 'COPYRIGHT', 'OTHER'],
+    { message: 'Invalid report reason' }
+  ),
   description: z.string().max(1000, 'Description is too long').optional(),
 });
 

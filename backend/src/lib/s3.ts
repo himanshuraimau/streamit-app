@@ -1,18 +1,29 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import crypto from 'crypto';
 import path from 'path';
+
+const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
+const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
+const BUCKET_NAME = process.env.S3_BUCKET_NAME;
+
+if (!AWS_ACCESS_KEY_ID) throw new Error('Missing environment variable: AWS_ACCESS_KEY_ID');
+if (!AWS_SECRET_ACCESS_KEY) throw new Error('Missing environment variable: AWS_SECRET_ACCESS_KEY');
+if (!BUCKET_NAME) throw new Error('Missing environment variable: S3_BUCKET_NAME');
 
 // Initialize S3 client
 const s3Client = new S3Client({
   region: process.env.AWS_REGION || 'us-east-1',
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    accessKeyId: AWS_ACCESS_KEY_ID,
+    secretAccessKey: AWS_SECRET_ACCESS_KEY,
   },
 });
-
-const BUCKET_NAME = process.env.S3_BUCKET_NAME!; 
 
 // Generate unique file name
 export const generateFileName = (originalName: string, purpose: string): string => {
@@ -20,7 +31,7 @@ export const generateFileName = (originalName: string, purpose: string): string 
   const randomString = crypto.randomBytes(8).toString('hex');
   const ext = path.extname(originalName);
   const baseName = path.basename(originalName, ext);
-  
+
   // Create organized folder structure
   const folder = getFolderByPurpose(purpose);
   return `${folder}/${timestamp}-${randomString}-${baseName}${ext}`;
@@ -66,7 +77,7 @@ export const uploadFileToS3 = async (
   });
 
   await s3Client.send(command);
-  
+
   // Return the S3 file URL
   return `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${fileName}`;
 };
@@ -118,7 +129,7 @@ export const extractFileNameFromUrl = (url: string): string => {
   try {
     const urlObj = new URL(url);
     return urlObj.pathname.substring(1); // Remove leading slash
-  } catch (error) {
+  } catch {
     throw new Error('Invalid S3 URL format');
   }
 };
@@ -127,7 +138,7 @@ export const extractFileNameFromUrl = (url: string): string => {
 export const validateFile = (file: Express.Multer.File): { isValid: boolean; error?: string } => {
   const allowedMimeTypes = [
     'image/jpeg',
-    'image/jpg', 
+    'image/jpg',
     'image/png',
     'image/webp',
     'application/pdf',
@@ -166,7 +177,7 @@ export const getFileInfo = async (fileName: string) => {
       contentLength: response.ContentLength,
       lastModified: response.LastModified,
     };
-  } catch (error) {
+  } catch {
     throw new Error('File not found in S3');
   }
 };

@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { getAuthUser } from '../middleware/auth.middleware';
 import { DiscountService } from '../services/discount.service';
 import { validateCodeSchema } from '../lib/validations/discount.validation';
 import { z } from 'zod';
@@ -11,7 +12,9 @@ export class DiscountController {
    */
   static async validateCode(req: Request, res: Response) {
     try {
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
       const { code, packageId } = validateCodeSchema.parse(req.body);
 
       const result = await DiscountService.validateCode(code, packageId, userId);
@@ -53,7 +56,9 @@ export class DiscountController {
    */
   static async getUserCodes(req: Request, res: Response) {
     try {
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
 
       const codes = await DiscountService.getUserCodes(userId);
 
@@ -77,7 +82,9 @@ export class DiscountController {
    */
   static async getLatestRewardCode(req: Request, res: Response) {
     try {
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
 
       const rewardCode = await DiscountService.getLatestRewardCode(userId);
 

@@ -5,11 +5,7 @@ import { prisma } from '../lib/db';
  * Middleware to ensure user is an approved creator
  * Must be used after requireAuth middleware
  */
-export const requireCreator = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const requireCreator = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -58,11 +54,7 @@ export const requireCreator = async (
  * Middleware to check if user owns a specific stream
  * Expects req.params.userId or req.body.userId
  */
-export const requireStreamOwnership = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const requireStreamOwnership = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
       return res.status(401).json({

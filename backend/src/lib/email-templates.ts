@@ -4,17 +4,17 @@
  */
 
 export const getOTPEmailTemplate = (otp: string, type: string): string => {
-  const title = 
-    type === "email-verification" 
-      ? "Verify Your Email" 
-      : type === "sign-in" 
-        ? "Sign In to VoltStream" 
-        : "Reset Your Password";
-  
-  const message = 
-    type === "email-verification"
-      ? "Welcome to VoltStream! Please verify your email address to complete your registration and start streaming."
-      : type === "sign-in"
+  const title =
+    type === 'email-verification'
+      ? 'Verify Your Email'
+      : type === 'sign-in'
+        ? 'Sign In to VoltStream'
+        : 'Reset Your Password';
+
+  const message =
+    type === 'email-verification'
+      ? 'Welcome to VoltStream! Please verify your email address to complete your registration and start streaming.'
+      : type === 'sign-in'
         ? "You've requested to sign in to your VoltStream account. Use the code below to continue."
         : "You've requested to reset your password. Use the code below to proceed with resetting your password.";
 

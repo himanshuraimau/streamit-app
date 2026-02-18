@@ -1,34 +1,29 @@
-import { betterAuth } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
-import { emailOTP, bearer } from "better-auth/plugins";
-import { prisma } from "./db";
-import { Resend } from "resend";
+import { betterAuth } from 'better-auth';
+import { prismaAdapter } from 'better-auth/adapters/prisma';
+import { emailOTP, bearer } from 'better-auth/plugins';
+import { prisma } from './db';
+import { Resend } from 'resend';
+import { ALLOWED_ORIGINS } from './config';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const auth = betterAuth({
-  database: prismaAdapter(prisma, { provider: "postgresql" }),
+  database: prismaAdapter(prisma, { provider: 'postgresql' }),
 
   emailAndPassword: {
     enabled: true,
   },
 
   // Base path for auth routes (default is /api/auth)
-  basePath: "/api/auth",
-  
+  basePath: '/api/auth',
+
   // Base URL of the auth server
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
-  
+  baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
+
   // Secret for encryption
   secret: process.env.BETTER_AUTH_SECRET,
 
-  trustedOrigins: [
-    process.env.FRONTEND_URL || "http://localhost:5173",
-    "http://localhost:5173",
-    "https://voltstream.space", // Production frontend
-    "https://www.voltstream.space", // Production frontend with www
-    "https://binate-nonperceptively-celestina.ngrok-free.dev", // ngrok tunnel
-  ],
+  trustedOrigins: ALLOWED_ORIGINS,
 
   // Advanced session configuration for cross-domain
   session: {
@@ -40,43 +35,39 @@ export const auth = betterAuth({
 
   // Advanced cookie configuration for cross-domain
   advanced: {
-    cookiePrefix: "better-auth",
+    cookiePrefix: 'better-auth',
     crossSubDomainCookies: {
       enabled: false, // Set to false since you have different domains
     },
     // Use secure cookies in production
-    useSecureCookies: process.env.NODE_ENV === "production",
-    
+    useSecureCookies: process.env.NODE_ENV === 'production',
+
     // CRITICAL: Cookie attributes for cross-domain setup
     defaultCookieAttributes: {
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      secure: process.env.NODE_ENV === "production", // Required with SameSite=none
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: process.env.NODE_ENV === 'production', // Required with SameSite=none
       httpOnly: true,
-      ...(process.env.NODE_ENV === "production" ? { partitioned: true } : {}),
+      ...(process.env.NODE_ENV === 'production' ? { partitioned: true } : {}),
     },
   },
 
   user: {
     additionalFields: {
       age: {
-        type: "number",
+        type: 'number',
         required: false,
       },
       phone: {
-        type: "string",
+        type: 'string',
         required: false,
       },
       username: {
-        type: "string",
+        type: 'string',
         required: true,
         unique: true,
       },
     },
   },
-
-
-
-
 
   plugins: [
     // Bearer token plugin for Safari and cross-domain compatibility
@@ -87,21 +78,21 @@ export const auth = betterAuth({
       async sendVerificationOTP({ email, otp, type }) {
         try {
           const getEmailContent = (otp: string, type: string) => {
-          const title = 
-            type === "email-verification" 
-              ? "Verify Your Email" 
-              : type === "sign-in" 
-                ? "Sign In to VoltStream" 
-                : "Reset Your Password";
-          
-          const message = 
-            type === "email-verification"
-              ? "Welcome to VoltStream! Please verify your email address to complete your registration and start streaming."
-              : type === "sign-in"
-                ? "You've requested to sign in to your VoltStream account. Use the code below to continue."
-                : "You've requested to reset your password. Use the code below to proceed with resetting your password.";
+            const title =
+              type === 'email-verification'
+                ? 'Verify Your Email'
+                : type === 'sign-in'
+                  ? 'Sign In to VoltStream'
+                  : 'Reset Your Password';
 
-          return `
+            const message =
+              type === 'email-verification'
+                ? 'Welcome to VoltStream! Please verify your email address to complete your registration and start streaming.'
+                : type === 'sign-in'
+                  ? "You've requested to sign in to your VoltStream account. Use the code below to continue."
+                  : "You've requested to reset your password. Use the code below to proceed with resetting your password.";
+
+            return `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html dir="ltr" lang="en">
   <head>
@@ -197,27 +188,30 @@ export const auth = betterAuth({
   </body>
 </html>
           `;
-        };
+          };
 
-        await resend.emails.send({
-          from: "VoltStream <noreply@voltstreambackend.space>",
-          to: email,
-          subject:
-            type === "email-verification"
-              ? "Verify Your Email - VoltStream"
-              : type === "sign-in"
-                ? "Sign In to VoltStream"
-                : "Reset Your Password - VoltStream",
-          html: getEmailContent(otp, type),
-        });
-        
-        console.log(`✅ OTP email sent successfully to ${email} (type: ${type})`);
-      } catch (error) {
-        console.error('❌ Failed to send OTP email:', error);
-        // Rethrow so Better Auth knows the email failed
-        throw new Error(`Failed to send verification email: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
-    },
+          await resend.emails.send({
+            from: 'VoltStream <noreply@voltstreambackend.space>',
+            to: email,
+            subject:
+              type === 'email-verification'
+                ? 'Verify Your Email - VoltStream'
+                : type === 'sign-in'
+                  ? 'Sign In to VoltStream'
+                  : 'Reset Your Password - VoltStream',
+            html: getEmailContent(otp, type),
+          });
+
+          console.log(`✅ OTP email sent successfully to ${email} (type: ${type})`);
+        } catch (error) {
+          console.error('❌ Failed to send OTP email:', error);
+          // Rethrow so Better Auth knows the email failed
+          throw new Error(
+            `Failed to send verification email: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            { cause: error }
+          );
+        }
+      },
       otpLength: 6,
       expiresIn: 600, // 10 minutes
       allowedAttempts: 3,

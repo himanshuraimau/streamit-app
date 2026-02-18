@@ -13,59 +13,257 @@ import {
 } from '../lib/validations/auth.validation';
 
 const router = Router();
-const authController = new AuthController();
 
-// OTP verification routes
+/**
+ * @swagger
+ * /api/auth/send-verification-otp:
+ *   post:
+ *     summary: Send a verification OTP via email
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, type]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               type:
+ *                 type: string
+ *                 enum: [email-verification, sign-in, forget-password]
+ *     responses:
+ *       200:
+ *         description: OTP sent successfully
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ */
 router.post(
   '/send-verification-otp',
   validate(SendVerificationOTPSchema),
-  (req, res) => authController.sendVerificationOTP(req, res)
+  AuthController.sendVerificationOTP
 );
 
+/**
+ * @swagger
+ * /api/auth/check-verification-otp:
+ *   post:
+ *     summary: Verify an OTP code
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, otp, type]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               otp:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: OTP verified
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       429:
+ *         description: Too many attempts
+ */
 router.post(
   '/check-verification-otp',
   validate(CheckVerificationOTPSchema),
-  (req, res) => authController.checkVerificationOTP(req, res)
+  AuthController.checkVerificationOTP
 );
 
-// OTP sign-in flow
-router.post(
-  '/signin/email-otp',
-  validate(SignInEmailOTPSchema),
-  (req, res) => authController.signInEmailOTP(req, res)
-);
+/**
+ * @swagger
+ * /api/auth/signin/email-otp:
+ *   post:
+ *     summary: Sign in using email + OTP (passwordless)
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, otp]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               otp:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Signed in, session token returned
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ */
+router.post('/signin/email-otp', validate(SignInEmailOTPSchema), AuthController.signInEmailOTP);
 
-// Email verification flow
-router.post(
-  '/verify-email',
-  validate(VerifyOTPSchema),
-  (req, res) => authController.verifyEmail(req, res)
-);
+/**
+ * @swagger
+ * /api/auth/verify-email:
+ *   post:
+ *     summary: Verify email address with OTP
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, otp]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               otp:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Email verified
+ */
+router.post('/verify-email', validate(VerifyOTPSchema), AuthController.verifyEmail);
 
-// Password reset flow
+/**
+ * @swagger
+ * /api/auth/forget-password/email-otp:
+ *   post:
+ *     summary: Request a password-reset OTP
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: OTP sent
+ */
 router.post(
   '/forget-password/email-otp',
   validate(ForgetPasswordEmailOTPSchema),
-  (req, res) => authController.forgetPasswordEmailOTP(req, res)
+  AuthController.forgetPasswordEmailOTP
 );
 
+/**
+ * @swagger
+ * /api/auth/reset-password/email-otp:
+ *   post:
+ *     summary: Reset password using email + OTP
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, otp, password]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               otp:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *     responses:
+ *       200:
+ *         description: Password reset successfully
+ */
 router.post(
   '/reset-password/email-otp',
   validate(ResetPasswordEmailOTPSchema),
-  (req, res) => authController.resetPasswordEmailOTP(req, res)
+  AuthController.resetPasswordEmailOTP
 );
 
-// Classic email+password routes
-router.post(
-  '/signup/email',
-  validate(SignUpSchema),
-  (req, res) => authController.signUpEmail(req, res)
-);
+/**
+ * @swagger
+ * /api/auth/signup/email:
+ *   post:
+ *     summary: Register a new user account
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, email, password]
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *               username:
+ *                 type: string
+ *               age:
+ *                 type: integer
+ *               phone:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Account created, verification OTP sent
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ */
+router.post('/signup/email', validate(SignUpSchema), AuthController.signUpEmail);
 
-router.post(
-  '/signin/email',
-  validate(SignInSchema),
-  (req, res) => authController.signInEmail(req, res)
-);
+/**
+ * @swagger
+ * /api/auth/signin/email:
+ *   post:
+ *     summary: Sign in with email and password
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [password]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               username:
+ *                 type: string
+ *                 description: Alias for email field
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Signed in, session token and cookie set
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ */
+router.post('/signin/email', validate(SignInSchema), AuthController.signInEmail);
 
 export default router;

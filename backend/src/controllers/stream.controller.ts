@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { getAuthUser } from '../middleware/auth.middleware';
 import { z } from 'zod';
 import { StreamService } from '../services/stream.service';
 import {
@@ -22,7 +23,9 @@ export class StreamController {
    */
   static async goLive(req: Request, res: Response) {
     try {
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
 
       console.log(`[StreamController] Going live for user: ${userId}`);
 
@@ -59,10 +62,7 @@ export class StreamController {
       console.error('[StreamController] Error going live:', error);
 
       if (error instanceof Error) {
-        if (
-          error.message.includes('creator application') ||
-          error.message.includes('APPROVED')
-        ) {
+        if (error.message.includes('creator application') || error.message.includes('APPROVED')) {
           return res.status(403).json({
             success: false,
             error: error.message,
@@ -85,7 +85,9 @@ export class StreamController {
    */
   static async endStream(req: Request, res: Response) {
     try {
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
 
       console.log(`[StreamController] Ending stream for user: ${userId}`);
 
@@ -121,7 +123,9 @@ export class StreamController {
    */
   static async setupStream(req: Request, res: Response) {
     try {
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
 
       // Validate request body
       const data = setupStreamSchema.parse(req.body);
@@ -161,10 +165,7 @@ export class StreamController {
       }
 
       if (error instanceof Error) {
-        if (
-          error.message.includes('creator application') ||
-          error.message.includes('APPROVED')
-        ) {
+        if (error.message.includes('creator application') || error.message.includes('APPROVED')) {
           return res.status(403).json({
             success: false,
             error: error.message,
@@ -186,7 +187,9 @@ export class StreamController {
    */
   static async getStreamInfo(req: Request, res: Response) {
     try {
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
 
       console.log(`[StreamController] Getting stream info for user: ${userId}`);
 
@@ -220,7 +223,9 @@ export class StreamController {
    */
   static async updateStreamInfo(req: Request, res: Response) {
     try {
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
 
       // Validate request body
       const data = updateStreamInfoSchema.parse(req.body);
@@ -271,7 +276,9 @@ export class StreamController {
    */
   static async updateChatSettings(req: Request, res: Response) {
     try {
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
 
       // Validate request body
       const settings = updateChatSettingsSchema.parse(req.body);
@@ -321,7 +328,9 @@ export class StreamController {
    */
   static async getStreamStatus(req: Request, res: Response) {
     try {
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
 
       console.log(`[StreamController] Getting stream status for user: ${userId}`);
 
@@ -355,7 +364,9 @@ export class StreamController {
    */
   static async getPastStreams(req: Request, res: Response) {
     try {
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
 
       console.log(`[StreamController] Getting past streams for user: ${userId}`);
 
@@ -424,7 +435,9 @@ export class StreamController {
    */
   static async reportStream(req: Request, res: Response) {
     try {
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
 
       // Validate request body
       const data = reportStreamSchema.parse(req.body);
@@ -478,5 +491,4 @@ export class StreamController {
       });
     }
   }
-
 }

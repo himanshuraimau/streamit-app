@@ -1,34 +1,33 @@
 import type { Request, Response } from 'express';
+import { getAuthUser } from '../middleware/auth.middleware';
+import type { FinancialDetails, Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '../lib/db';
-import { 
-  createApplicationSchema, 
-  updateApplicationSchema, 
-  saveDraftSchema,
-  identityDraftSchema,
-  financialDraftSchema,
-  profileDraftSchema,
-  fileUploadSchema
+import {
+  createApplicationSchema,
+  updateApplicationSchema,
 } from '../lib/validations/creator.validation';
-import { 
-  uploadFileToS3, 
-  generateFileName, 
-  deleteFileFromS3, 
+import {
+  uploadFileToS3,
+  generateFileName,
+  deleteFileFromS3,
   extractFileNameFromUrl,
-  generatePresignedUrl
+  generatePresignedUrl,
 } from '../lib/s3';
 import { ApplicationService } from '../services/application.service';
 
 // Utility function to mask sensitive data
-const maskSensitiveData = (application: any) => {
+const maskSensitiveData = <T extends { financial?: FinancialDetails | null }>(
+  application: T
+): T => {
   if (application.financial) {
-    application.financial.accountNumber = 
-      '*'.repeat(application.financial.accountNumber.length - 4) + 
+    (application.financial as FinancialDetails).accountNumber =
+      '*'.repeat(application.financial.accountNumber.length - 4) +
       application.financial.accountNumber.slice(-4);
-    
-    application.financial.panNumber = 
-      application.financial.panNumber.slice(0, 2) + 
-      '*'.repeat(6) + 
+
+    (application.financial as FinancialDetails).panNumber =
+      application.financial.panNumber.slice(0, 2) +
+      '*'.repeat(6) +
       application.financial.panNumber.slice(-2);
   }
   return application;
@@ -38,8 +37,10 @@ export class CreatorController {
   // Get current user's application
   static async getApplication(req: Request, res: Response) {
     try {
-      const userId = req.user!.id;
-      
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
+
       const application = await prisma.creatorApplication.findUnique({
         where: { userId },
         include: {
@@ -50,9 +51,9 @@ export class CreatorController {
       });
 
       if (!application) {
-        return res.status(404).json({ 
+        return res.status(404).json({
           success: false,
-          error: 'Application not found' 
+          error: 'Application not found',
         });
       }
 
@@ -61,13 +62,13 @@ export class CreatorController {
 
       res.json({
         success: true,
-        data: maskedApplication
+        data: maskedApplication,
       });
     } catch (error) {
       console.error('Error fetching application:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         success: false,
-        error: 'Internal server error' 
+        error: 'Internal server error',
       });
     }
   }
@@ -75,7 +76,9 @@ export class CreatorController {
   // Create new application
   static async createApplication(req: Request, res: Response) {
     try {
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
       const data = createApplicationSchema.parse(req.body);
 
       // Check if application already exists
@@ -84,9 +87,9 @@ export class CreatorController {
       });
 
       if (existingApplication) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          error: 'Application already exists. Use update endpoint instead.' 
+          error: 'Application already exists. Use update endpoint instead.',
         });
       }
 
@@ -134,20 +137,20 @@ export class CreatorController {
       res.status(201).json({
         success: true,
         data: maskedApplication,
-        message: 'Application submitted successfully'
+        message: 'Application submitted successfully',
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          error: 'Validation error', 
-          details: error.message
+          error: 'Validation error',
+          details: error.message,
         });
       }
       console.error('Error creating application:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         success: false,
-        error: 'Internal server error' 
+        error: 'Internal server error',
       });
     }
   }
@@ -155,7 +158,9 @@ export class CreatorController {
   // Update existing application (only if not approved)
   static async updateApplication(req: Request, res: Response) {
     try {
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
       const data = updateApplicationSchema.parse(req.body);
 
       // Check if application exists and can be updated
@@ -164,16 +169,16 @@ export class CreatorController {
       });
 
       if (!existingApplication) {
-        return res.status(404).json({ 
+        return res.status(404).json({
           success: false,
-          error: 'Application not found' 
+          error: 'Application not found',
         });
       }
 
       if (existingApplication.status === 'APPROVED') {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          error: 'Cannot update approved application' 
+          error: 'Cannot update approved application',
         });
       }
 
@@ -184,7 +189,7 @@ export class CreatorController {
       await ApplicationService.cleanupOldFiles(userId, data);
 
       // Build update data
-      const updateData: any = {
+      const updateData: Prisma.CreatorApplicationUpdateInput = {
         status: 'PENDING',
         submittedAt: new Date(),
       };
@@ -232,20 +237,20 @@ export class CreatorController {
       res.json({
         success: true,
         data: maskedApplication,
-        message: 'Application updated successfully'
+        message: 'Application updated successfully',
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          error: 'Validation error', 
-          details: error.message
+          error: 'Validation error',
+          details: error.message,
         });
       }
       console.error('Error updating application:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         success: false,
-        error: 'Internal server error' 
+        error: 'Internal server error',
       });
     }
   }
@@ -253,8 +258,10 @@ export class CreatorController {
   // Check application status
   static async getApplicationStatus(req: Request, res: Response) {
     try {
-      const userId = req.user!.id;
-      
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
+
       const application = await prisma.creatorApplication.findUnique({
         where: { userId },
         select: {
@@ -273,8 +280,8 @@ export class CreatorController {
           success: true,
           data: {
             hasApplication: false,
-            status: null
-          }
+            status: null,
+          },
         });
       }
 
@@ -282,14 +289,14 @@ export class CreatorController {
         success: true,
         data: {
           hasApplication: true,
-          ...application
-        }
+          ...application,
+        },
       });
     } catch (error) {
       console.error('Error fetching application status:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         success: false,
-        error: 'Internal server error' 
+        error: 'Internal server error',
       });
     }
   }
@@ -298,24 +305,22 @@ export class CreatorController {
   static async uploadFile(req: Request, res: Response) {
     try {
       if (!req.file) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          error: 'No file uploaded' 
+          error: 'No file uploaded',
         });
       }
 
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
       const { purpose } = req.body;
 
       // Generate unique file name
       const fileName = generateFileName(req.file.originalname, purpose || 'OTHER');
 
       // Upload file to S3
-      const fileUrl = await uploadFileToS3(
-        req.file.buffer,
-        fileName,
-        req.file.mimetype
-      );
+      const fileUrl = await uploadFileToS3(req.file.buffer, fileName, req.file.mimetype);
 
       // Save file info to database
       const fileUpload = await prisma.fileUpload.create({
@@ -339,13 +344,13 @@ export class CreatorController {
           originalName: fileUpload.originalName,
           mimeType: fileUpload.mimeType,
           size: fileUpload.size,
-        }
+        },
       });
     } catch (error) {
       console.error('Error uploading file:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         success: false,
-        error: 'Internal server error' 
+        error: 'Internal server error',
       });
     }
   }
@@ -354,17 +359,17 @@ export class CreatorController {
   static async getPresignedUrl(req: Request, res: Response) {
     try {
       const { fileUrl } = req.body;
-      
+
       if (!fileUrl) {
         return res.status(400).json({
           success: false,
-          error: 'File URL is required'
+          error: 'File URL is required',
         });
       }
 
       // Extract file name from URL
       const fileName = extractFileNameFromUrl(fileUrl);
-      
+
       // Generate presigned URL (valid for 1 hour)
       const presignedUrl = await generatePresignedUrl(fileName, 3600);
 
@@ -372,14 +377,14 @@ export class CreatorController {
         success: true,
         data: {
           presignedUrl,
-          expiresIn: 3600
-        }
+          expiresIn: 3600,
+        },
       });
     } catch (error) {
       console.error('Error generating presigned URL:', error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
@@ -388,12 +393,14 @@ export class CreatorController {
   static async deleteFile(req: Request, res: Response) {
     try {
       const { fileUrl } = req.body;
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
 
       if (!fileUrl) {
         return res.status(400).json({
           success: false,
-          error: 'File URL is required'
+          error: 'File URL is required',
         });
       }
 
@@ -408,7 +415,7 @@ export class CreatorController {
       if (!fileRecord) {
         return res.status(404).json({
           success: false,
-          error: 'File not found or access denied'
+          error: 'File not found or access denied',
         });
       }
 
@@ -423,13 +430,13 @@ export class CreatorController {
 
       res.json({
         success: true,
-        message: 'File deleted successfully'
+        message: 'File deleted successfully',
       });
     } catch (error) {
       console.error('Error deleting file:', error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
@@ -437,18 +444,20 @@ export class CreatorController {
   // Get user file statistics
   static async getFileStats(req: Request, res: Response) {
     try {
-      const userId = req.user!.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const userId = user.id;
       const stats = await ApplicationService.getUserFileStats(userId);
 
       res.json({
         success: true,
-        data: stats
+        data: stats,
       });
     } catch (error) {
       console.error('Error fetching file stats:', error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   }
