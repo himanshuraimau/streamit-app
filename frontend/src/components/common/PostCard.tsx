@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Heart, MessageCircle, Share2, Eye } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { contentApi } from '@/lib/api/content';
 import type { PostResponse } from '@/types/content';
 
@@ -12,6 +12,11 @@ export function PostCard({ post }: PostCardProps) {
     const navigate = useNavigate();
     const cardRef = useRef<HTMLDivElement>(null);
     const viewTracked = useRef(false);
+    const [shareCount, setShareCount] = useState(post.sharesCount || 0);
+
+    useEffect(() => {
+        setShareCount(post.sharesCount || 0);
+    }, [post.id, post.sharesCount]);
 
     // Track view when card becomes visible
     useEffect(() => {
@@ -41,13 +46,42 @@ export function PostCard({ post }: PostCardProps) {
         };
     }, [post.id]);
 
+    const handleShare = async () => {
+        const shareUrl = post.isShort
+            ? `${window.location.origin}/shorts?short=${post.id}`
+            : `${window.location.origin}/${post.author.username}`;
+
+        try {
+            const response = await contentApi.trackShare(post.id);
+            if (response.success) {
+                setShareCount((prev) => prev + 1);
+            }
+        } catch (error) {
+            console.error('Error tracking post share:', error);
+        }
+
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: `Post by ${post.author.name}`,
+                    text: post.content || 'Check out this post',
+                    url: shareUrl,
+                });
+            } else {
+                await navigator.clipboard.writeText(shareUrl);
+            }
+        } catch (error) {
+            console.error('Error sharing post:', error);
+        }
+    };
+
     return (
         <div ref={cardRef} className="bg-card rounded-lg overflow-hidden border hover:shadow-lg transition-shadow">
             {/* Media */}
             {post.media && post.media.length > 0 && (
                 <div
                     className="aspect-video relative cursor-pointer"
-                    onClick={() => navigate(`/post/${post.id}`)}
+                    onClick={() => navigate(post.isShort ? `/shorts?short=${post.id}` : `/${post.author.username}`)}
                 >
                     {post.media[0].type === 'IMAGE' ? (
                         <img
@@ -110,10 +144,14 @@ export function PostCard({ post }: PostCardProps) {
                         <Eye className="h-4 w-4" />
                         <span>{post.viewsCount || 0}</span>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <button
+                        type="button"
+                        onClick={handleShare}
+                        className="flex items-center gap-1 transition-colors hover:text-foreground"
+                    >
                         <Share2 className="h-4 w-4" />
-                        <span>{post.sharesCount || 0}</span>
-                    </div>
+                        <span>{shareCount}</span>
+                    </button>
                 </div>
             </div>
         </div>

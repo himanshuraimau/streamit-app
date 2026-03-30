@@ -1,6 +1,13 @@
 import { useState, useCallback, useEffect } from 'react';
 import { streamApi } from '@/lib/api/stream';
-import type { StreamInfo, StreamStatus, GoLiveResponse, SetupStreamRequest, SetupStreamResponse } from '@/lib/api/stream';
+import type {
+  StreamInfo,
+  StreamStatus,
+  GoLiveResponse,
+  SetupStreamRequest,
+  SetupStreamResponse,
+  UpdateStreamInfoRequest,
+} from '@/lib/api/stream';
 import { toast } from 'sonner';
 
 export function useStream() {
@@ -38,7 +45,9 @@ export function useStream() {
       
       if (response.success && response.data) {
         setStreamStatus(response.data);
-        setStreamInfo(response.data.stream);
+        if (response.data.stream) {
+          setStreamInfo(response.data.stream);
+        }
       }
     } catch (err) {
       console.error('Error fetching stream status:', err);
@@ -54,19 +63,7 @@ export function useStream() {
       const response = await streamApi.setupStream(data);
       
       if (response.success && response.data) {
-        // Update stream info with the setup response
-        setStreamInfo(prev => ({
-          ...prev,
-          id: response.data!.id,
-          title: response.data!.title,
-          description: response.data!.description,
-          isLive: response.data!.isLive,
-          isChatEnabled: response.data!.isChatEnabled,
-          isChatDelayed: response.data!.isChatDelayed,
-          isChatFollowersOnly: response.data!.isChatFollowersOnly,
-          thumbnail: prev?.thumbnail ?? null,
-          userId: prev?.userId ?? '',
-        }));
+        setStreamInfo(response.data);
         toast.success('Stream setup complete!');
         return response.data;
       } else {
@@ -156,7 +153,7 @@ export function useStream() {
   }, []);
 
   // Update stream info
-  const updateStreamInfo = useCallback(async (data: { title?: string; thumbnail?: string }) => {
+  const updateStreamInfo = useCallback(async (data: UpdateStreamInfoRequest) => {
     try {
       setLoading(true);
       setError(null);

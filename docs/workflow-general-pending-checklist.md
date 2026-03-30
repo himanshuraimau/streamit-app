@@ -10,10 +10,6 @@ Assumption: items listed here are not fully complete yet, are only partially wir
 
 ## Trending Content Interactions
 
-- [ ] Surface follow actions directly inside the trending content experience.
-- [ ] Wire like/comment/follow behavior inside the shorts experience. The current shorts UI is mostly display-only.
-- [ ] Track share counts from the regular post cards. The share UI exists, but regular post cards do not call the backend share-tracking endpoint.
-
 ## Become A Creator
 
 - [ ] Add a `Become a Creator` entry inside profile/settings if the workflow doc is still the source of truth. The app currently exposes creator application entry points from navbar/creator pages instead.
@@ -30,19 +26,6 @@ Assumption: items listed here are not fully complete yet, are only partially wir
 - [ ] Implement community management features. The current community page is marked as coming soon.
 - [ ] Implement chat moderation dashboard features. The current creator chat page is marked as coming soon.
 - [ ] Add follower/subscriber management tools.
-
-## Creator Go Live Setup
-
-- [ ] Add category, thumbnail, tags, audience, and monetization fields to the go-live setup flow.
-- [ ] Add front/back camera switching, audio-only mode, and filters/music options.
-- [ ] Add premium stream or pay-per-view setup and limited-seat controls if required by the workflow.
-
-## Creator Live Screen
-
-- [ ] Show live timer, likes, and earnings counters in the creator live header/top bar.
-- [ ] Add overlays for top gifter and new follower during the live stream.
-- [ ] Add controls for chat toggle, viewer list, gift transactions, pin message, moderation tools, audio-only, filters, and camera switching.
-- [ ] Replace the placeholder creator post-stream summary with actual backend stats and earnings.
 
 ## Viewer Live Screen
 
@@ -72,5 +55,3 @@ Assumption: items listed here are not fully complete yet, are only partially wir
 - [ ] Align coin package offerings with the workflow doc if the required packages are `₹299` and `₹999`.
 
 ## Wiring Issues Found During Review
-
-- [ ] Fix the navbar `Buy Coins` menu route. It navigates to `/coins/purchase`, but the app route is `/coins/shop`.

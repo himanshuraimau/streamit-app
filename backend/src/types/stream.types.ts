@@ -17,14 +17,39 @@ export interface IngressResponse {
 // Stream info types
 export interface UpdateStreamInfoRequest {
   title?: string;
+  description?: string;
   thumbnail?: string;
+  category?: string;
+  tags?: string[];
+  audience?: 'PUBLIC' | 'FOLLOWERS' | 'INVITE_ONLY';
+  allowGifts?: boolean;
+  allowAds?: boolean;
+  allowPayPerView?: boolean;
+  cameraFacingMode?: 'FRONT' | 'BACK';
+  audioOnlyMode?: boolean;
+  filterPreset?: 'NONE' | 'WARM' | 'COOL' | 'NOIR' | 'POP';
+  musicPreset?: 'NONE' | 'AMBIENT' | 'HYPE' | 'LOFI' | 'ACOUSTIC';
 }
 
 export interface StreamInfoResponse {
   id: string;
   title: string;
+  description: string | null;
   thumbnail: string | null;
+  category: string | null;
+  tags: string[];
+  audience: 'PUBLIC' | 'FOLLOWERS' | 'INVITE_ONLY';
+  allowGifts: boolean;
+  allowAds: boolean;
+  allowPayPerView: boolean;
+  cameraFacingMode: 'FRONT' | 'BACK';
+  audioOnlyMode: boolean;
+  filterPreset: 'NONE' | 'WARM' | 'COOL' | 'NOIR' | 'POP';
+  musicPreset: 'NONE' | 'AMBIENT' | 'HYPE' | 'LOFI' | 'ACOUSTIC';
   isLive: boolean;
+  isChatEnabled: boolean;
+  isChatDelayed: boolean;
+  isChatFollowersOnly: boolean;
   userId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -47,11 +72,7 @@ export interface ChatSettingsResponse {
 export interface StreamStatusResponse {
   isLive: boolean;
   viewerCount: number;
-  title: string;
-  thumbnail: string | null;
-  isChatEnabled: boolean;
-  isChatDelayed: boolean;
-  isChatFollowersOnly: boolean;
+  stream: StreamInfoResponse;
 }
 
 // Token types

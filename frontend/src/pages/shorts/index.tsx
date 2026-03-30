@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAllShorts, useFollowingShorts } from '@/hooks/useShorts';
 import { useSession } from '@/lib/auth-client';
+import { useFollowingCreatorIds } from '@/hooks/useFollowingCreatorIds';
 import { ShortsPlayer } from '@/components/shorts/ShortsPlayer';
 import { Loader2 } from 'lucide-react';
 
@@ -9,6 +10,11 @@ export default function ShortsPage() {
     const [searchParams] = useSearchParams();
     const selectedShortId = searchParams.get('short');
     const { data: session } = useSession();
+    const {
+        isFollowing,
+        isPending,
+        toggleFollow,
+    } = useFollowingCreatorIds();
     const followingShortsQuery = useFollowingShorts({ enabled: !!session?.user });
     const followingShorts = useMemo(
         () => followingShortsQuery.data?.pages.flatMap(page => page.data?.posts || []) || [],
@@ -39,6 +45,24 @@ export default function ShortsPage() {
             setCurrentIndex(shortIndex);
         }
     }, [allShorts, selectedShortId]);
+
+    useEffect(() => {
+        if (currentIndex > allShorts.length - 1) {
+            setCurrentIndex(0);
+        }
+    }, [allShorts.length, currentIndex]);
+
+    const handleToggleFollow = async (creatorId: string) => {
+        if (!session?.user) {
+            return;
+        }
+
+        try {
+            await toggleFollow(creatorId);
+        } catch (error) {
+            console.error('Error toggling follow in shorts page:', error);
+        }
+    };
 
     const handleSwipeUp = () => {
         if (currentIndex < allShorts.length - 1) {
@@ -109,6 +133,9 @@ export default function ShortsPage() {
                     <ShortsPlayer
                         short={short}
                         isActive={index === currentIndex}
+                        isFollowing={isFollowing(short.author.id)}
+                        followPending={isPending(short.author.id)}
+                        onToggleFollow={handleToggleFollow}
                         onSwipeUp={handleSwipeUp}
                         onSwipeDown={handleSwipeDown}
                     />

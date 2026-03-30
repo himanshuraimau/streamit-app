@@ -9,9 +9,10 @@ import type { CommentResponse } from '@/types/content';
 
 interface CommentSectionProps {
   postId: string;
+  onCommentAdded?: () => void;
 }
 
-export function CommentSection({ postId }: CommentSectionProps) {
+export function CommentSection({ postId, onCommentAdded }: CommentSectionProps) {
   const [newComment, setNewComment] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const { data: session } = useAuthSession();
@@ -29,6 +30,7 @@ export function CommentSection({ postId }: CommentSectionProps) {
         postId,
         parentId,
       });
+      onCommentAdded?.();
       setNewComment('');
       setReplyingTo(null);
     } catch (error) {

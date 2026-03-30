@@ -34,6 +34,12 @@ interface SectionEmptyStateProps {
   onAction?: () => void;
 }
 
+interface FollowCardProps {
+  isFollowing?: boolean;
+  followPending?: boolean;
+  onToggleFollow?: (creatorId: string) => void;
+}
+
 export function SectionEmptyState({
   title,
   description,
@@ -116,7 +122,12 @@ export function HomeStreamCard({ stream }: { stream: LiveStream }) {
   );
 }
 
-export function HomeMediaCard({ post }: { post: PostResponse }) {
+export function HomeMediaCard({
+  post,
+  isFollowing = false,
+  followPending = false,
+  onToggleFollow,
+}: { post: PostResponse } & FollowCardProps) {
   const navigate = useNavigate();
   const media = getPhotoMedia(post);
 
@@ -138,16 +149,38 @@ export function HomeMediaCard({ post }: { post: PostResponse }) {
       </div>
 
       <div className="space-y-4 p-4">
-        <div className="flex items-center gap-3">
-          <img
-            src={getAvatarUrl(post.author.username, post.author.image)}
-            alt={post.author.username}
-            className="h-10 w-10 rounded-full object-cover"
-          />
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-white">{post.author.name}</p>
-            <p className="truncate text-xs text-zinc-400">@{post.author.username}</p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <img
+              src={getAvatarUrl(post.author.username, post.author.image)}
+              alt={post.author.username}
+              className="h-10 w-10 rounded-full object-cover"
+            />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-white">{post.author.name}</p>
+              <p className="truncate text-xs text-zinc-400">@{post.author.username}</p>
+            </div>
           </div>
+
+          {onToggleFollow && (
+            <Button
+              type="button"
+              size="sm"
+              variant={isFollowing ? 'outline' : 'secondary'}
+              disabled={followPending}
+              onClick={(event) => {
+                event.stopPropagation();
+                onToggleFollow(post.author.id);
+              }}
+              className={
+                isFollowing
+                  ? 'border-zinc-700 bg-transparent text-white hover:bg-zinc-900'
+                  : 'bg-white text-black hover:bg-zinc-200'
+              }
+            >
+              {followPending ? '...' : isFollowing ? 'Following' : 'Follow'}
+            </Button>
+          )}
         </div>
 
         {post.content && <p className="line-clamp-2 text-sm text-zinc-200">{post.content}</p>}
@@ -175,7 +208,12 @@ export function HomeMediaCard({ post }: { post: PostResponse }) {
   );
 }
 
-export function HomeShortCard({ post }: { post: PostResponse }) {
+export function HomeShortCard({
+  post,
+  isFollowing = false,
+  followPending = false,
+  onToggleFollow,
+}: { post: PostResponse } & FollowCardProps) {
   const navigate = useNavigate();
   const media = getShortMedia(post);
 
@@ -208,16 +246,38 @@ export function HomeShortCard({ post }: { post: PostResponse }) {
       </div>
 
       <div className="space-y-4 p-4">
-        <div className="flex items-center gap-3">
-          <img
-            src={getAvatarUrl(post.author.username, post.author.image)}
-            alt={post.author.username}
-            className="h-10 w-10 rounded-full object-cover"
-          />
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-white">{post.author.name}</p>
-            <p className="truncate text-xs text-zinc-400">@{post.author.username}</p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <img
+              src={getAvatarUrl(post.author.username, post.author.image)}
+              alt={post.author.username}
+              className="h-10 w-10 rounded-full object-cover"
+            />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-white">{post.author.name}</p>
+              <p className="truncate text-xs text-zinc-400">@{post.author.username}</p>
+            </div>
           </div>
+
+          {onToggleFollow && (
+            <Button
+              type="button"
+              size="sm"
+              variant={isFollowing ? 'outline' : 'secondary'}
+              disabled={followPending}
+              onClick={(event) => {
+                event.stopPropagation();
+                onToggleFollow(post.author.id);
+              }}
+              className={
+                isFollowing
+                  ? 'border-zinc-700 bg-transparent text-white hover:bg-zinc-900'
+                  : 'bg-white text-black hover:bg-zinc-200'
+              }
+            >
+              {followPending ? '...' : isFollowing ? 'Following' : 'Follow'}
+            </Button>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-400">

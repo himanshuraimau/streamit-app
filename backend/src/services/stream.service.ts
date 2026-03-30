@@ -158,6 +158,16 @@ export class StreamService {
       title: string;
       description?: string;
       thumbnail?: string;
+      category?: string;
+      tags?: string[];
+      audience?: 'PUBLIC' | 'FOLLOWERS' | 'INVITE_ONLY';
+      allowGifts?: boolean;
+      allowAds?: boolean;
+      allowPayPerView?: boolean;
+      cameraFacingMode?: 'FRONT' | 'BACK';
+      audioOnlyMode?: boolean;
+      filterPreset?: 'NONE' | 'WARM' | 'COOL' | 'NOIR' | 'POP';
+      musicPreset?: 'NONE' | 'AMBIENT' | 'HYPE' | 'LOFI' | 'ACOUSTIC';
       isChatEnabled?: boolean;
       isChatDelayed?: boolean;
       isChatFollowersOnly?: boolean;
@@ -176,6 +186,16 @@ export class StreamService {
           title: data.title,
           description: data.description,
           thumbnail: data.thumbnail,
+          category: data.category,
+          tags: data.tags ?? [],
+          audience: data.audience ?? 'PUBLIC',
+          allowGifts: data.allowGifts ?? true,
+          allowAds: data.allowAds ?? false,
+          allowPayPerView: data.allowPayPerView ?? false,
+          cameraFacingMode: data.cameraFacingMode ?? 'FRONT',
+          audioOnlyMode: data.audioOnlyMode ?? false,
+          filterPreset: data.filterPreset ?? 'NONE',
+          musicPreset: data.musicPreset ?? 'NONE',
           isChatEnabled: data.isChatEnabled ?? true,
           isChatDelayed: data.isChatDelayed ?? false,
           isChatFollowersOnly: data.isChatFollowersOnly ?? false,
@@ -185,6 +205,16 @@ export class StreamService {
           title: data.title,
           description: data.description,
           thumbnail: data.thumbnail,
+          category: data.category,
+          tags: data.tags ?? [],
+          audience: data.audience ?? 'PUBLIC',
+          allowGifts: data.allowGifts ?? true,
+          allowAds: data.allowAds ?? false,
+          allowPayPerView: data.allowPayPerView ?? false,
+          cameraFacingMode: data.cameraFacingMode ?? 'FRONT',
+          audioOnlyMode: data.audioOnlyMode ?? false,
+          filterPreset: data.filterPreset ?? 'NONE',
+          musicPreset: data.musicPreset ?? 'NONE',
           isChatEnabled: data.isChatEnabled ?? true,
           isChatDelayed: data.isChatDelayed ?? false,
           isChatFollowersOnly: data.isChatFollowersOnly ?? false,
@@ -208,7 +238,21 @@ export class StreamService {
    */
   static async updateStreamInfo(
     userId: string,
-    data: { title?: string; thumbnail?: string; description?: string }
+    data: {
+      title?: string;
+      description?: string;
+      thumbnail?: string;
+      category?: string;
+      tags?: string[];
+      audience?: 'PUBLIC' | 'FOLLOWERS' | 'INVITE_ONLY';
+      allowGifts?: boolean;
+      allowAds?: boolean;
+      allowPayPerView?: boolean;
+      cameraFacingMode?: 'FRONT' | 'BACK';
+      audioOnlyMode?: boolean;
+      filterPreset?: 'NONE' | 'WARM' | 'COOL' | 'NOIR' | 'POP';
+      musicPreset?: 'NONE' | 'AMBIENT' | 'HYPE' | 'LOFI' | 'ACOUSTIC';
+    }
   ): Promise<Stream> {
     try {
       console.log(`[StreamService] Updating stream info for user: ${userId}`);
@@ -372,12 +416,7 @@ export class StreamService {
   static async getStreamStatus(userId: string): Promise<{
     isLive: boolean;
     viewerCount: number;
-    title: string;
-    description: string | null;
-    thumbnail: string | null;
-    isChatEnabled: boolean;
-    isChatDelayed: boolean;
-    isChatFollowersOnly: boolean;
+    stream: Stream;
   }> {
     try {
       const stream = await this.getCreatorStream(userId);
@@ -393,12 +432,7 @@ export class StreamService {
       return {
         isLive: stream.isLive,
         viewerCount,
-        title: stream.title,
-        description: stream.description,
-        thumbnail: stream.thumbnail,
-        isChatEnabled: stream.isChatEnabled,
-        isChatDelayed: stream.isChatDelayed,
-        isChatFollowersOnly: stream.isChatFollowersOnly,
+        stream,
       };
     } catch (error) {
       console.error('[StreamService] Error getting stream status:', error);

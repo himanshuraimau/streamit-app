@@ -12,7 +12,18 @@ export const createIngressSchema = z.object({
 // Update stream info request
 export const updateStreamInfoSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title is too long').optional(),
+  description: z.string().max(1000, 'Description is too long').optional(),
   thumbnail: z.string().url('Invalid thumbnail URL').optional(),
+  category: z.string().trim().max(80, 'Category is too long').optional(),
+  tags: z.array(z.string().trim().min(1).max(30)).max(10, 'Too many tags').optional(),
+  audience: z.enum(['PUBLIC', 'FOLLOWERS', 'INVITE_ONLY']).optional(),
+  allowGifts: z.boolean().optional(),
+  allowAds: z.boolean().optional(),
+  allowPayPerView: z.boolean().optional(),
+  cameraFacingMode: z.enum(['FRONT', 'BACK']).optional(),
+  audioOnlyMode: z.boolean().optional(),
+  filterPreset: z.enum(['NONE', 'WARM', 'COOL', 'NOIR', 'POP']).optional(),
+  musicPreset: z.enum(['NONE', 'AMBIENT', 'HYPE', 'LOFI', 'ACOUSTIC']).optional(),
 });
 
 // Create stream with metadata (NEW FLOW)
@@ -20,6 +31,16 @@ export const createStreamSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title is too long'),
   description: z.string().max(1000, 'Description is too long').optional(),
   thumbnail: z.string().url('Invalid thumbnail URL').optional(),
+  category: z.string().trim().max(80, 'Category is too long').optional(),
+  tags: z.array(z.string().trim().min(1).max(30)).max(10, 'Too many tags').optional(),
+  audience: z.enum(['PUBLIC', 'FOLLOWERS', 'INVITE_ONLY']).optional(),
+  allowGifts: z.boolean().optional(),
+  allowAds: z.boolean().optional(),
+  allowPayPerView: z.boolean().optional(),
+  cameraFacingMode: z.enum(['FRONT', 'BACK']).optional(),
+  audioOnlyMode: z.boolean().optional(),
+  filterPreset: z.enum(['NONE', 'WARM', 'COOL', 'NOIR', 'POP']).optional(),
+  musicPreset: z.enum(['NONE', 'AMBIENT', 'HYPE', 'LOFI', 'ACOUSTIC']).optional(),
   chatSettings: z
     .object({
       isChatEnabled: z.boolean().optional(),
@@ -34,6 +55,17 @@ export const createStreamSchema = z.object({
 export const setupStreamSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title is too long'),
   description: z.string().max(1000, 'Description is too long').optional(),
+  thumbnail: z.string().url('Invalid thumbnail URL').optional(),
+  category: z.string().trim().max(80, 'Category is too long').optional(),
+  tags: z.array(z.string().trim().min(1).max(30)).max(10, 'Too many tags').optional(),
+  audience: z.enum(['PUBLIC', 'FOLLOWERS', 'INVITE_ONLY']).optional(),
+  allowGifts: z.boolean().optional(),
+  allowAds: z.boolean().optional(),
+  allowPayPerView: z.boolean().optional(),
+  cameraFacingMode: z.enum(['FRONT', 'BACK']).optional(),
+  audioOnlyMode: z.boolean().optional(),
+  filterPreset: z.enum(['NONE', 'WARM', 'COOL', 'NOIR', 'POP']).optional(),
+  musicPreset: z.enum(['NONE', 'AMBIENT', 'HYPE', 'LOFI', 'ACOUSTIC']).optional(),
   isChatEnabled: z.boolean().optional(),
   isChatDelayed: z.boolean().optional(),
   isChatFollowersOnly: z.boolean().optional(),

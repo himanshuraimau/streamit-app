@@ -235,6 +235,16 @@ model Stream {
   title       String  @db.Text
   description String? @db.Text
   thumbnail   String? @db.Text
+  category    String? @db.Text
+  tags        String[] @default([])
+  audience    StreamAudience @default(PUBLIC)
+  allowGifts      Boolean @default(true)
+  allowAds        Boolean @default(false)
+  allowPayPerView Boolean @default(false)
+  cameraFacingMode StreamCameraFacingMode @default(FRONT)
+  audioOnlyMode   Boolean @default(false)
+  filterPreset    StreamFilterPreset @default(NONE)
+  musicPreset     StreamMusicPreset @default(NONE)
 
   // Stream status
   isLive    Boolean   @default(false)
@@ -265,6 +275,33 @@ model Stream {
   @@index([title])
   @@index([isLive])
   @@map("stream")
+}
+
+enum StreamAudience {
+  PUBLIC
+  FOLLOWERS
+  INVITE_ONLY
+}
+
+enum StreamCameraFacingMode {
+  FRONT
+  BACK
+}
+
+enum StreamFilterPreset {
+  NONE
+  WARM
+  COOL
+  NOIR
+  POP
+}
+
+enum StreamMusicPreset {
+  NONE
+  AMBIENT
+  HYPE
+  LOFI
+  ACOUSTIC
 }
 
 // Stream-specific reports from viewers

@@ -136,6 +136,17 @@ export class StreamController {
       const stream = await StreamService.createOrUpdateStream(userId, {
         title: data.title,
         description: data.description,
+        thumbnail: data.thumbnail,
+        category: data.category,
+        tags: data.tags,
+        audience: data.audience,
+        allowGifts: data.allowGifts,
+        allowAds: data.allowAds,
+        allowPayPerView: data.allowPayPerView,
+        cameraFacingMode: data.cameraFacingMode,
+        audioOnlyMode: data.audioOnlyMode,
+        filterPreset: data.filterPreset,
+        musicPreset: data.musicPreset,
         isChatEnabled: data.isChatEnabled,
         isChatDelayed: data.isChatDelayed,
         isChatFollowersOnly: data.isChatFollowersOnly,
@@ -143,15 +154,7 @@ export class StreamController {
 
       res.status(201).json({
         success: true,
-        data: {
-          id: stream.id,
-          title: stream.title,
-          description: stream.description,
-          isLive: stream.isLive,
-          isChatEnabled: stream.isChatEnabled,
-          isChatDelayed: stream.isChatDelayed,
-          isChatFollowersOnly: stream.isChatFollowersOnly,
-        },
+        data: stream,
       });
     } catch (error) {
       console.error('[StreamController] Error setting up stream:', error);
@@ -243,12 +246,7 @@ export class StreamController {
 
       res.json({
         success: true,
-        data: {
-          id: stream.id,
-          title: stream.title,
-          thumbnail: stream.thumbnail,
-          updatedAt: stream.updatedAt,
-        },
+        data: stream,
         message: 'Stream info updated successfully',
       });
     } catch (error) {
@@ -296,11 +294,7 @@ export class StreamController {
 
       res.json({
         success: true,
-        data: {
-          isChatEnabled: stream.isChatEnabled,
-          isChatDelayed: stream.isChatDelayed,
-          isChatFollowersOnly: stream.isChatFollowersOnly,
-        },
+        data: stream,
         message: 'Chat settings updated successfully',
       });
     } catch (error) {

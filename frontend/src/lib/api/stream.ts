@@ -22,11 +22,26 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
+export type StreamAudience = 'PUBLIC' | 'FOLLOWERS' | 'INVITE_ONLY';
+export type StreamCameraFacingMode = 'FRONT' | 'BACK';
+export type StreamFilterPreset = 'NONE' | 'WARM' | 'COOL' | 'NOIR' | 'POP';
+export type StreamMusicPreset = 'NONE' | 'AMBIENT' | 'HYPE' | 'LOFI' | 'ACOUSTIC';
+
 export interface StreamInfo {
   id: string;
   title: string;
   description?: string | null;
   thumbnail: string | null;
+  category: string | null;
+  tags: string[];
+  audience: StreamAudience;
+  allowGifts: boolean;
+  allowAds: boolean;
+  allowPayPerView: boolean;
+  cameraFacingMode: StreamCameraFacingMode;
+  audioOnlyMode: boolean;
+  filterPreset: StreamFilterPreset;
+  musicPreset: StreamMusicPreset;
   isLive: boolean;
   isChatEnabled: boolean;
   isChatDelayed: boolean;
@@ -42,7 +57,18 @@ export interface StreamStatus {
 
 export interface UpdateStreamInfoRequest {
   title?: string;
+  description?: string;
   thumbnail?: string;
+  category?: string;
+  tags?: string[];
+  audience?: StreamAudience;
+  allowGifts?: boolean;
+  allowAds?: boolean;
+  allowPayPerView?: boolean;
+  cameraFacingMode?: StreamCameraFacingMode;
+  audioOnlyMode?: boolean;
+  filterPreset?: StreamFilterPreset;
+  musicPreset?: StreamMusicPreset;
 }
 
 export interface UpdateChatSettingsRequest {
@@ -55,20 +81,23 @@ export interface UpdateChatSettingsRequest {
 export interface SetupStreamRequest {
   title: string;
   description?: string;
+  thumbnail?: string;
+  category?: string;
+  tags?: string[];
+  audience?: StreamAudience;
+  allowGifts?: boolean;
+  allowAds?: boolean;
+  allowPayPerView?: boolean;
+  cameraFacingMode?: StreamCameraFacingMode;
+  audioOnlyMode?: boolean;
+  filterPreset?: StreamFilterPreset;
+  musicPreset?: StreamMusicPreset;
   isChatEnabled?: boolean;
   isChatDelayed?: boolean;
   isChatFollowersOnly?: boolean;
 }
 
-export interface SetupStreamResponse {
-  id: string;
-  title: string;
-  description: string | null;
-  isLive: boolean;
-  isChatEnabled: boolean;
-  isChatDelayed: boolean;
-  isChatFollowersOnly: boolean;
-}
+export type SetupStreamResponse = StreamInfo;
 
 export interface GoLiveResponse {
   token: string;

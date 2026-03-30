@@ -4,6 +4,7 @@ import { Loader2, TrendingUp as TrendingUpIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTrending } from '@/hooks/useTrending';
 import { useTrendingShorts } from '@/hooks/useShorts';
+import { useFollowingCreatorIds } from '@/hooks/useFollowingCreatorIds';
 import {
   HomeMediaCard,
   HomeShortCard,
@@ -15,8 +16,22 @@ import {
 export function TrendingTab() {
   const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('7d');
   const navigate = useNavigate();
+  const { session, isFollowing, isPending, toggleFollow } = useFollowingCreatorIds();
   const trendingPhotosQuery = useTrending(timeRange);
   const trendingShortsQuery = useTrendingShorts(timeRange);
+
+  const handleToggleFollow = async (creatorId: string) => {
+    if (!session?.user) {
+      navigate('/auth/signin');
+      return;
+    }
+
+    try {
+      await toggleFollow(creatorId);
+    } catch (error) {
+      console.error('Error toggling follow in trending view:', error);
+    }
+  };
 
   const trendingPhotos = useMemo(
     () => (trendingPhotosQuery.data?.posts || []).filter(isPhotoPost),
@@ -93,7 +108,13 @@ export function TrendingTab() {
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             {trendingPhotos.slice(0, 6).map((post) => (
-              <HomeMediaCard key={post.id} post={post} />
+              <HomeMediaCard
+                key={post.id}
+                post={post}
+                isFollowing={isFollowing(post.author.id)}
+                followPending={isPending(post.author.id)}
+                onToggleFollow={handleToggleFollow}
+              />
             ))}
           </div>
         )}
@@ -127,7 +148,13 @@ export function TrendingTab() {
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
             {trendingShorts.slice(0, 4).map((post) => (
-              <HomeShortCard key={post.id} post={post} />
+              <HomeShortCard
+                key={post.id}
+                post={post}
+                isFollowing={isFollowing(post.author.id)}
+                followPending={isPending(post.author.id)}
+                onToggleFollow={handleToggleFollow}
+              />
             ))}
           </div>
         )}

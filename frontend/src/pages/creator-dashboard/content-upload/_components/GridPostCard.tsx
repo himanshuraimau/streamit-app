@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useTogglePostLike, useDeletePost } from '@/hooks/useContent';
 import { useAuthSession } from '@/hooks/useAuthSession';
+import { contentApi } from '@/lib/api/content';
 import { TruncatedText } from '@/components/common/TruncatedText';
 import type { PostResponse, MediaResponse } from '@/types/content';
 import { CommentSection } from './CommentSection';
@@ -42,19 +43,29 @@ export function GridPostCard({ post, onEdit }: GridPostCardProps) {
   };
 
   const handleShare = async () => {
+    const shareUrl = post.isShort
+      ? `${window.location.origin}/shorts?short=${post.id}`
+      : `${window.location.origin}/${post.author.username}`;
+
+    try {
+      await contentApi.trackShare(post.id);
+    } catch (error) {
+      console.error('Error tracking post share:', error);
+    }
+
     if (navigator.share) {
       try {
         await navigator.share({
           title: `Post by ${post.author.name}`,
           text: post.content || 'Check out this post',
-          url: window.location.origin + `/posts/${post.id}`,
+          url: shareUrl,
         });
       } catch {
         // User cancelled sharing
       }
     } else {
       // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.origin + `/posts/${post.id}`);
+      navigator.clipboard.writeText(shareUrl);
     }
   };
 

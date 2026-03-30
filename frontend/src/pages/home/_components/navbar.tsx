@@ -199,7 +199,7 @@ export default function Navbar() {
                     <span>Gifts Sent</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => navigate('/coins/purchase')}
+                    onClick={() => navigate('/coins/shop')}
                     className="text-zinc-300 focus:text-white focus:bg-zinc-800 cursor-pointer"
                   >
                     <Coins className="mr-2 h-4 w-4" />
