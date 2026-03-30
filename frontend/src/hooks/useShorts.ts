@@ -2,11 +2,12 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { contentApi } from '@/lib/api/content';
 
 // Hook for following shorts (infinite scroll)
-export function useFollowingShorts() {
+export function useFollowingShorts(options: { enabled?: boolean } = {}) {
     return useInfiniteQuery({
         queryKey: ['shorts', 'following'],
         queryFn: ({ pageParam }) =>
             contentApi.getFollowingShorts({ cursor: pageParam, limit: 10 }),
+        enabled: options.enabled,
         getNextPageParam: (lastPage) => {
             if (!lastPage.success || !lastPage.data) return undefined;
             return lastPage.data.hasMore ? lastPage.data.nextCursor : undefined;
@@ -31,11 +32,12 @@ export function useTrendingShorts(timeRange: '24h' | '7d' | '30d' = '7d') {
 }
 
 // Hook for all shorts (discover, infinite scroll)
-export function useAllShorts() {
+export function useAllShorts(options: { enabled?: boolean } = {}) {
     return useInfiniteQuery({
         queryKey: ['shorts', 'all'],
         queryFn: ({ pageParam }) =>
             contentApi.getAllShorts({ cursor: pageParam, limit: 10 }),
+        enabled: options.enabled,
         getNextPageParam: (lastPage) => {
             if (!lastPage.success || !lastPage.data) return undefined;
             return lastPage.data.hasMore ? lastPage.data.nextCursor : undefined;

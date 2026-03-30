@@ -1,22 +1,52 @@
-import { useState } from 'react';
-import { useFollowingShorts } from '@/hooks/useShorts';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useAllShorts, useFollowingShorts } from '@/hooks/useShorts';
+import { useSession } from '@/lib/auth-client';
 import { ShortsPlayer } from '@/components/shorts/ShortsPlayer';
 import { Loader2 } from 'lucide-react';
 
 export default function ShortsPage() {
-    const { data, fetchNextPage, hasNextPage, isLoading, error } = useFollowingShorts();
+    const [searchParams] = useSearchParams();
+    const selectedShortId = searchParams.get('short');
+    const { data: session } = useSession();
+    const followingShortsQuery = useFollowingShorts({ enabled: !!session?.user });
+    const followingShorts = useMemo(
+        () => followingShortsQuery.data?.pages.flatMap(page => page.data?.posts || []) || [],
+        [followingShortsQuery.data]
+    );
+    const shouldLoadAllShorts = !session?.user || (followingShortsQuery.isFetched && followingShorts.length === 0);
+    const allShortsQuery = useAllShorts({ enabled: shouldLoadAllShorts });
     const [currentIndex, setCurrentIndex] = useState(0);
 
-    // Flatten all pages into a single array
-    const allShorts = data?.pages.flatMap(page => page.data?.posts || []) || [];
+    const allShorts = useMemo(() => {
+        if (session?.user && followingShorts.length > 0) {
+            return followingShorts;
+        }
+
+        return allShortsQuery.data?.pages.flatMap(page => page.data?.posts || []) || [];
+    }, [allShortsQuery.data, followingShorts, session?.user]);
+
+    const activeQuery =
+        session?.user && followingShorts.length > 0 ? followingShortsQuery : allShortsQuery;
+
+    useEffect(() => {
+        if (!selectedShortId || allShorts.length === 0) {
+            return;
+        }
+
+        const shortIndex = allShorts.findIndex((short) => short.id === selectedShortId);
+        if (shortIndex >= 0) {
+            setCurrentIndex(shortIndex);
+        }
+    }, [allShorts, selectedShortId]);
 
     const handleSwipeUp = () => {
         if (currentIndex < allShorts.length - 1) {
             setCurrentIndex(currentIndex + 1);
 
             // Prefetch next page when near the end
-            if (currentIndex >= allShorts.length - 3 && hasNextPage) {
-                fetchNextPage();
+            if (currentIndex >= allShorts.length - 3 && activeQuery.hasNextPage) {
+                activeQuery.fetchNextPage();
             }
         }
     };
@@ -27,7 +57,7 @@ export default function ShortsPage() {
         }
     };
 
-    if (isLoading) {
+    if (followingShortsQuery.isLoading || allShortsQuery.isLoading) {
         return (
             <div className="fixed inset-0 bg-black flex items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-white" />
@@ -35,7 +65,7 @@ export default function ShortsPage() {
         );
     }
 
-    if (error) {
+    if (followingShortsQuery.isError && allShortsQuery.isError) {
         return (
             <div className="fixed inset-0 bg-black flex items-center justify-center">
                 <div className="text-center">
@@ -51,7 +81,11 @@ export default function ShortsPage() {
             <div className="fixed inset-0 bg-black flex items-center justify-center">
                 <div className="text-center px-4">
                     <p className="text-white text-lg mb-2">No shorts available</p>
-                    <p className="text-white/60 text-sm">Follow creators to see their shorts here</p>
+                    <p className="text-white/60 text-sm">
+                        {session?.user
+                            ? 'Follow creators or check back later for new shorts'
+                            : 'Check back later for new shorts from creators'}
+                    </p>
                 </div>
             </div>
         );

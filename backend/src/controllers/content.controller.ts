@@ -349,12 +349,16 @@ export class ContentController {
   // Get feed for authenticated user (following + public)
   static async getFeed(req: Request, res: Response) {
     try {
-      const requestingUserId = req.user?.id;
+      const user = getAuthUser(req, res);
+      if (!user) return;
+      const requestingUserId = user.id;
       const query = feedQuerySchema.parse(req.query);
 
-      // For now, just return public feed
-      // In the future, this could include posts from followed users
-      const result = await ContentService.getPublicFeed(query, requestingUserId);
+      const result = await ContentService.getFollowingFeed(
+        requestingUserId,
+        query,
+        requestingUserId
+      );
 
       res.json({
         success: true,

@@ -1,11 +1,88 @@
 import { prisma } from '../lib/db';
 import type { Stream, StreamReportReason } from '@prisma/client';
+import { RoomServiceClient } from 'livekit-server-sdk';
 
 /**
  * Stream Service - Business logic for stream management
  * Handles stream creation, updates, and status management for WebRTC streaming
  */
 export class StreamService {
+  private static getLiveKitServiceUrl(): string | null {
+    const liveKitUrl = process.env.LIVEKIT_URL;
+
+    if (!liveKitUrl) {
+      return null;
+    }
+
+    try {
+      const parsedUrl = new URL(liveKitUrl);
+
+      if (parsedUrl.protocol === 'ws:') {
+        parsedUrl.protocol = 'http:';
+      } else if (parsedUrl.protocol === 'wss:') {
+        parsedUrl.protocol = 'https:';
+      }
+
+      return parsedUrl.origin;
+    } catch (error) {
+      console.error('[StreamService] Invalid LIVEKIT_URL:', error);
+      return null;
+    }
+  }
+
+  private static getRoomServiceClient(): RoomServiceClient | null {
+    const host = this.getLiveKitServiceUrl();
+    const apiKey = process.env.LIVEKIT_API_KEY;
+    const apiSecret = process.env.LIVEKIT_API_SECRET;
+
+    if (!host || !apiKey || !apiSecret) {
+      return null;
+    }
+
+    return new RoomServiceClient(host, apiKey, apiSecret);
+  }
+
+  private static async getViewerCounts(roomNames: string[]): Promise<Map<string, number>> {
+    const uniqueRoomNames = [...new Set(roomNames.filter(Boolean))];
+    const viewerCounts = new Map<string, number>();
+
+    uniqueRoomNames.forEach((roomName) => {
+      viewerCounts.set(roomName, 0);
+    });
+
+    if (uniqueRoomNames.length === 0) {
+      return viewerCounts;
+    }
+
+    const client = this.getRoomServiceClient();
+    if (!client) {
+      return viewerCounts;
+    }
+
+    try {
+      const rooms = await client.listRooms(uniqueRoomNames);
+
+      rooms.forEach((room) => {
+        viewerCounts.set(room.name, Math.max((room.numParticipants ?? 0) - 1, 0));
+      });
+    } catch (error) {
+      console.error('[StreamService] Failed to fetch LiveKit viewer counts:', error);
+    }
+
+    return viewerCounts;
+  }
+
+  private static async attachViewerCounts<T extends { userId: string }>(
+    streams: T[]
+  ): Promise<Array<T & { viewerCount: number }>> {
+    const viewerCounts = await this.getViewerCounts(streams.map((stream) => stream.userId));
+
+    return streams.map((stream) => ({
+      ...stream,
+      viewerCount: viewerCounts.get(stream.userId) ?? 0,
+    }));
+  }
+
   /**
    * Validate that user is an approved creator
    * @param userId - User ID to check
@@ -309,9 +386,13 @@ export class StreamService {
         throw new Error('Stream not found');
       }
 
+      const viewerCount = stream.isLive
+        ? (await this.getViewerCounts([userId])).get(userId) ?? 0
+        : 0;
+
       return {
         isLive: stream.isLive,
-        viewerCount: 0, // Viewer count will be managed by LiveKit room events
+        viewerCount,
         title: stream.title,
         description: stream.description,
         thumbnail: stream.thumbnail,
@@ -330,7 +411,7 @@ export class StreamService {
    * @returns Array of live streams with user info
    */
   static async getLiveStreams() {
-    return await prisma.stream.findMany({
+    const streams = await prisma.stream.findMany({
       where: { isLive: true },
       include: {
         user: {
@@ -346,6 +427,8 @@ export class StreamService {
         updatedAt: 'desc',
       },
     });
+
+    return this.attachViewerCounts(streams);
   }
 
   /**
@@ -354,7 +437,7 @@ export class StreamService {
    * @returns Array of streams from followed creators
    */
   static async getFollowedStreams(userId: string) {
-    return await prisma.stream.findMany({
+    const streams = await prisma.stream.findMany({
       where: {
         user: {
           followedBy: {
@@ -379,6 +462,8 @@ export class StreamService {
         { updatedAt: 'desc' },
       ],
     });
+
+    return this.attachViewerCounts(streams);
   }
 
   /**

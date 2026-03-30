@@ -9,7 +9,7 @@ export function LiveCreatorIndicator() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <Loader2 className="h-6 w-6 animate-spin text-white" />
             </div>
         );
     }
@@ -21,14 +21,17 @@ export function LiveCreatorIndicator() {
     if (!data?.creators || data.creators.length === 0) {
         return (
             <div className="py-8 text-center">
-                <p className="text-sm text-muted-foreground">No creators live right now</p>
+                <p className="text-sm text-zinc-400">No creators live right now</p>
             </div>
         );
     }
 
     return (
         <div className="space-y-3">
-            <h2 className="text-lg font-semibold">Live Now</h2>
+            <div>
+                <h2 className="text-lg font-semibold text-white">Followed creators live now</h2>
+                <p className="text-sm text-zinc-400">Jump back into creators you already follow.</p>
+            </div>
             <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
                 {data.creators.map((creator) => (
                     <button
@@ -40,7 +43,7 @@ export function LiveCreatorIndicator() {
                             {/* Avatar with live ring */}
                             <div className="relative h-16 w-16 rounded-full border-2 border-red-500 ring-2 ring-red-500/20 p-0.5">
                                 <img
-                                    src={creator.image || '/default-avatar.png'}
+                                    src={creator.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${creator.username}`}
                                     alt={creator.name}
                                     className="h-full w-full rounded-full object-cover"
                                 />
@@ -55,7 +58,7 @@ export function LiveCreatorIndicator() {
                         </div>
 
                         {/* Creator name */}
-                        <p className="mt-2 text-xs font-medium text-center max-w-[64px] truncate">
+                        <p className="mt-2 max-w-[64px] truncate text-center text-xs font-medium text-white">
                             {creator.name}
                         </p>
                     </button>

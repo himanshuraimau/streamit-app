@@ -231,6 +231,82 @@ export class ContentService {
     };
   }
 
+  // Get followed creators feed
+  static async getFollowingFeed(
+    userId: string,
+    query: FeedQuery,
+    requestingUserId?: string
+  ): Promise<PostFeedResponse> {
+    const limit = query.limit || 20;
+    const cursor = query.cursor;
+
+    const following = await prisma.follow.findMany({
+      where: { followerId: userId },
+      select: { followingId: true },
+    });
+
+    const followingIds = following.map((follow) => follow.followingId);
+
+    if (followingIds.length === 0) {
+      return {
+        posts: [],
+        hasMore: false,
+      };
+    }
+
+    const posts = await prisma.post.findMany({
+      where: {
+        authorId: { in: followingIds },
+        isPublic: true,
+        isHidden: false,
+        ...(query.type && { type: query.type }),
+        ...(cursor && {
+          createdAt: {
+            lt: new Date(cursor),
+          },
+        }),
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            image: true,
+          },
+        },
+        media: true,
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          },
+        },
+        ...(requestingUserId && {
+          likes: {
+            where: { userId: requestingUserId },
+            select: { id: true },
+          },
+        }),
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: limit + 1,
+    });
+
+    const hasMore = posts.length > limit;
+    const postsToReturn = hasMore ? posts.slice(0, -1) : posts;
+    const lastPost = postsToReturn[postsToReturn.length - 1];
+    const nextCursor = hasMore && lastPost ? lastPost.createdAt.toISOString() : undefined;
+
+    return {
+      posts: postsToReturn.map((post) => this.formatPostResponse(post, requestingUserId)),
+      hasMore,
+      nextCursor,
+    };
+  }
+
   // Get single post
   static async getPost(postId: string, requestingUserId?: string): Promise<PostResponse | null> {
     const post = await prisma.post.findUnique({
@@ -612,6 +688,7 @@ export class ContentService {
       id: post.id,
       content: post.content,
       type: post.type,
+      isShort: post.isShort ?? false,
       isPublic: post.isPublic,
       allowComments: post.allowComments,
       likesCount: post._count?.likes || post.likesCount || 0,
@@ -675,6 +752,12 @@ export class ContentService {
             WHERE p."createdAt" >= ${dateThreshold}
                 AND p."isPublic" = true
                 AND p."isHidden" = false
+                AND EXISTS (
+                    SELECT 1
+                    FROM "post_media" pm
+                    WHERE pm."postId" = p.id
+                      AND pm."type" IN ('IMAGE', 'GIF')
+                )
             ORDER BY "trendingScore" DESC
             LIMIT ${limit}
             OFFSET ${(page - 1) * limit}
@@ -704,6 +787,13 @@ export class ContentService {
         createdAt: { gte: dateThreshold },
         isPublic: true,
         isHidden: false,
+        media: {
+          some: {
+            type: {
+              in: [MediaType.IMAGE, MediaType.GIF],
+            },
+          },
+        },
       },
     });
 

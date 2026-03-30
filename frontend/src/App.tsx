@@ -22,6 +22,7 @@ import Posts from '@/pages/creator-dashboard/posts';
 
 // Content Pages
 import ContentPage from '@/pages/content/index';
+import ShortsPage from '@/pages/shorts';
 
 // Search Page
 import SearchPage from '@/pages/search';
@@ -74,6 +75,7 @@ function App() {
 
       {/* Content routes */}
       <Route path="/content" element={<ContentPage />} />
+      <Route path="/shorts" element={<ShortsPage />} />
 
       {/* Search route */}
       <Route path="/search" element={<SearchPage />} />

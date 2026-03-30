@@ -1,4 +1,5 @@
 import {
+  Clapperboard,
   Home,
   Radio,
   Users,
@@ -31,6 +32,7 @@ interface FollowedCreator {
 const primaryNav = [
   { title: "Home", icon: Home, url: "/" },
   { title: "Live Now", icon: Radio, url: "/live" },
+  { title: "Shorts", icon: Clapperboard, url: "/shorts" },
   { title: "Search", icon: Search, url: "/search" },
 ]
 

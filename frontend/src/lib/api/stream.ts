@@ -368,6 +368,7 @@ export interface LiveStream {
   title: string;
   thumbnail: string | null;
   isLive: boolean;
+  viewerCount: number;
   isChatEnabled: boolean;
   isChatDelayed: boolean;
   isChatFollowersOnly: boolean;

@@ -7,9 +7,12 @@ import { FollowingTab } from './_components/following-tab';
 import { TrendingTab } from './_components/trending-tab';
 import { PostsTab } from './_components/posts-tab';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { LiveCreatorIndicator } from '@/components/home/LiveCreatorIndicator';
+import { useSession } from '@/lib/auth-client';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabType>('live');
+  const { data: session } = useSession();
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -42,7 +45,12 @@ export default function Home() {
             <HomeTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
             <div className="container mx-auto px-4 py-12">
-              {/* Tab Content */}
+              {session?.user && (
+                <div className="mb-10 rounded-3xl border border-zinc-800 bg-zinc-950/80 p-6">
+                  <LiveCreatorIndicator />
+                </div>
+              )}
+
               {renderTabContent()}
             </div>
           </main>

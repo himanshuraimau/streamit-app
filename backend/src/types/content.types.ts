@@ -37,6 +37,7 @@ export interface PostResponse {
   id: string;
   content: string | null;
   type: PostType;
+  isShort: boolean;
   isPublic: boolean;
   allowComments: boolean;
   likesCount: number;

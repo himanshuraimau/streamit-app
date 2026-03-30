@@ -216,9 +216,9 @@ export const useVerifyEmail = () => {
       await handleApiResponse(response);
 
       toast.success('Email verified!', {
-        description: 'You can now sign in',
+        description: 'Redirecting you to the home page',
       });
-      setTimeout(() => navigate('/auth/signin'), 2000);
+      setTimeout(() => navigate('/', { replace: true }), 1500);
     } catch (error: unknown) {
       console.error('❌ Verify email error:', error);
       const errorInfo = formatErrorForToast(error);

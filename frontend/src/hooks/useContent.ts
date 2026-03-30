@@ -105,10 +105,11 @@ export const useUserPosts = (userId: string, query: FeedQuery = {}) => {
 };
 
 // Hooks for feeds
-export const useFeed = (query: FeedQuery = {}) => {
+export const useFeed = (query: FeedQuery = {}, options: { enabled?: boolean } = {}) => {
   return useInfiniteQuery({
     queryKey: contentKeys.feed(query),
     queryFn: ({ pageParam }) => contentApi.getFeed({ ...query, cursor: pageParam }),
+    enabled: options.enabled,
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => {
       if (lastPage.success && lastPage.data?.hasMore) {
@@ -119,10 +120,11 @@ export const useFeed = (query: FeedQuery = {}) => {
   });
 };
 
-export const usePublicFeed = (query: FeedQuery = {}) => {
+export const usePublicFeed = (query: FeedQuery = {}, options: { enabled?: boolean } = {}) => {
   return useInfiniteQuery({
     queryKey: contentKeys.publicFeed(query),
     queryFn: ({ pageParam }) => contentApi.getPublicFeed({ ...query, cursor: pageParam }),
+    enabled: options.enabled,
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => {
       if (lastPage.success && lastPage.data?.hasMore) {

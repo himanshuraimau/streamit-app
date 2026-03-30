@@ -13,7 +13,6 @@ import { RoomEvent, type RemoteParticipant } from 'livekit-client';
 import {
   parseDataChannelMessage,
   messageToEngagementEvent,
-  type DataChannelMessage,
   type StreamEndedHandler,
 } from '@/lib/livekit-data-channel';
 import type { EngagementEvent } from '@/components/stream/engagement-popup';

@@ -1,165 +1,137 @@
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { viewerApi, type LiveStream } from '@/lib/api/stream';
-import { Card } from '@/components/ui/card';
-import { Loader2, Users, TrendingUp as TrendingUpIcon } from 'lucide-react';
+import { Loader2, TrendingUp as TrendingUpIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useTrending } from '@/hooks/useTrending';
+import { useTrendingShorts } from '@/hooks/useShorts';
+import {
+  HomeMediaCard,
+  HomeShortCard,
+  SectionEmptyState,
+  isPhotoPost,
+  isShortPost,
+} from './discovery-cards';
 
 export function TrendingTab() {
-  const [streams, setStreams] = useState<LiveStream[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('7d');
   const navigate = useNavigate();
+  const trendingPhotosQuery = useTrending(timeRange);
+  const trendingShortsQuery = useTrendingShorts(timeRange);
 
-  useEffect(() => {
-    const fetchTrendingStreams = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const trendingPhotos = useMemo(
+    () => (trendingPhotosQuery.data?.posts || []).filter(isPhotoPost),
+    [trendingPhotosQuery.data]
+  );
 
-        // Use getLiveStreams for now - can be replaced with a dedicated trending API
-        const response = await viewerApi.getLiveStreams();
-        
-        if (response.success && response.data) {
-          // Sort by viewer count or other trending metrics when available
-          // For now, just show all live streams
-          setStreams(response.data);
-        } else {
-          setError(response.error || 'Failed to load trending streams');
-        }
-      } catch (err) {
-        console.error('Error fetching trending streams:', err);
-        setError('Failed to load trending streams');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const trendingShorts = useMemo(
+    () => (trendingShortsQuery.data?.posts || []).filter(isShortPost),
+    [trendingShortsQuery.data]
+  );
 
-    fetchTrendingStreams();
-    
-    // Poll for updates every 30 seconds
-    const interval = setInterval(fetchTrendingStreams, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  if (loading) {
+  if (trendingPhotosQuery.isLoading || trendingShortsQuery.isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center space-y-4">
-          <p className="text-red-400">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (streams.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
-        <div className="text-center space-y-4 max-w-2xl">
-          <div className="flex items-center justify-center">
-            <div className="w-16 h-16 rounded-full bg-linear-to-r from-orange-500 to-pink-500 flex items-center justify-center">
-              <TrendingUpIcon className="w-8 h-8 text-white" />
-            </div>
-          </div>
-          <h2 className="text-3xl font-bold text-white">No Trending Streams</h2>
-          <p className="text-lg text-zinc-400">
-            No streams are trending right now. Check back later!
-          </p>
-        </div>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-white">
-          Trending Now ({streams.length})
-        </h2>
-        <span className="text-sm text-zinc-500">Most popular streams</span>
+    <div className="space-y-10">
+      <div className="rounded-3xl border border-zinc-800 bg-linear-to-br from-zinc-950 via-zinc-950 to-zinc-900 p-8">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/80 px-3 py-1 text-xs font-medium text-zinc-300">
+              <TrendingUpIcon className="h-3.5 w-3.5 text-orange-400" />
+              Trending discovery
+            </div>
+            <h2 className="text-3xl font-bold text-white">Trending photos and shorts</h2>
+            <p className="max-w-2xl text-sm text-zinc-400">
+              Ranked by likes, comments, views, shares, and recency so the most engaging creator content rises to the top.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {[
+              { label: '24h', value: '24h' as const },
+              { label: '7 days', value: '7d' as const },
+              { label: '30 days', value: '30d' as const },
+            ].map((option) => (
+              <Button
+                key={option.value}
+                onClick={() => setTimeRange(option.value)}
+                variant={timeRange === option.value ? 'default' : 'outline'}
+                className={
+                  timeRange === option.value
+                    ? 'bg-white text-black hover:bg-zinc-200'
+                    : 'border-zinc-700 bg-transparent text-white hover:bg-zinc-900'
+                }
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {streams.map((stream) => (
-          <Card
-            key={stream.id}
-            onClick={() => navigate(`/${stream.user.username}/live`)}
-            className="group cursor-pointer bg-zinc-900 border-zinc-800 overflow-hidden hover:border-purple-500 transition-all duration-300 hover:scale-105"
+      <section className="space-y-4">
+        <div>
+          <h3 className="text-xl font-semibold text-white">Trending photos</h3>
+          <p className="text-sm text-zinc-400">High-engagement photo posts from across the platform.</p>
+        </div>
+
+        {trendingPhotosQuery.isError ? (
+          <SectionEmptyState
+            title="Couldn’t load trending photos"
+            description="The engagement-ranked photo feed hit an error. Refresh the page and try again."
+          />
+        ) : trendingPhotos.length === 0 ? (
+          <SectionEmptyState
+            title="No trending photos yet"
+            description="As creator photo posts pick up traction, they’ll appear here."
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {trendingPhotos.slice(0, 6).map((post) => (
+              <HomeMediaCard key={post.id} post={post} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h3 className="text-xl font-semibold text-white">Trending shorts</h3>
+            <p className="text-sm text-zinc-400">Short-form clips ranked by engagement instead of recycled live streams.</p>
+          </div>
+          <Button
+            onClick={() => navigate('/shorts')}
+            variant="outline"
+            className="border-zinc-700 bg-transparent text-white hover:bg-zinc-900"
           >
-            {/* Thumbnail */}
-            <div className="relative aspect-video bg-zinc-800">
-              {stream.thumbnail ? (
-                <img
-                  src={stream.thumbnail}
-                  alt={stream.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-full bg-linear-to-r from-pink-500 to-purple-600 flex items-center justify-center opacity-50 group-hover:opacity-100 transition-opacity">
-                    <svg
-                      className="w-8 h-8 text-white"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                    </svg>
-                  </div>
-                </div>
-              )}
-              
-              {/* Live badge */}
-              <div className="absolute top-2 left-2">
-                <span className="inline-flex items-center px-2 py-1 rounded bg-red-600 text-white text-xs font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-white mr-1.5 animate-pulse"></span>
-                  LIVE
-                </span>
-              </div>
+            Watch shorts
+          </Button>
+        </div>
 
-              {/* Viewer count */}
-              <div className="absolute top-2 right-2">
-                <span className="inline-flex items-center px-2 py-1 rounded bg-black/60 backdrop-blur-sm text-white text-xs font-medium">
-                  <Users className="w-3 h-3 mr-1" />
-                  {Math.floor(Math.random() * 1000)}
-                </span>
-              </div>
-            </div>
-
-            {/* Info */}
-            <div className="p-4 space-y-3">
-              {/* User info */}
-              <div className="flex items-start gap-3">
-                <img
-                  src={stream.user.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${stream.user.username}`}
-                  alt={stream.user.username}
-                  className="w-10 h-10 rounded-full"
-                />
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-white truncate group-hover:text-purple-400 transition-colors">
-                    {stream.title}
-                  </h3>
-                  <p className="text-sm text-zinc-400 truncate">
-                    {stream.user.name || stream.user.username}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+        {trendingShortsQuery.isError ? (
+          <SectionEmptyState
+            title="Couldn’t load trending shorts"
+            description="The ranked shorts feed hit an error. Refresh the page and try again."
+          />
+        ) : trendingShorts.length === 0 ? (
+          <SectionEmptyState
+            title="No trending shorts yet"
+            description="Once short videos start moving, they’ll show up here."
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+            {trendingShorts.slice(0, 4).map((post) => (
+              <HomeShortCard key={post.id} post={post} />
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
