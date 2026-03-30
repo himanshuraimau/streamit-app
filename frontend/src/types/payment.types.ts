@@ -7,6 +7,15 @@ export enum PurchaseStatus {
   CANCELLED = 'CANCELLED',
 }
 
+export enum WithdrawalStatus {
+  PENDING = 'PENDING',
+  UNDER_REVIEW = 'UNDER_REVIEW',
+  ON_HOLD = 'ON_HOLD',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  PAID = 'PAID',
+}
+
 export enum PaymentMethod {
   UPI = 'UPI',
   CARD = 'CARD',
@@ -142,6 +151,52 @@ export interface SendGiftRequest {
   message?: string;
 }
 
+export interface CreatorWithdrawalRequest {
+  id: string;
+  userId: string;
+  amountCoins: number;
+  coinToPaiseRate: number;
+  grossAmountPaise: number;
+  platformFeePaise: number;
+  netAmountPaise: number;
+  status: WithdrawalStatus;
+  reason?: string;
+  requestedAt: string;
+  reviewedAt?: string;
+  approvedAt?: string;
+  rejectedAt?: string;
+  paidAt?: string;
+  payoutReference?: string;
+  reviewer?: {
+    id: string;
+    username: string;
+    name: string;
+    email: string;
+  };
+}
+
+export interface WithdrawalRequestPayload {
+  amountCoins: number;
+  reason?: string;
+}
+
+export interface WithdrawalHistorySummary {
+  availableCoins: number;
+  pendingCoins: number;
+}
+
+export interface PaginatedWithdrawalResponse {
+  success: boolean;
+  data: CreatorWithdrawalRequest[];
+  summary: WithdrawalHistorySummary;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 // Helper Functions
 export const formatPrice = (priceInPaise: number): string => {
   return `₹${(priceInPaise / 100).toFixed(0)}`;
@@ -178,5 +233,39 @@ export const getPurchaseStatusText = (status: PurchaseStatus): string => {
       return 'Refunded';
     case PurchaseStatus.CANCELLED:
       return 'Cancelled';
+  }
+};
+
+export const getWithdrawalStatusColor = (status: WithdrawalStatus): string => {
+  switch (status) {
+    case WithdrawalStatus.PENDING:
+      return 'text-amber-300 bg-amber-500/15 border-amber-500/30';
+    case WithdrawalStatus.UNDER_REVIEW:
+      return 'text-sky-300 bg-sky-500/15 border-sky-500/30';
+    case WithdrawalStatus.ON_HOLD:
+      return 'text-orange-300 bg-orange-500/15 border-orange-500/30';
+    case WithdrawalStatus.APPROVED:
+      return 'text-green-300 bg-green-500/15 border-green-500/30';
+    case WithdrawalStatus.REJECTED:
+      return 'text-red-300 bg-red-500/15 border-red-500/30';
+    case WithdrawalStatus.PAID:
+      return 'text-emerald-300 bg-emerald-500/15 border-emerald-500/30';
+  }
+};
+
+export const getWithdrawalStatusText = (status: WithdrawalStatus): string => {
+  switch (status) {
+    case WithdrawalStatus.PENDING:
+      return 'Pending';
+    case WithdrawalStatus.UNDER_REVIEW:
+      return 'Under Review';
+    case WithdrawalStatus.ON_HOLD:
+      return 'On Hold';
+    case WithdrawalStatus.APPROVED:
+      return 'Approved';
+    case WithdrawalStatus.REJECTED:
+      return 'Rejected';
+    case WithdrawalStatus.PAID:
+      return 'Paid';
   }
 };

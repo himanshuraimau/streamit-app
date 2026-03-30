@@ -95,3 +95,23 @@ export const streamReportRateLimiter = createRateLimiter(
   60 * 60 * 1000, // per hour (in milliseconds)
   'stream-report'
 );
+
+/**
+ * High-risk admin action limiter
+ * Keeps privileged write operations from being spammed by compromised sessions.
+ */
+export const adminHighRiskActionRateLimiter = createRateLimiter(
+  40,
+  10 * 60 * 1000,
+  'admin-high-risk'
+);
+
+/**
+ * Compliance export limiter
+ * Export generation/download is intentionally stricter due to sensitive payloads.
+ */
+export const adminComplianceExportRateLimiter = createRateLimiter(
+  12,
+  60 * 60 * 1000,
+  'admin-compliance-export'
+);

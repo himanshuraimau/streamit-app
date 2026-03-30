@@ -4,9 +4,17 @@ import { BadgeCheck, Video, DollarSign, TrendingUp, Shield, Clock } from 'lucide
 
 interface WelcomePageProps {
   onNext: () => void;
+  actionLabel?: string;
+  actionHint?: string | null;
+  disabled?: boolean;
 }
 
-export function WelcomePage({ onNext }: WelcomePageProps) {
+export function WelcomePage({
+  onNext,
+  actionLabel = 'Start Application',
+  actionHint = null,
+  disabled = false,
+}: WelcomePageProps) {
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl">
       <div className="text-center mb-12">
@@ -99,12 +107,16 @@ export function WelcomePage({ onNext }: WelcomePageProps) {
       <div className="flex justify-center">
         <Button
           onClick={onNext}
+          disabled={disabled}
           size="lg"
-          className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white px-12"
+          className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white px-12 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Start Application
+          {actionLabel}
         </Button>
       </div>
+      {actionHint && (
+        <p className="mt-4 text-center text-sm text-zinc-500">{actionHint}</p>
+      )}
     </div>
   );
 }

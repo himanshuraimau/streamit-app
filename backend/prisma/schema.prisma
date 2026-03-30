@@ -58,6 +58,8 @@ model User {
   coinPurchases CoinPurchase[]
   giftsSent     GiftTransaction[] @relation("GiftsSent")
   giftsReceived GiftTransaction[] @relation("GiftsReceived")
+  withdrawalRequests CreatorWithdrawalRequest[] @relation("WithdrawalRequester")
+  withdrawalsReviewed CreatorWithdrawalRequest[] @relation("WithdrawalReviewer")
 
   // Discount relationships
   ownedDiscountCodes  DiscountCode[]       @relation("OwnedDiscountCodes")
@@ -699,6 +701,97 @@ model GiftTransaction {
   @@map("gift_transaction")
 }
 
+// Creator withdrawal request for manual payout lifecycle
+model CreatorWithdrawalRequest {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation("WithdrawalRequester", fields: [userId], references: [id], onDelete: Cascade)
+
+  amountCoins      Int
+  coinToPaiseRate  Int @default(100)
+  grossAmountPaise Int
+  platformFeePaise Int @default(0)
+  netAmountPaise   Int
+
+  status WithdrawalStatus @default(PENDING)
+  reason String?          @db.Text
+
+  requestedAt DateTime @default(now())
+  reviewedAt  DateTime?
+  reviewedBy  String?
+  reviewer    User?    @relation("WithdrawalReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+
+  approvedAt DateTime?
+  rejectedAt DateTime?
+  paidAt     DateTime?
+
+  payoutReference String?
+  metadata        Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([status, requestedAt])
+  @@index([reviewedBy])
+  @@index([requestedAt])
+  @@map("creator_withdrawal_request")
+}
+
+// Admin-managed advertisement campaign
+model AdCampaign {
+  id String @id @default(cuid())
+
+  name      String
+  objective String? @db.Text
+  status    AdCampaignStatus @default(DRAFT)
+
+  startAt DateTime?
+  endAt   DateTime?
+
+  dailyBudgetPaise Int?
+  totalBudgetPaise Int?
+  spendPaise       Int @default(0)
+
+  targeting      Json?
+  deliveryConfig Json?
+
+  createdBy String
+
+  metrics AdCampaignMetricDaily[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, startAt, endAt])
+  @@index([createdAt])
+  @@map("ad_campaign")
+}
+
+// Aggregated ad performance bucketed by date
+model AdCampaignMetricDaily {
+  id String @id @default(cuid())
+
+  campaignId String
+  campaign   AdCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  bucketDate DateTime
+
+  impressions Int @default(0)
+  clicks      Int @default(0)
+  conversions Int @default(0)
+  spendPaise  Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([campaignId, bucketDate])
+  @@index([bucketDate])
+  @@index([campaignId, bucketDate])
+  @@map("ad_campaign_metric_daily")
+}
+
 // Enums
 enum ApplicationStatus {
   DRAFT
@@ -756,6 +849,24 @@ enum PurchaseStatus {
   COMPLETED
   FAILED
   REFUNDED
+}
+
+enum WithdrawalStatus {
+  PENDING
+  UNDER_REVIEW
+  ON_HOLD
+  APPROVED
+  REJECTED
+  PAID
+}
+
+enum AdCampaignStatus {
+  DRAFT
+  SCHEDULED
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
 }
 
 // ============================================
@@ -933,6 +1044,134 @@ model Announcement {
   @@map("announcement")
 }
 
+// Legal and compliance case tracking
+model LegalCase {
+  id String @id @default(cuid())
+
+  referenceCode String @unique
+  title         String
+  description   String?       @db.Text
+  caseType      LegalCaseType
+  status        LegalCaseStatus @default(OPEN)
+  priority      Int             @default(3)
+
+  targetType String
+  targetId   String
+
+  requestedBy   String?
+  assignedTo    String?
+  createdBy     String
+  resolvedBy    String?
+  resolutionNote String? @db.Text
+
+  dueAt      DateTime?
+  resolvedAt DateTime?
+  closedAt   DateTime?
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  takedowns TakedownRequest[]
+
+  @@index([status, caseType])
+  @@index([targetType, targetId])
+  @@index([assignedTo])
+  @@index([createdAt])
+  @@map("legal_case")
+}
+
+// Takedown workflow driven by legal or compliance decisions
+model TakedownRequest {
+  id String @id @default(cuid())
+
+  legalCaseId String?
+  legalCase   LegalCase? @relation(fields: [legalCaseId], references: [id], onDelete: SetNull)
+
+  targetType String
+  targetId   String
+
+  reason TakedownReason
+  status TakedownStatus @default(PENDING)
+
+  note          String? @db.Text
+  executionNote String? @db.Text
+  appealNote    String? @db.Text
+
+  requestedBy String
+  executedBy  String?
+  reversedBy  String?
+
+  requestedAt DateTime @default(now())
+  executedAt  DateTime?
+  appealedAt  DateTime?
+  reversedAt  DateTime?
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, reason])
+  @@index([targetType, targetId])
+  @@index([legalCaseId])
+  @@index([requestedAt])
+  @@map("takedown_request")
+}
+
+// Geo-block rules for compliance and licensing constraints
+model GeoBlockRule {
+  id String @id @default(cuid())
+
+  targetType String
+  targetId   String
+
+  countryCode String
+  reason      GeoBlockReason
+  status      GeoBlockStatus @default(ACTIVE)
+
+  note      String? @db.Text
+  createdBy String
+  updatedBy String?
+  expiresAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([targetType, targetId, countryCode])
+  @@index([status, countryCode])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("geo_block_rule")
+}
+
+// Version history for system settings and rollback support
+model SystemSettingVersion {
+  id String @id @default(cuid())
+
+  settingKey String
+
+  previousValue String? @db.Text
+  newValue      String  @db.Text
+
+  previousIsPublic Boolean?
+  newIsPublic      Boolean
+
+  changeReason String? @db.Text
+  changedBy    String
+
+  rollbackOfVersionId String?
+  metadata            Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([settingKey, createdAt])
+  @@index([changedBy])
+  @@index([rollbackOfVersionId])
+  @@map("system_setting_version")
+}
+
 // ============================================
 // ADMIN ENUMS
 // ============================================
@@ -987,8 +1226,17 @@ enum AdminAction {
   // Payment management
   PAYMENT_REFUNDED
   PAYMENT_VERIFIED
+  WITHDRAWAL_APPROVED
+  WITHDRAWAL_REJECTED
+  WITHDRAWAL_HOLD
+  WITHDRAWAL_RELEASED
+  WITHDRAWAL_MARKED_PAID
   DISCOUNT_CODE_CREATED
   DISCOUNT_CODE_DEACTIVATED
+
+  // Advertisement management
+  AD_CAMPAIGN_CREATED
+  AD_CAMPAIGN_STATUS_CHANGED
 
   // Report handling
   REPORT_REVIEWED
@@ -999,6 +1247,19 @@ enum AdminAction {
   ANNOUNCEMENT_CREATED
   ANNOUNCEMENT_UPDATED
   ANNOUNCEMENT_DELETED
+  SETTING_ROLLED_BACK
+
+  // Compliance and legal actions
+  LEGAL_CASE_CREATED
+  LEGAL_CASE_STATUS_CHANGED
+  LEGAL_CASE_ASSIGNED
+  TAKEDOWN_CREATED
+  TAKEDOWN_EXECUTED
+  TAKEDOWN_APPEALED
+  TAKEDOWN_REVERSED
+  GEOBLOCK_CREATED
+  GEOBLOCK_UPDATED
+  GEOBLOCK_REMOVED
 }
 
 enum AnnouncementType {
@@ -1007,6 +1268,53 @@ enum AnnouncementType {
   MAINTENANCE
   FEATURE
   PROMOTION
+}
+
+enum LegalCaseType {
+  COPYRIGHT
+  PLATFORM_POLICY
+  REGULATORY
+  PRIVACY
+  FRAUD
+  OTHER
+}
+
+enum LegalCaseStatus {
+  OPEN
+  UNDER_REVIEW
+  ACTION_REQUIRED
+  RESOLVED
+  CLOSED
+}
+
+enum TakedownReason {
+  COPYRIGHT
+  LEGAL_ORDER
+  PLATFORM_POLICY
+  SAFETY
+  FRAUD
+  OTHER
+}
+
+enum TakedownStatus {
+  PENDING
+  EXECUTED
+  APPEALED
+  REVERSED
+  REJECTED
+}
+
+enum GeoBlockReason {
+  LEGAL
+  LICENSING
+  REGULATORY
+  SAFETY
+  OTHER
+}
+
+enum GeoBlockStatus {
+  ACTIVE
+  DISABLED
 }
 
 // Stream report specific enums

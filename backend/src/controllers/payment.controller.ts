@@ -4,8 +4,10 @@ import { PaymentService } from '../services/payment.service';
 import { z } from 'zod';
 import {
   createPurchaseSchema,
+  createWithdrawalRequestSchema,
   sendGiftSchema,
   sendPennyTipSchema,
+  withdrawalHistoryQuerySchema,
 } from '../lib/validations/payment.validation';
 
 export class PaymentController {
@@ -263,6 +265,95 @@ export class PaymentController {
       res.status(500).json({
         success: false,
         error: 'Failed to fetch gifts received',
+      });
+    }
+  }
+
+  /**
+   * Create a withdrawal request for the authenticated creator.
+   * POST /api/payment/withdrawals
+   */
+  static async createWithdrawalRequest(req: Request, res: Response) {
+    try {
+      const user = getAuthUser(req, res);
+      if (!user) return;
+
+      const { amountCoins, reason } = createWithdrawalRequestSchema.parse(req.body);
+      const result = await PaymentService.createWithdrawalRequest(user.id, amountCoins, reason);
+
+      res.status(201).json({
+        success: true,
+        data: result,
+        message: 'Withdrawal request submitted successfully',
+      });
+    } catch (error) {
+      console.error('Error creating withdrawal request:', error);
+
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          error: 'Validation error',
+          details: error.issues,
+        });
+      }
+
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to create withdrawal request';
+
+      if (errorMessage === 'Only approved creators can request withdrawals') {
+        return res.status(403).json({
+          success: false,
+          error: errorMessage,
+        });
+      }
+
+      const status = errorMessage === 'Insufficient balance' ? 400 : 500;
+      res.status(status).json({
+        success: false,
+        error: errorMessage,
+      });
+    }
+  }
+
+  /**
+   * Get authenticated creator withdrawal history.
+   * GET /api/payment/withdrawals
+   */
+  static async getWithdrawals(req: Request, res: Response) {
+    try {
+      const user = getAuthUser(req, res);
+      if (!user) return;
+
+      const { page, limit } = withdrawalHistoryQuerySchema.parse(req.query);
+      const offset = (page - 1) * limit;
+
+      const result = await PaymentService.getCreatorWithdrawalHistory(user.id, limit, offset);
+
+      res.json({
+        success: true,
+        data: result.requests,
+        summary: result.summary,
+        pagination: {
+          page,
+          limit,
+          total: result.total,
+          totalPages: Math.ceil(result.total / limit),
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching withdrawal history:', error);
+
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          error: 'Validation error',
+          details: error.issues,
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch withdrawal history',
       });
     }
   }

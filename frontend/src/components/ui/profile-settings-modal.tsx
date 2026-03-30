@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { User, Image as ImageIcon, Lock, Loader2, Upload, Check } from 'lucide-react';
+import { User, Image as ImageIcon, Lock, Loader2, Upload, Check, Clock, Video } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { useCreatorApplication } from '@/hooks/useCreatorApplication';
 
 interface ProfileSettingsModalProps {
   open: boolean;
@@ -18,6 +20,8 @@ interface ProfileSettingsModalProps {
 export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProps) {
   const { data: session } = authClient.useSession();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { status: creatorStatus } = useCreatorApplication();
   
   // Profile tab state
   const [name, setName] = useState(session?.user?.name || '');
@@ -200,6 +204,17 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
     }
   };
 
+  const handleCreatorAction = () => {
+    onClose();
+
+    if (creatorStatus?.hasApplication && creatorStatus.status === 'APPROVED') {
+      navigate('/creator-dashboard');
+      return;
+    }
+
+    navigate('/creator-application');
+  };
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[600px] bg-zinc-900 border-zinc-800 text-white">
@@ -274,10 +289,84 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
                 <p className="text-xs text-zinc-500 mt-1">Email cannot be changed</p>
               </div>
 
+              <div className="rounded-lg border border-zinc-700 bg-zinc-800/60 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-white">Creator Access</p>
+                    {creatorStatus?.hasApplication && creatorStatus.status === 'APPROVED' ? (
+                      <p className="mt-1 text-xs text-emerald-300">
+                        You are an approved creator. Open your creator dashboard.
+                      </p>
+                    ) : creatorStatus?.hasApplication && creatorStatus.status === 'PENDING' ? (
+                      <p className="mt-1 text-xs text-amber-300">
+                        Your creator application is under review.
+                      </p>
+                    ) : creatorStatus?.hasApplication && creatorStatus.status === 'REJECTED' ? (
+                      <div className="mt-1 space-y-1 text-xs">
+                        <p className="text-rose-300">Your previous creator application was rejected.</p>
+                        {creatorStatus.rejectionReason ? (
+                          <p className="text-zinc-300">Reason: {creatorStatus.rejectionReason}</p>
+                        ) : null}
+                        {creatorStatus.canReapply === false ? (
+                          <p className="text-zinc-400">
+                            Re-apply in {creatorStatus.reapplyCooldownDaysRemaining ?? 0} day(s).
+                          </p>
+                        ) : (
+                          <p className="text-emerald-300">You can submit a re-application now.</p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="mt-1 text-xs text-zinc-400">
+                        Apply to become a creator and unlock streaming plus monetization tools.
+                      </p>
+                    )}
+                  </div>
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={
+                      creatorStatus?.hasApplication &&
+                      creatorStatus.status === 'REJECTED' &&
+                      creatorStatus.canReapply === false
+                    }
+                    onClick={handleCreatorAction}
+                    className="border-zinc-600 bg-zinc-900 text-zinc-100 hover:bg-zinc-700 disabled:opacity-50"
+                  >
+                    {creatorStatus?.hasApplication && creatorStatus.status === 'APPROVED' ? (
+                      'Open Dashboard'
+                    ) : creatorStatus?.hasApplication && creatorStatus.status === 'PENDING' ? (
+                      'View Status'
+                    ) : creatorStatus?.hasApplication && creatorStatus.status === 'REJECTED' ? (
+                      creatorStatus.canReapply === false
+                        ? `Re-Apply in ${creatorStatus.reapplyCooldownDaysRemaining ?? 0}d`
+                        : 'Re-Apply'
+                    ) : (
+                      'Become a Creator'
+                    )}
+                  </Button>
+                </div>
+
+                {creatorStatus?.hasApplication &&
+                creatorStatus.status === 'REJECTED' &&
+                creatorStatus.canReapply === false ? (
+                  <div className="mt-3 flex items-center gap-2 text-xs text-zinc-400">
+                    <Clock className="h-4 w-4" />
+                    <span>Cooldown is enforced automatically for rejected applications.</span>
+                  </div>
+                ) : (
+                  <div className="mt-3 flex items-center gap-2 text-xs text-zinc-500">
+                    <Video className="h-4 w-4" />
+                    <span>Creator application is available in this settings panel.</span>
+                  </div>
+                )}
+              </div>
+
               <Button
                 onClick={handleProfileUpdate}
                 disabled={isUpdatingProfile}
-                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+                className="w-full bg-linear-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
               >
                 {isUpdatingProfile ? (
                   <>
@@ -337,7 +426,7 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
               <Button
                 onClick={handleAvatarUpload}
                 disabled={!selectedFile || isUploadingAvatar}
-                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+                className="w-full bg-linear-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
               >
                 {isUploadingAvatar ? (
                   <>
@@ -403,7 +492,7 @@ export function ProfileSettingsModal({ open, onClose }: ProfileSettingsModalProp
               <Button
                 onClick={handlePasswordChange}
                 disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}
-                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+                className="w-full bg-linear-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
               >
                 {isChangingPassword ? (
                   <>

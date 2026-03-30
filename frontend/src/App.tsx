@@ -19,6 +19,7 @@ import Chat from '@/pages/creator-dashboard/chat';
 import Community from '@/pages/creator-dashboard/community';
 import ContentUpload from '@/pages/creator-dashboard/content-upload';
 import Posts from '@/pages/creator-dashboard/posts';
+import Earnings from '@/pages/creator-dashboard/earnings';
 
 // Content Pages
 import ContentPage from '@/pages/content/index';
@@ -71,6 +72,7 @@ function App() {
         <Route path="community" element={<Community />} />
         <Route path="content-upload" element={<ContentUpload />} />
         <Route path="posts" element={<Posts />} />
+        <Route path="earnings" element={<Earnings />} />
       </Route>
 
       {/* Content routes */}

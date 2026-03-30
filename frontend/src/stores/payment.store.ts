@@ -6,10 +6,13 @@ import type {
   CoinWallet,
   CoinPackage,
   CoinPurchase,
+  CreatorWithdrawalRequest,
   PaginationParams,
   Gift,
   GiftTransaction,
   SendGiftRequest,
+  WithdrawalHistorySummary,
+  WithdrawalRequestPayload,
 } from '@/types/payment.types';
 
 interface PaymentState {
@@ -67,6 +70,20 @@ interface PaymentState {
   sendingGift: boolean;
   sendGiftError: string | null;
 
+  // Withdrawal State
+  withdrawalRequests: CreatorWithdrawalRequest[];
+  withdrawalSummary: WithdrawalHistorySummary;
+  withdrawalRequestsLoading: boolean;
+  withdrawalRequestsError: string | null;
+  withdrawalRequestsPagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  submittingWithdrawal: boolean;
+  submitWithdrawalError: string | null;
+
   // Actions
   fetchWallet: () => Promise<void>;
   fetchPackages: () => Promise<void>;
@@ -79,6 +96,8 @@ interface PaymentState {
   sendGift: (request: SendGiftRequest) => Promise<GiftTransaction | null>;
   fetchGiftsSent: (params?: PaginationParams) => Promise<void>;
   fetchGiftsReceived: (params?: PaginationParams) => Promise<void>;
+  fetchWithdrawalRequests: (params?: PaginationParams) => Promise<void>;
+  submitWithdrawalRequest: (payload: WithdrawalRequestPayload) => Promise<boolean>;
   
   reset: () => void;
 }
@@ -135,6 +154,22 @@ export const usePaymentStore = create<PaymentState>()(
 
       sendingGift: false,
       sendGiftError: null,
+
+      withdrawalRequests: [],
+      withdrawalSummary: {
+        availableCoins: 0,
+        pendingCoins: 0,
+      },
+      withdrawalRequestsLoading: false,
+      withdrawalRequestsError: null,
+      withdrawalRequestsPagination: {
+        page: 1,
+        limit: 20,
+        total: 0,
+        totalPages: 0,
+      },
+      submittingWithdrawal: false,
+      submitWithdrawalError: null,
 
       // Fetch wallet balance
       fetchWallet: async () => {
@@ -348,6 +383,65 @@ export const usePaymentStore = create<PaymentState>()(
         }
       },
 
+      // Fetch creator withdrawal requests
+      fetchWithdrawalRequests: async (params: PaginationParams = {}) => {
+        set({ withdrawalRequestsLoading: true, withdrawalRequestsError: null });
+
+        try {
+          const response = await paymentApi.getWithdrawalHistory(params);
+
+          if (response.success) {
+            set({
+              withdrawalRequests: response.data,
+              withdrawalSummary: response.summary,
+              withdrawalRequestsPagination: response.pagination,
+              withdrawalRequestsError: null,
+            });
+          } else {
+            set({ withdrawalRequestsError: 'Failed to fetch withdrawal requests' });
+          }
+        } catch (error) {
+          set({ withdrawalRequestsError: 'Network error occurred' });
+          console.error('Error fetching withdrawal requests:', error);
+        } finally {
+          set({ withdrawalRequestsLoading: false });
+        }
+      },
+
+      // Submit withdrawal request
+      submitWithdrawalRequest: async (payload: WithdrawalRequestPayload) => {
+        set({ submittingWithdrawal: true, submitWithdrawalError: null });
+
+        try {
+          const response = await paymentApi.createWithdrawalRequest(payload);
+
+          if (response.success) {
+            toast.success('Withdrawal request submitted successfully');
+
+            const currentLimit = get().withdrawalRequestsPagination.limit || 20;
+            await Promise.all([
+              get().fetchWallet(),
+              get().fetchWithdrawalRequests({ page: 1, limit: currentLimit }),
+            ]);
+
+            return true;
+          }
+
+          const errorMsg = response.error || 'Failed to submit withdrawal request';
+          set({ submitWithdrawalError: errorMsg });
+          toast.error(errorMsg);
+          return false;
+        } catch (error) {
+          const errorMsg = 'Network error occurred';
+          set({ submitWithdrawalError: errorMsg });
+          toast.error(errorMsg);
+          console.error('Error submitting withdrawal request:', error);
+          return false;
+        } finally {
+          set({ submittingWithdrawal: false });
+        }
+      },
+
       // Reset store
       reset: () =>
         set({
@@ -391,6 +485,21 @@ export const usePaymentStore = create<PaymentState>()(
           },
           sendingGift: false,
           sendGiftError: null,
+          withdrawalRequests: [],
+          withdrawalSummary: {
+            availableCoins: 0,
+            pendingCoins: 0,
+          },
+          withdrawalRequestsLoading: false,
+          withdrawalRequestsError: null,
+          withdrawalRequestsPagination: {
+            page: 1,
+            limit: 20,
+            total: 0,
+            totalPages: 0,
+          },
+          submittingWithdrawal: false,
+          submitWithdrawalError: null,
         }),
     }),
     {

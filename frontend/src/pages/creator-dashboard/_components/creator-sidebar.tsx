@@ -8,6 +8,7 @@ import {
   BarChart3,
   FileText,
   Gift,
+  HandCoins,
 } from "lucide-react";
 import { useCreatorApplication } from '@/hooks/useCreatorApplication';
 import { Card } from '@/components/ui/card';
@@ -30,6 +31,7 @@ const creatorNavItems = [
   { title: "Community", icon: Users, url: "/creator-dashboard/community" },
   { title: "Content Upload", icon: Upload, url: "/creator-dashboard/content-upload" },
   { title: "Posts", icon: FileText, url: "/creator-dashboard/posts" },
+  { title: "Earnings", icon: HandCoins, url: "/creator-dashboard/earnings" },
   { title: "Gifts Received", icon: Gift, url: "/gifts/received" },
 ];
 
@@ -38,13 +40,13 @@ export function CreatorSidebar() {
   const { application } = useCreatorApplication();
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-zinc-800 !top-20 !h-[calc(100vh-5rem)]">
+    <Sidebar collapsible="icon" className="border-r border-zinc-800 top-20! h-[calc(100vh-5rem)]!">
       <SidebarContent className="bg-black">
         {/* Creator Status Card - Only visible when expanded */}
         <div className="p-4 group-data-[collapsible=icon]:hidden">
-          <Card className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/20 p-4">
+          <Card className="bg-linear-to-r from-green-500/10 to-emerald-500/10 border-green-500/20 p-4">
             <div className="flex items-center gap-3">
-              <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0" />
+              <CheckCircle className="w-6 h-6 text-green-400 shrink-0" />
               <div className="min-w-0">
                 <p className="text-green-300 font-medium text-sm">Verified Creator</p>
                 <p className="text-green-400/70 text-xs truncate">

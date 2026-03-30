@@ -87,9 +87,26 @@ export class CreatorController {
       });
 
       if (existingApplication) {
+        const reapplyCooldown = ApplicationService.getReapplyCooldownInfo(existingApplication);
+
+        if (reapplyCooldown && !reapplyCooldown.canReapply) {
+          return res.status(403).json({
+            success: false,
+            error: 'You can re-apply 30 days after a rejection.',
+            data: {
+              reapplyAvailableAt: reapplyCooldown.reapplyAvailableAt,
+              reapplyCooldownDaysRemaining: reapplyCooldown.reapplyCooldownDaysRemaining,
+              rejectionReason: existingApplication.rejectionReason,
+            },
+          });
+        }
+
         return res.status(400).json({
           success: false,
-          error: 'Application already exists. Use update endpoint instead.',
+          error:
+            existingApplication.status === 'REJECTED'
+              ? 'Your rejected application already exists. Use the update endpoint to re-apply.'
+              : 'Application already exists. Use update endpoint instead.',
         });
       }
 
@@ -182,6 +199,19 @@ export class CreatorController {
         });
       }
 
+      const reapplyCooldown = ApplicationService.getReapplyCooldownInfo(existingApplication);
+      if (reapplyCooldown && !reapplyCooldown.canReapply) {
+        return res.status(403).json({
+          success: false,
+          error: 'You can re-apply 30 days after a rejection.',
+          data: {
+            reapplyAvailableAt: reapplyCooldown.reapplyAvailableAt,
+            reapplyCooldownDaysRemaining: reapplyCooldown.reapplyCooldownDaysRemaining,
+            rejectionReason: existingApplication.rejectionReason,
+          },
+        });
+      }
+
       // Validate that all files exist and belong to user
       await ApplicationService.validateApplicationFiles(userId, data);
 
@@ -193,6 +223,12 @@ export class CreatorController {
         status: 'PENDING',
         submittedAt: new Date(),
       };
+
+      if (existingApplication.status === 'REJECTED') {
+        updateData.reviewedAt = null;
+        updateData.reviewedBy = null;
+        updateData.rejectionReason = null;
+      }
 
       if (data.identity) {
         updateData.identity = {
@@ -285,11 +321,16 @@ export class CreatorController {
         });
       }
 
+      const reapplyCooldown = ApplicationService.getReapplyCooldownInfo(application);
+
       res.json({
         success: true,
         data: {
           hasApplication: true,
           ...application,
+          canReapply: reapplyCooldown?.canReapply,
+          reapplyAvailableAt: reapplyCooldown?.reapplyAvailableAt ?? null,
+          reapplyCooldownDaysRemaining: reapplyCooldown?.reapplyCooldownDaysRemaining ?? null,
         },
       });
     } catch (error) {

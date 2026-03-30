@@ -155,6 +155,66 @@ router.post('/penny-tip', requireAuth, PaymentController.sendPennyTip);
 
 /**
  * @swagger
+ * /api/payment/withdrawals:
+ *   post:
+ *     summary: Submit a withdrawal request as an approved creator
+ *     tags: [Payment]
+ *     security:
+ *       - BearerAuth: []
+ *       - CookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [amountCoins]
+ *             properties:
+ *               amountCoins:
+ *                 type: integer
+ *                 minimum: 1
+ *               reason:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Withdrawal request submitted
+ *       400:
+ *         description: Validation or balance failure
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         description: User is not an approved creator
+ *   get:
+ *     summary: Get authenticated creator withdrawal history
+ *     tags: [Payment]
+ *     security:
+ *       - BearerAuth: []
+ *       - CookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: false
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *         required: false
+ *     responses:
+ *       200:
+ *         description: Paginated withdrawal history
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ */
+router.post('/withdrawals', requireAuth, PaymentController.createWithdrawalRequest);
+router.get('/withdrawals', requireAuth, PaymentController.getWithdrawals);
+
+/**
+ * @swagger
  * /api/payment/purchases:
  *   get:
  *     summary: Get the authenticated user's coin purchase history

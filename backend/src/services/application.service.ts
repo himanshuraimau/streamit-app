@@ -5,7 +5,33 @@ import type {
   UpdateApplicationInput,
 } from '../lib/validations/creator.validation';
 
+const REAPPLY_COOLDOWN_DAYS = 30;
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
 export class ApplicationService {
+  static getReapplyCooldownInfo(application: {
+    status: string;
+    reviewedAt: Date | null;
+    updatedAt: Date;
+  }) {
+    if (application.status !== 'REJECTED') {
+      return null;
+    }
+
+    const reviewedAt = application.reviewedAt ?? application.updatedAt;
+    const reapplyAvailableAt = new Date(
+      reviewedAt.getTime() + REAPPLY_COOLDOWN_DAYS * DAY_IN_MS
+    );
+    const cooldownMsRemaining = reapplyAvailableAt.getTime() - Date.now();
+
+    return {
+      canReapply: cooldownMsRemaining <= 0,
+      reapplyAvailableAt,
+      reapplyCooldownDaysRemaining:
+        cooldownMsRemaining > 0 ? Math.ceil(cooldownMsRemaining / DAY_IN_MS) : 0,
+    };
+  }
+
   // Clean up old files when updating application
   static async cleanupOldFiles(userId: string, newData: UpdateApplicationInput) {
     try {

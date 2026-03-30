@@ -4,7 +4,7 @@ import { useSignOut } from '@/utils/queries/auth';
 import { useCreatorApplication } from '@/hooks/useCreatorApplication';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Button } from '@/components/ui/button';
-import { Search, LogOut, Menu, UserCircle, Settings, Video, BarChart3, CheckCircle, Gift, Coins } from 'lucide-react';
+import { Search, LogOut, Menu, UserCircle, Settings, Video, BarChart3, CheckCircle, Gift, Coins, Clock3 } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
 import { ProfileSettingsModal } from '@/components/ui/profile-settings-modal';
 import { CoinBalance } from '@/components/payment/CoinBalance';
@@ -39,7 +39,7 @@ export default function Navbar() {
   // Show loading state while checking authentication
   if (isPending) {
     return (
-      <nav className="fixed top-0 left-0 right-0 z-[100] w-full border-b border-zinc-800 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/60">
+      <nav className="fixed top-0 left-0 right-0 z-100 w-full border-b border-zinc-800 bg-black/95 backdrop-blur supports-backdrop-filter:bg-black/60">
         <div className="flex h-20 items-center justify-between px-6 gap-6">
           <div className="flex items-center gap-4">
             <Button
@@ -64,7 +64,7 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-[100] w-full border-b border-zinc-800 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/60">
+    <nav className="fixed top-0 left-0 right-0 z-100 w-full border-b border-zinc-800 bg-black/95 backdrop-blur supports-backdrop-filter:bg-black/60">
       <div className="flex h-20 items-center justify-between px-6 gap-6">
         {/* Left Section: Hamburger + Logo */}
         <div className="flex items-center gap-4">
@@ -109,7 +109,7 @@ export default function Navbar() {
                 <Link to="/creator-dashboard">
                   <Button
                     size="sm"
-                    className="hidden md:flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white transition-all"
+                    className="hidden md:flex items-center gap-2 bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white transition-all"
                   >
                     <BarChart3 className="h-4 w-4" />
                     <span>Creator Dashboard</span>
@@ -126,6 +126,16 @@ export default function Navbar() {
                     <span>Application Pending</span>
                   </Button>
                 </Link>
+              ) : initialized && status?.hasApplication && status.status === 'REJECTED' && status.canReapply === false ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled
+                  className="hidden md:flex items-center gap-2 border-red-500/50 text-red-400 opacity-70"
+                >
+                  <Clock3 className="h-4 w-4" />
+                  <span>Reapply in {status.reapplyCooldownDaysRemaining ?? 0}d</span>
+                </Button>
               ) : initialized && status?.hasApplication && status.status === 'REJECTED' ? (
                 <Link to="/creator-application">
                   <Button
@@ -151,7 +161,7 @@ export default function Navbar() {
               )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-black overflow-hidden">
+                  <button className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-black overflow-hidden">
                     {/* Use currentUser.image for avatar URL from database */}
                     {currentUser?.image ? (
                       <img
@@ -226,7 +236,7 @@ export default function Navbar() {
               <Link to="/auth/signup">
                 <Button
                   size="sm"
-                  className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 transition-all"
+                  className="bg-linear-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 transition-all"
                 >
                   Sign Up
                 </Button>

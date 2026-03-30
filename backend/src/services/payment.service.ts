@@ -1,6 +1,6 @@
 import DodoPayments from 'dodopayments';
 import { prisma } from '../lib/db';
-import type { Prisma } from '@prisma/client';
+import { WithdrawalStatus, type Prisma } from '@prisma/client';
 import { DiscountService } from './discount.service';
 
 // Log environment for debugging
@@ -16,6 +16,21 @@ const dodo = new DodoPayments({
 });
 
 export class PaymentService {
+  private static async getCoinToPaiseRate(tx?: Prisma.TransactionClient): Promise<number> {
+    const db = tx ?? prisma;
+    const setting = await db.systemSetting.findUnique({
+      where: { key: 'finance.coinToPaiseRate' },
+      select: { value: true },
+    });
+
+    const parsed = Number(setting?.value ?? 100);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return 100;
+    }
+
+    return Math.floor(parsed);
+  }
+
   /**
    * Create checkout session for coin purchase
    * Accepts optional discountCode parameter to apply bonus coins
@@ -568,6 +583,133 @@ export class PaymentService {
         transaction,
       };
     });
+  }
+
+  /**
+   * Create a creator withdrawal request and reserve the requested coins.
+   */
+  static async createWithdrawalRequest(userId: string, amountCoins: number, reason?: string) {
+    return await prisma.$transaction(async (tx) => {
+      const creatorApplication = await tx.creatorApplication.findUnique({
+        where: { userId },
+        select: { status: true },
+      });
+
+      if (creatorApplication?.status !== 'APPROVED') {
+        throw new Error('Only approved creators can request withdrawals');
+      }
+
+      const wallet = await tx.coinWallet.findUnique({
+        where: { userId },
+      });
+
+      if (!wallet || wallet.balance < amountCoins) {
+        throw new Error('Insufficient balance');
+      }
+
+      const coinToPaiseRate = await this.getCoinToPaiseRate(tx);
+      const grossAmountPaise = amountCoins * coinToPaiseRate;
+      const platformFeePaise = 0;
+      const netAmountPaise = grossAmountPaise - platformFeePaise;
+
+      const request = await tx.creatorWithdrawalRequest.create({
+        data: {
+          userId,
+          amountCoins,
+          coinToPaiseRate,
+          grossAmountPaise,
+          platformFeePaise,
+          netAmountPaise,
+          reason: reason?.trim() || null,
+          metadata: {
+            requestedVia: 'creator-dashboard',
+          },
+        },
+        include: {
+          reviewer: {
+            select: {
+              id: true,
+              name: true,
+              username: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      const updatedWallet = await tx.coinWallet.update({
+        where: { userId },
+        data: {
+          balance: { decrement: amountCoins },
+        },
+        select: {
+          balance: true,
+        },
+      });
+
+      return {
+        request,
+        remainingBalance: updatedWallet.balance,
+      };
+    });
+  }
+
+  /**
+   * Get creator withdrawal history with pagination and lightweight summary.
+   */
+  static async getCreatorWithdrawalHistory(userId: string, limit = 20, offset = 0) {
+    const pendingStatuses: WithdrawalStatus[] = [
+      WithdrawalStatus.PENDING,
+      WithdrawalStatus.UNDER_REVIEW,
+      WithdrawalStatus.ON_HOLD,
+      WithdrawalStatus.APPROVED,
+    ];
+
+    const [requests, total, pendingAggregate, wallet] = await prisma.$transaction([
+      prisma.creatorWithdrawalRequest.findMany({
+        where: { userId },
+        orderBy: { requestedAt: 'desc' },
+        skip: offset,
+        take: limit,
+        include: {
+          reviewer: {
+            select: {
+              id: true,
+              name: true,
+              username: true,
+              email: true,
+            },
+          },
+        },
+      }),
+      prisma.creatorWithdrawalRequest.count({
+        where: { userId },
+      }),
+      prisma.creatorWithdrawalRequest.aggregate({
+        where: {
+          userId,
+          status: {
+            in: pendingStatuses,
+          },
+        },
+        _sum: {
+          amountCoins: true,
+        },
+      }),
+      prisma.coinWallet.findUnique({
+        where: { userId },
+        select: { balance: true },
+      }),
+    ]);
+
+    return {
+      requests,
+      total,
+      summary: {
+        availableCoins: wallet?.balance ?? 0,
+        pendingCoins: pendingAggregate._sum.amountCoins ?? 0,
+      },
+    };
   }
 
   /**

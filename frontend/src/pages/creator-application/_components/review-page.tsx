@@ -9,6 +9,7 @@ interface ReviewPageProps {
   onSubmit: () => void;
   onBack: () => void;
   loading?: boolean;
+  submitLabel?: string;
 }
 
 const ID_TYPE_LABELS = {
@@ -17,7 +18,14 @@ const ID_TYPE_LABELS = {
   DRIVERS_LICENSE: "Driver's License",
 };
 
-export function ReviewPage({ data, onEdit, onSubmit, onBack, loading = false }: ReviewPageProps) {
+export function ReviewPage({
+  data,
+  onEdit,
+  onSubmit,
+  onBack,
+  loading = false,
+  submitLabel = 'Submit Application',
+}: ReviewPageProps) {
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl">
       <div className="mb-8">
@@ -190,7 +198,7 @@ export function ReviewPage({ data, onEdit, onSubmit, onBack, loading = false }: 
             disabled={loading}
             className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 disabled:opacity-50"
           >
-            {loading ? 'Submitting...' : 'Submit Application'}
+            {loading ? 'Submitting...' : submitLabel}
           </Button>
         </div>
       </div>

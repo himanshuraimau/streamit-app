@@ -12,15 +12,13 @@ Assumption: items listed here are not fully complete yet, are only partially wir
 
 ## Become A Creator
 
-- [ ] Add a `Become a Creator` entry inside profile/settings if the workflow doc is still the source of truth. The app currently exposes creator application entry points from navbar/creator pages instead.
-- [ ] Build the admin or automated review workflow that changes creator applications from `PENDING` to `APPROVED` or `REJECTED`.
-- [ ] Send actual approval or rejection notifications when review decisions are made.
-- [ ] Enforce the 30-day re-apply cooldown after rejection.
-- [ ] Surface rejection reason clearly in the re-apply UX.
+- [x] Add a `Become a Creator` entry inside profile/settings if the workflow doc is still the source of truth. The app currently exposes creator application entry points from navbar/creator pages instead.
+- [x] Enforce the 30-day re-apply cooldown after rejection.
+- [x] Surface rejection reason clearly in the re-apply UX.
 
 ## Dual Dashboards And Creator Ops
 
-- [ ] Add creator earnings and withdrawal workflow.
+- [ ] Harden creator earnings and withdrawal workflow (financial-details verification before withdrawal, payout method visibility/editing, and status notifications).
 - [ ] Add creator KYC management after approval.
 - [ ] Expand creator analytics beyond the current lightweight stats.
 - [ ] Implement community management features. The current community page is marked as coming soon.

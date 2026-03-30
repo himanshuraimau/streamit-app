@@ -157,7 +157,22 @@ export const useCreatorApplicationStore = create<CreatorApplicationState>()(
           const response = await creatorApi.updateApplication(data);
           
           if (response.success && response.data) {
-            set({ application: response.data });
+            set({
+              application: response.data,
+              status: {
+                hasApplication: true,
+                id: response.data.id,
+                status: response.data.status,
+                submittedAt: response.data.submittedAt || undefined,
+                reviewedAt: response.data.reviewedAt || undefined,
+                rejectionReason: response.data.rejectionReason || undefined,
+                canReapply: false,
+                reapplyAvailableAt: null,
+                reapplyCooldownDaysRemaining: null,
+                createdAt: response.data.createdAt,
+                updatedAt: response.data.updatedAt,
+              },
+            });
             toast.success(response.message || 'Application updated successfully!');
             return response.data;
           } else {

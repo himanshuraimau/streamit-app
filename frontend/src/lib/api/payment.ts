@@ -7,9 +7,12 @@ import type {
   PaginatedResponse,
   ApiResponse,
   PaginationParams,
+  CreatorWithdrawalRequest,
   Gift,
   GiftTransaction,
+  PaginatedWithdrawalResponse,
   SendGiftRequest,
+  WithdrawalRequestPayload,
 } from '@/types/payment.types';
 
 export interface PennyTipRequest {
@@ -231,6 +234,52 @@ export const paymentApi = {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to send penny tip',
+      };
+    }
+  },
+
+  /**
+   * Submit a withdrawal request as an approved creator.
+   */
+  async createWithdrawalRequest(
+    payload: WithdrawalRequestPayload
+  ): Promise<ApiResponse<{ request: CreatorWithdrawalRequest; remainingBalance: number }>> {
+    try {
+      const response = await apiPost<
+        ApiResponse<{ request: CreatorWithdrawalRequest; remainingBalance: number }>
+      >('/api/payment/withdrawals', payload);
+      return response;
+    } catch (error) {
+      console.error('Error creating withdrawal request:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to create withdrawal request',
+      };
+    }
+  },
+
+  /**
+   * Get authenticated creator withdrawal history.
+   */
+  async getWithdrawalHistory(
+    params: PaginationParams = {}
+  ): Promise<PaginatedWithdrawalResponse> {
+    try {
+      const { page = 1, limit = 20 } = params;
+      const response = await apiGet<PaginatedWithdrawalResponse>(
+        `/api/payment/withdrawals?page=${page}&limit=${limit}`
+      );
+      return response;
+    } catch (error) {
+      console.error('Error fetching withdrawal history:', error);
+      return {
+        success: false,
+        data: [],
+        summary: {
+          availableCoins: 0,
+          pendingCoins: 0,
+        },
+        pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
       };
     }
   },

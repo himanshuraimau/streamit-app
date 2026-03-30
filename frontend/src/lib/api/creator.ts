@@ -52,6 +52,9 @@ export interface ApplicationStatusResponse {
   submittedAt?: string;
   reviewedAt?: string;
   rejectionReason?: string;
+  canReapply?: boolean;
+  reapplyAvailableAt?: string | null;
+  reapplyCooldownDaysRemaining?: number | null;
   createdAt?: string;
   updatedAt?: string;
 }
