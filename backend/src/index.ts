@@ -17,7 +17,6 @@ import socialRoutes from './routes/social.route';
 import searchRoutes from './routes/search.route';
 import paymentRoutes from './routes/payment.route';
 import discountRoutes from './routes/discount.route';
-import adminRoutes from './routes/admin.route';
 import { WebhookController } from './controllers/webhook.controller';
 
 const app = express();
@@ -111,9 +110,6 @@ app.use('/api/payment', paymentRoutes);
 
 // Mount discount routes
 app.use('/api/discount', discountRoutes);
-
-// Mount admin routes
-app.use('/api/admin', adminRoutes);
 
 // API Documentation (Swagger UI)
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
