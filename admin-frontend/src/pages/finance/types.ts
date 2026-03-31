@@ -1,10 +1,7 @@
+import type { AdminNoticeState } from "@/components/admin/types";
 import type { FinanceWithdrawalItem } from "@/lib/admin-api";
 
-export interface FinanceNoticeState {
-  tone: "success" | "error";
-  title: string;
-  description?: string;
-}
+export type FinanceNoticeState = AdminNoticeState;
 
 export type WithdrawalDecision =
   | "APPROVE"
