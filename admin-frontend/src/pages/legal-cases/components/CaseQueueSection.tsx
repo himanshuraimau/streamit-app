@@ -32,7 +32,6 @@ export function CaseQueueSection({
   statusFilter,
   typeFilter,
   search,
-  page,
   onStatusFilterChange,
   onTypeFilterChange,
   onSearchChange,

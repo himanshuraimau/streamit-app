@@ -25,7 +25,14 @@ export function LegalCasesPage() {
           onStatusFilterChange={(value) => controller.handleFilterChange("status", value)}
           onTypeFilterChange={(value) => controller.handleFilterChange("type", value)}
           onSearchChange={controller.handleSearchChange}
-          onPageChange={controller.setPage}
+          onPreviousPage={() => controller.setPage((prev) => Math.max(prev - 1, 1))}
+          onNextPage={() => {
+            const data =
+              controller.legalCasesQuery.data && controller.legalCasesQuery.data.success
+                ? controller.legalCasesQuery.data.data
+                : null;
+            controller.setPage((prev) => Math.min(prev + 1, data?.pagination.totalPages ?? 1));
+          }}
           onRefresh={controller.handleRefresh}
           onViewDetail={controller.setSelectedLegalCaseId}
           onUpdateStatus={controller.handleOpenStatusUpdateDialog}
