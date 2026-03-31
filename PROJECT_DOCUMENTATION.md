@@ -1,739 +1,409 @@
-# StreamIt Platform - Complete Documentation
+# StreamIt Platform - Project Documentation
 
 ## Overview
-StreamIt is a comprehensive live streaming and social media platform built with modern web technologies. The platform enables creators to broadcast live streams, share content, monetize through virtual gifts, and engage with their audience through social features.
+StreamIt is a full-stack live streaming platform enabling creators to broadcast content, engage with viewers, and monetize through virtual gifts. Built with TypeScript, it features real-time streaming, social interactions, content management, and comprehensive admin controls.
 
----
-
-## Technology Stack
+## Tech Stack
 
 ### Backend
-- **Runtime**: Bun (JavaScript runtime)
-- **Framework**: Express.js 5.x
+- **Runtime**: Bun with Express.js
 - **Language**: TypeScript
-- **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: Better Auth (JWT-based)
-- **File Storage**: AWS S3
-- **Live Streaming**: LiveKit
-- **Payment Gateway**: Dodo Payments
+- **Database**: PostgreSQL 16 with Prisma ORM
+- **Authentication**: Better Auth (email/password, sessions)
+- **Streaming**: LiveKit Server SDK
+- **Storage**: AWS S3 (media uploads)
 - **Email**: Resend
-- **API Documentation**: Swagger/OpenAPI
+- **Payment**: Dodo Payments
+- **API Docs**: Swagger UI
 
-### Key Dependencies
-- `@prisma/client` - Database ORM
-- `better-auth` - Authentication system
-- `livekit-server-sdk` - Live streaming infrastructure
-- `dodopayments` - Payment processing
-- `sharp` - Image processing
-- `multer` - File upload handling
-- `zod` - Schema validation
-- `cors` - Cross-origin resource sharing
+### Frontend (User App)
+- **Framework**: React 19 + TypeScript
+- **Build Tool**: Vite
+- **Styling**: TailwindCSS
+- **State**: Zustand
+- **Data Fetching**: TanStack Query
+- **Forms**: React Hook Form + Zod
+- **UI Components**: Radix UI
+- **Streaming**: LiveKit React Components
 
----
+### Admin Frontend
+- **Framework**: React 19 + TypeScript
+- **Build Tool**: Vite
+- **Styling**: TailwindCSS + shadcn/ui
+- **UI Components**: Radix UI primitives
 
-## Architecture Overview
+## Project Structure
 
-### Project Structure
 ```
-backend/
-├── src/
-│   ├── controllers/     # Request handlers
-│   ├── routes/          # API route definitions
-│   ├── services/        # Business logic
-│   ├── middleware/      # Express middleware
-│   ├── lib/             # Utilities and configurations
-│   └── types/           # TypeScript type definitions
-├── prisma/
-│   ├── schema.prisma    # Database schema
-│   └── migrations/      # Database migrations
-└── dist/                # Compiled output
+streamit/
+├── backend/                    # API Server (Port 3000)
+│   ├── src/
+│   │   ├── controllers/       # Request handlers (10 files)
+│   │   │   ├── auth.controller.ts
+│   │   │   ├── content.controller.ts
+│   │   │   ├── creator.controller.ts
+│   │   │   ├── discount.controller.ts
+│   │   │   ├── payment.controller.ts
+│   │   │   ├── search.controller.ts
+│   │   │   ├── social.controller.ts
+│   │   │   ├── stream.controller.ts
+│   │   │   ├── viewer.controller.ts
+│   │   │   └── webhook.controller.ts
+│   │   ├── routes/            # API route definitions (10 files)
+│   │   ├── services/          # Business logic (8 files)
+│   │   ├── middleware/        # Express middleware
+│   │   ├── lib/               # Utilities (auth, db, config, swagger)
+│   │   ├── types/             # TypeScript definitions
+│   │   └── index.ts           # Server entry point
+│   ├── prisma/
+│   │   ├── schema.prisma      # Database schema (40+ models)
+│   │   ├── migrations/        # 23 migration files
+│   │   ├── seed-payment.ts    # Payment data seeder
+│   │   └── seed-discount.ts   # Discount code seeder
+│   ├── scripts/               # Utility scripts
+│   ├── .env.example           # Environment template
+│   ├── package.json
+│   └── Dockerfile
+│
+├── admin-fe/                   # Admin Dashboard (Port 5174)
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── ui/            # shadcn/ui components
+│   │   │   └── theme-provider.tsx
+│   │   ├── lib/
+│   │   │   └── utils.ts
+│   │   ├── assets/
+│   │   ├── App.tsx            # Main component
+│   │   ├── main.tsx           # Entry point
+│   │   └── index.css          # Global styles
+│   ├── public/
+│   ├── .env.example
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── components.json        # shadcn config
+│
+└── docker-compose.yml          # Container orchestration
 ```
-
----
 
 ## Core Features
 
 ### 1. Authentication & User Management
-
-#### User Roles
-- **USER**: Regular platform users
-- **CREATOR**: Approved content creators with streaming privileges
-- **ADMIN**: Platform administrators
-- **SUPER_ADMIN**: Full system access
-
-#### Authentication Features
-- Email/password authentication
-- OTP verification for email
-- Session management with JWT tokens
-- OAuth support (via Better Auth)
-- Password reset functionality
-
-#### User Profile
-- Username, email, phone
-- Profile picture and bio
-- Age verification
+- Email/password registration with verification
+- Session-based authentication (Better Auth)
+- Password reset flow
+- User roles: USER, CREATOR, ADMIN, SUPER_ADMIN
+- Profile management (avatar, bio, username)
 - Account suspension system
-- Last login tracking
 
 ### 2. Creator Application System
-
-#### Application Workflow
-1. **DRAFT**: Initial application state
-2. **PENDING**: Submitted for review
-3. **UNDER_REVIEW**: Being reviewed by admin
-4. **APPROVED**: Creator access granted
-5. **REJECTED**: Application denied
-
-#### Required Information
-- **Identity Verification**
-  - ID type (Aadhaar, Passport, Driver's License)
-  - ID document upload
-  - Selfie photo verification
-  
-- **Financial Details**
-  - Bank account information
-  - IFSC code
-  - PAN number (encrypted)
-  - Account holder name
-
-- **Creator Profile**
-  - Profile picture
-  - Bio
-  - Content categories (Education, Entertainment, Gaming, Music, etc.)
+- Multi-step application workflow
+- Identity verification (Aadhaar/Passport/Driver's License)
+- Financial details (bank account, IFSC, PAN)
+- Profile setup (bio, categories, profile picture)
+- Admin review and approval process
+- File upload management
 
 ### 3. Live Streaming
+- Stream creation with metadata (title, description, thumbnail)
+- LiveKit integration for real-time streaming
+- Stream settings: chat controls, audience type, gifts
+- Camera modes, filters, music presets
+- Stream statistics (viewers, likes, gifts, coins)
+- Stream key management
+- Webhook handling for stream events
 
-#### Stream Configuration
-- Title and description
-- Thumbnail image
-- Category and tags
-- Audience settings (Public, Followers Only, Invite Only)
-- Camera facing mode (Front/Back)
-- Audio-only mode
-- Filter presets (Warm, Cool, Noir, Pop)
-- Music presets (Ambient, Hype, Lofi, Acoustic)
-
-#### Stream Features
-- Real-time chat
-- Chat moderation (delay, followers-only)
-- Virtual gift receiving
-- Viewer statistics
-- Stream reports and moderation
-
-#### Stream Statistics
-- Peak viewers
-- Total viewers
-- Total likes
-- Total gifts received
-- Total coins earned
-- Stream duration
-
-### 4. Social Media Features
-
-#### Content Types
-- **TEXT**: Text-only posts
-- **IMAGE**: Image posts with captions
-- **VIDEO**: Video posts
-- **MIXED**: Text with media
-- **SHORTS**: Short-form videos (<60 seconds)
-
-#### Post Features
-- Multiple media attachments
-- Like and comment system
-- Nested comments (replies)
-- View tracking
-- Share tracking
-- Visibility controls
-- Comment moderation
-
-#### Social Interactions
-- Follow/unfollow users
-- Block/unblock users
-- Like posts and comments
-- Comment on posts
-- View user profiles
+### 4. Social Features
+- Follow/unfollow system
+- User blocking
+- Following feed
+- Creator discovery
 - Follower/following lists
 
-### 5. Monetization System
+### 5. Content Management
+- Post creation (TEXT, IMAGE, VIDEO, MIXED)
+- Multiple media attachments per post
+- Short-form video support (< 60s)
+- Post visibility controls
+- Like system
+- Nested comments with likes
+- Post view tracking
+- Content moderation (hide/flag)
 
-#### Virtual Currency (Coins)
-- Users purchase coin packages
-- Coins used to send virtual gifts
-- Creators earn coins from gifts
-- Withdrawal system for creators
+### 6. Monetization
+- Virtual coin system
+- Coin packages with bonus coins
+- Discount codes (promotional & reward)
+- Virtual gifts (send to creators during streams)
+- Gift transactions tracking
+- Creator withdrawal requests
+- Wallet management
 
-#### Coin Packages
-- Multiple package tiers
-- Bonus coins on purchase
-- Promotional pricing
-- Currency support (INR)
-
-#### Virtual Gifts
-- Predefined gift catalog
-- Coin-based pricing
-- Animated gift effects
-- Gift messages
-- Real-time gift notifications
-
-#### Creator Earnings
-- Coin-to-currency conversion
-- Withdrawal requests
-- Platform fee deduction
-- Manual payout approval
-- Withdrawal status tracking
-  - PENDING
-  - UNDER_REVIEW
-  - ON_HOLD
-  - APPROVED
-  - REJECTED
-  - PAID
-
-### 6. Discount Code System
-
-#### Code Types
-- **PROMOTIONAL**: Platform-wide codes
-- **REWARD**: User-specific reward codes
-
-#### Discount Types
-- **PERCENTAGE**: Percentage off (1-100%)
-- **FIXED**: Fixed amount discount
-
-#### Features
-- Usage limits
-- Expiration dates
-- Minimum purchase requirements
-- One-time use codes
-- Bonus coin rewards
-- Redemption tracking
-
-### 7. Payment Integration
-
-#### Dodo Payments
-- Secure payment processing
-- Webhook verification
-- Transaction tracking
-- Refund support
-- Multiple currency support
-
-#### Payment Flow
-1. User selects coin package
-2. Optional discount code application
-3. Payment gateway redirect
-4. Webhook confirmation
-5. Coin credit to wallet
-6. Transaction record
-
-### 8. Content Moderation
-
-#### Report System
-- Report reasons:
-  - Spam
-  - Harassment
-  - Hate speech
-  - Nudity
-  - Violence
-  - Copyright
-  - Misinformation
-  - Self-harm
-  - Other
-
-#### Moderation Actions
-- Hide/unhide posts
-- Hide/unhide comments
-- Delete content
-- Review reports
-
-#### Stream Moderation
-- Stream-specific reports
-- Real-time moderation
-- Chat controls
-- Viewer blocking
-
----
-
-## API Structure
-
-### Authentication Routes (`/api/auth`)
-- POST `/send-verification-otp` - Send email OTP
-- POST `/verify-otp` - Verify OTP code
-- POST `/sign-up` - User registration
-- POST `/sign-in` - User login
-- POST `/sign-out` - User logout
-- GET `/get-session` - Get current session
-- POST `/forgot-password` - Password reset request
-- POST `/reset-password` - Reset password
-
-### Creator Routes (`/api/creator`)
-- GET `/application` - Get creator application
-- POST `/application` - Submit creator application
-- PUT `/application` - Update application
-- POST `/application/identity` - Upload identity docs
-- POST `/application/financial` - Submit financial details
-- POST `/application/profile` - Submit creator profile
-- GET `/earnings` - View earnings
-- POST `/withdraw` - Request withdrawal
-
-### Stream Routes (`/api/stream`)
-- POST `/go-live` - Start streaming
-- POST `/end-stream` - End stream
-- PUT `/update` - Update stream settings
-- GET `/token` - Get viewer token
-- GET `/live` - Get live streams
-- GET `/:streamId` - Get stream details
-- GET `/:streamId/stats` - Get stream statistics
-- POST `/:streamId/report` - Report stream
-
-### Content Routes (`/api/content`)
-- POST `/posts` - Create post
-- GET `/posts` - Get feed
-- GET `/posts/:postId` - Get post details
-- PUT `/posts/:postId` - Update post
-- DELETE `/posts/:postId` - Delete post
-- POST `/posts/:postId/like` - Like post
-- DELETE `/posts/:postId/like` - Unlike post
-- POST `/posts/:postId/comments` - Add comment
-- GET `/posts/:postId/comments` - Get comments
-- PUT `/comments/:commentId` - Update comment
-- DELETE `/comments/:commentId` - Delete comment
-- POST `/comments/:commentId/like` - Like comment
-- GET `/shorts` - Get short-form videos
-
-### Social Routes (`/api/social`)
-- POST `/follow/:userId` - Follow user
-- DELETE `/follow/:userId` - Unfollow user
-- POST `/block/:userId` - Block user
-- DELETE `/block/:userId` - Unblock user
-- GET `/followers` - Get followers
-- GET `/following` - Get following
-- GET `/profile/:userId` - Get user profile
-
-### Payment Routes (`/api/payment`)
-- GET `/wallet` - Get coin wallet
-- GET `/packages` - Get coin packages
-- POST `/purchase` - Initiate purchase
-- GET `/gifts` - Get available gifts
-- POST `/send-gift` - Send gift to creator
-- GET `/transactions` - Get transaction history
-
-### Discount Routes (`/api/discount`)
-- POST `/validate` - Validate discount code
-- POST `/redeem` - Redeem discount code
-- GET `/my-codes` - Get user's reward codes
-
-### Search Routes (`/api/search`)
-- GET `/` - Search streams, users, categories
-- GET `/trending` - Get trending content
-- GET `/categories` - Get content categories
-
-### Viewer Routes (`/api/viewer`)
-- GET `/me` - Get current user info
-- PUT `/profile` - Update profile
-- GET `/feed` - Get personalized feed
-- GET `/notifications` - Get notifications
-
-### Webhook Routes (`/api/webhook`)
-- POST `/livekit` - LiveKit webhook events
-- POST `/dodo` - Dodo payment webhook
-
----
-
-## Planned Features (Not Yet Implemented)
-
-### Admin Dashboard
-- User management interface
+### 7. Admin Dashboard
+- User management (suspend, role changes)
 - Creator application review
-- Content moderation tools
-- Financial management
-- Analytics dashboard
-- System settings
+- Content moderation (reports, hide/delete)
+- Financial operations (withdrawals, transactions)
+- System settings management
+- Activity logs and audit trails
 
-### Compliance & Legal Tools
-- Legal case management
-- Takedown request system
-- Geo-blocking capabilities
-- Audit trail interface
+### 8. Search & Discovery
+- Global search (streams, creators)
+- Filter by live status
+- Category-based filtering
+- Username and title search
 
-### Advertisement System
-- Campaign management
-- Budget tracking
-- Targeting configuration
-- Performance analytics
-
----
-
-## Database Schema
+## Database Schema (40+ Models)
 
 ### Core Models
+- **User**: Authentication, profile, roles, suspension
+- **Session**: User sessions with device info
+- **Account**: OAuth and credential storage
+- **Verification**: Email verification tokens
 
-#### User
-- Authentication data
-- Profile information
-- Role and permissions
-- Suspension status (schema defined, admin UI not implemented)
+### Creator Models
+- **CreatorApplication**: Application workflow
+- **IdentityVerification**: ID document verification
+- **FinancialDetails**: Bank account info
+- **CreatorProfile**: Bio and categories
+- **FileUpload**: File tracking
 
-#### Session
-- JWT token management
-- Expiration tracking
-- IP and user agent
+### Streaming Models
+- **Stream**: Stream metadata and settings
+- **StreamStats**: Viewer metrics
+- **StreamReport**: Stream-specific reports
 
-#### CreatorApplication
-- Application status
-- Identity verification
-- Financial details
-- Creator profile
+### Social Models
+- **Follow**: Following relationships
+- **Block**: User blocking
 
-#### Stream
-- Stream configuration
-- Live status
+### Content Models
+- **Post**: Text/media content
+- **PostMedia**: Image/video attachments
+- **PostView**: View tracking
+- **Like**: Post likes
+- **Comment**: Nested comments
+- **CommentLike**: Comment likes
+
+### Payment Models
+- **CoinWallet**: User coin balance
+- **CoinPackage**: Purchasable coin packages
+- **CoinPurchase**: Purchase history
+- **Gift**: Virtual gift catalog
+- **GiftTransaction**: Gift sending records
+- **CreatorWithdrawalRequest**: Payout requests
+- **DiscountCode**: Promo and reward codes
+- **DiscountRedemption**: Code usage tracking
+
+### Moderation Models
+- **Report**: User-generated reports
+- **SystemSetting**: Platform configuration
+
+## API Routes
+
+### `/api/auth` - Authentication
+- Sign up, sign in, sign out
+- Email verification
+- Password reset
+- Session management (Better Auth)
+
+### `/api/creator` - Creator Operations
+- Application CRUD
+- File uploads (ID, selfie, profile pic)
+- Profile management
+
+### `/api/stream` - Streaming
+- Stream CRUD operations
 - Chat settings
-- Statistics
-
-#### Post
-- Content and media
-- Engagement metrics
-- Visibility settings
-- Moderation flags
-
-#### CoinWallet
-- Balance tracking
-- Earnings history
-- Spending history
-
-#### CoinPurchase
-- Transaction details
-- Payment gateway data
-- Discount application
+- Stream credentials
 - Status tracking
 
-#### Gift & GiftTransaction
+### `/api/viewer` - Viewer Features
+- Profile management
+- Stream discovery
+- Viewing tokens
+- Following feed
+
+### `/api/social` - Social Interactions
+- Follow/unfollow
+- Block/unblock
+- Creator listings
+- Follower/following lists
+
+### `/api/content` - Content Management
+- Post CRUD
+- Media uploads
+- Likes and comments
+- Public and personal feeds
+
+### `/api/payment` - Monetization
+- Coin packages
+- Purchase coins
 - Gift catalog
-- Gift sending records
-- Coin transactions
+- Send gifts
+- Withdrawal requests
 
-#### DiscountCode & DiscountRedemption
+### `/api/discount` - Discount System
+- Validate codes
+- Redeem codes
 - Code management
-- Usage tracking
-- Bonus rewards
 
-#### Report
-- Content reports
-- User reports
-- Review status (schema defined, admin UI not implemented)
+### `/api/search` - Search & Discovery
+- Global search
+- Creator search
+- Stream filtering
 
-#### SystemSetting
-- Platform configuration
-- Used for coin-to-paise conversion rate
-- Extensible for future settings
-
----
-
-## Security Features
-
-### Authentication
-- JWT-based sessions
-- Secure password hashing
-- OTP verification
-- Session expiration
-- IP tracking
-
-### Authorization
-- Role-based access control (RBAC)
-- Creator-only endpoints
-- Admin-only endpoints
-- Resource ownership validation
-
-### Data Protection
-- Encrypted sensitive data (PAN, account numbers)
-- Secure file uploads
-- S3 presigned URLs
-- CORS configuration
-- Rate limiting
-
-### Payment Security
-- Webhook signature verification
-- Transaction validation
-- Idempotency keys
-- Secure payment gateway integration
-
----
-
-## File Upload System
-
-### Supported File Types
-- Images (JPEG, PNG, GIF)
-- Videos (MP4, WebM)
-- Documents (PDF for verification)
-
-### Upload Purposes
-- ID documents
-- Selfie photos
-- Profile pictures
-- Stream thumbnails
-- Post media
-
-### Storage
-- AWS S3 bucket storage
-- Presigned URL generation
-- Image optimization with Sharp
-- File size limits
-- MIME type validation
-
----
-
-## Email System
-
-### Email Templates
-- OTP verification
-- Welcome emails
-- Password reset
-- Creator application status
-- Withdrawal notifications
-- Admin alerts
-
-### Email Provider
-- Resend API integration
-- Template management
-- Delivery tracking
-
----
+### `/api/webhook` - External Events
+- LiveKit webhooks
+- Dodo payment webhooks
 
 ## Environment Configuration
 
-### Required Variables
-```env
-# Server
+### Backend (.env)
+```bash
 PORT=3000
 NODE_ENV=development
-
-# Database
-DATABASE_URL=postgresql://...
-
-# Authentication
-BETTER_AUTH_SECRET=...
+DATABASE_URL=postgresql://user:pass@localhost:5432/streamit
+BETTER_AUTH_SECRET=<32+ char secret>
 BETTER_AUTH_URL=http://localhost:3000
-
-# Frontend URLs
 FRONTEND_URL=http://localhost:5173
 ADMIN_FRONTEND_URL=http://localhost:5174
-
-# Email
-RESEND_API_KEY=...
-
-# AWS S3
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=...
-AWS_SECRET_ACCESS_KEY=...
-S3_BUCKET_NAME=...
-
-# LiveKit
-LIVEKIT_URL=wss://...
-LIVEKIT_API_KEY=...
-LIVEKIT_API_SECRET=...
-
-# Payments
-DODO_API_KEY=...
-DODO_WEBHOOK_SECRET=...
+RESEND_API_KEY=<resend key>
+AWS_REGION=<region>
+AWS_ACCESS_KEY_ID=<key>
+AWS_SECRET_ACCESS_KEY=<secret>
+S3_BUCKET_NAME=<bucket>
+LIVEKIT_URL=<livekit url>
+LIVEKIT_API_KEY=<key>
+LIVEKIT_API_SECRET=<secret>
+DODO_API_KEY=<key>
+DODO_WEBHOOK_SECRET=<secret>
 ```
 
----
-
-## Development Workflow
-
-### Setup
+### Frontend (.env)
 ```bash
-# Install dependencies
+VITE_API_URL=http://localhost:3000
+VITE_LIVEKIT_WS_URL=<optional>
+```
+
+### Admin Frontend (.env)
+```bash
+VITE_API_URL=http://localhost:3000
+```
+
+## Development Setup
+
+### Prerequisites
+- Bun v1.3.0+
+- PostgreSQL 16
+- Node.js 18+ (optional)
+
+### Quick Start
+
+1. **Backend Setup**
+```bash
+cd backend
 bun install
-
-# Generate Prisma client
+cp .env.example .env
+# Edit .env with credentials
 bun run db:generate
-
-# Run migrations
 bun run db:migrate
-
-# Seed database
 bun run db:seed
 bun run db:seed-discount
-
-# Start development server
-bun run dev
+bun run dev  # http://localhost:3000
 ```
 
-### Database Commands
+2. **Frontend Setup**
 ```bash
-# Create migration
-bun run db:migrate
-
-# Deploy migrations (production)
-bun run db:migrate:deploy
-
-# Push schema changes
-bun run db:push
-
-# Open Prisma Studio
-bun run db:studio
+cd admin-fe
+bun install
+cp .env.example .env
+bun run dev  # http://localhost:5174
 ```
 
-### Code Quality
+3. **Create Admin User**
 ```bash
-# Type checking
-bun run typecheck
-
-# Linting
-bun run lint
-bun run lint:fix
-
-# Formatting
-bun run format
-bun run format:check
+cd backend
+bun run admin:promote user@example.com SUPER_ADMIN
 ```
 
----
+## Key Scripts
 
-## API Documentation
+### Backend
+- `dev` - Development server with hot reload
+- `build` - Production build
+- `start` - Production server
+- `db:generate` - Generate Prisma client
+- `db:migrate` - Run migrations
+- `db:push` - Push schema changes
+- `db:studio` - Open Prisma Studio GUI
+- `db:seed` - Seed payment data
+- `db:seed-discount` - Seed discount codes
+- `typecheck` - TypeScript validation
+- `lint` / `lint:fix` - ESLint
+- `format` / `format:check` - Prettier
 
-### Swagger UI
-- Available at `/api/docs`
-- Interactive API testing
-- Schema documentation
-- Example requests/responses
-
-### OpenAPI Spec
-- Available at `/api/docs.json`
-- Complete API specification
-- Can be imported into Postman/Insomnia
-
----
-
-## Performance Considerations
-
-### Database
-- Indexed fields for fast queries
-- Composite indexes for complex queries
-- Connection pooling
-- Query optimization
-
-### Caching
-- Session caching
-- Static asset caching
-- API response caching (where applicable)
-
-### File Handling
-- Image optimization
-- Lazy loading
-- CDN delivery (S3)
-- Presigned URL expiration
-
-### Streaming
-- LiveKit infrastructure
-- WebRTC optimization
-- Adaptive bitrate
-- Low-latency delivery
-
----
-
-## Monitoring & Logging
-
-### Health Check
-- Endpoint: `/health`
-- Database connectivity
-- Service status
-- Timestamp
-
-### Logging
-- Request/response logging
-- Error tracking
-- Admin action logging
-- Payment transaction logging
-
----
+### Frontend
+- `dev` - Development server
+- `build` - Production build
+- `preview` - Preview production build
+- `lint` - ESLint
+- `typecheck` - TypeScript validation
+- `format` - Prettier formatting
 
 ## Deployment
 
-### Production Build
+### Docker Compose
 ```bash
-# Build application
-bun run build
-
-# Start production server
-bun run start
+docker-compose up -d
 ```
 
-### Docker Support
-- Dockerfile included
-- Multi-stage build
-- Environment variable injection
-- Health check configuration
+Services:
+- Backend: http://localhost:3000
+- Admin Frontend: http://localhost:5174
+- PostgreSQL: localhost:5432
 
-### Database Migration
-```bash
-# Deploy migrations
-bun run db:migrate:deploy
-```
+## Security Features
+- Password hashing (Better Auth)
+- Email verification
+- Session management
+- CORS configuration
+- Input validation (Zod)
+- File upload restrictions
+- SQL injection prevention (Prisma)
+- Protected API routes
+- Admin role-based access
 
----
+## Key Dependencies
 
-## Error Handling
+### Backend
+- express (5.1.0) - Web framework
+- @prisma/client (6.17.1) - ORM
+- better-auth (1.3.28) - Authentication
+- livekit-server-sdk (2.14.0) - Streaming
+- @aws-sdk/client-s3 (3.918.0) - Storage
+- resend (6.2.1) - Email
+- dodopayments (2.4.4) - Payments
+- swagger-ui-express (5.0.1) - API docs
+- zod (4.1.12) - Validation
 
-### HTTP Status Codes
-- 200: Success
-- 201: Created
-- 400: Bad Request
-- 401: Unauthorized
-- 403: Forbidden
-- 404: Not Found
-- 409: Conflict
-- 500: Internal Server Error
+### Frontend
+- react (19.2.4) - UI library
+- vite (7.3.1) - Build tool
+- tailwindcss (4.2.1) - Styling
+- @remixicon/react (4.9.0) - Icons
+- shadcn - UI components
+- class-variance-authority (0.7.1) - Component variants
 
-### Error Response Format
-```json
-{
-  "success": false,
-  "error": "Error message",
-  "details": {}
-}
-```
+## API Documentation
+- Swagger UI: http://localhost:3000/api/docs
+- JSON spec: http://localhost:3000/api/docs.json
 
----
-
-## Rate Limiting
-
-### Implemented Limits
-- Authentication endpoints
-- File upload endpoints
-- Payment endpoints
-- API request throttling
-
----
-
-## Webhooks
-
-### LiveKit Webhooks
-- Stream started
-- Stream ended
-- Participant joined
-- Participant left
-- Recording events
-
-### Dodo Payment Webhooks
-- Payment successful
-- Payment failed
-- Refund processed
-- Subscription events
-
-
-## Contact & Resources
-
-### Documentation
-- API docs: `/api/docs`
-- Database schema: `prisma/schema.prisma`
-- Environment setup: `.env.example`
-
-### Development
-- Runtime: Bun v1.3.0+
-- Node compatibility: Node.js 18+
-- Database: PostgreSQL 14+
+## Health Check
+- Endpoint: http://localhost:3000/health
+- Returns: Database status, timestamp
 
 ---
 
-*Last Updated: March 2026*
-*Version: 1.0.0*
+**Last Updated**: March 31, 2026
+**Version**: 1.0.0
+**License**: Proprietary

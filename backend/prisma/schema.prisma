@@ -54,11 +54,11 @@ model User {
   commentLikes CommentLike[]
 
   // Payment relationships
-  coinWallet    CoinWallet?
-  coinPurchases CoinPurchase[]
-  giftsSent     GiftTransaction[] @relation("GiftsSent")
-  giftsReceived GiftTransaction[] @relation("GiftsReceived")
-  withdrawalRequests CreatorWithdrawalRequest[] @relation("WithdrawalRequester")
+  coinWallet          CoinWallet?
+  coinPurchases       CoinPurchase[]
+  giftsSent           GiftTransaction[]          @relation("GiftsSent")
+  giftsReceived       GiftTransaction[]          @relation("GiftsReceived")
+  withdrawalRequests  CreatorWithdrawalRequest[] @relation("WithdrawalRequester")
   withdrawalsReviewed CreatorWithdrawalRequest[] @relation("WithdrawalReviewer")
 
   // Discount relationships
@@ -71,6 +71,9 @@ model User {
 
   // Stream report relationships
   streamReportsSubmitted StreamReport[]
+
+  // Admin relationships
+  adminAuditLogs AdminAuditLog[] @relation("AdminAuditLogs")
 
   @@unique([email])
   @@index([role])
@@ -229,20 +232,20 @@ model FileUpload {
 
 // Streaming Models (for approved creators only)
 model Stream {
-  id          String  @id @default(cuid())
-  title       String  @db.Text
-  description String? @db.Text
-  thumbnail   String? @db.Text
-  category    String? @db.Text
-  tags        String[] @default([])
-  audience    StreamAudience @default(PUBLIC)
-  allowGifts      Boolean @default(true)
-  allowAds        Boolean @default(false)
-  allowPayPerView Boolean @default(false)
+  id               String                 @id @default(cuid())
+  title            String                 @db.Text
+  description      String?                @db.Text
+  thumbnail        String?                @db.Text
+  category         String?                @db.Text
+  tags             String[]               @default([])
+  audience         StreamAudience         @default(PUBLIC)
+  allowGifts       Boolean                @default(true)
+  allowAds         Boolean                @default(false)
+  allowPayPerView  Boolean                @default(false)
   cameraFacingMode StreamCameraFacingMode @default(FRONT)
-  audioOnlyMode   Boolean @default(false)
-  filterPreset    StreamFilterPreset @default(NONE)
-  musicPreset     StreamMusicPreset @default(NONE)
+  audioOnlyMode    Boolean                @default(false)
+  filterPreset     StreamFilterPreset     @default(NONE)
+  musicPreset      StreamMusicPreset      @default(NONE)
 
   // Stream status
   isLive    Boolean   @default(false)
@@ -410,6 +413,9 @@ model Post {
   isFlagged Boolean  @default(false)
   flagCount Int      @default(0)
   reports   Report[]
+
+  // Geographic blocking
+  geoBlocks GeoBlock[] @relation("GeoBlockedContent")
 
   // Author
   authorId String
@@ -713,10 +719,10 @@ model CreatorWithdrawalRequest {
   status WithdrawalStatus @default(PENDING)
   reason String?          @db.Text
 
-  requestedAt DateTime @default(now())
+  requestedAt DateTime  @default(now())
   reviewedAt  DateTime?
   reviewedBy  String?
-  reviewer    User?    @relation("WithdrawalReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+  reviewer    User?     @relation("WithdrawalReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
 
   approvedAt DateTime?
   rejectedAt DateTime?
@@ -923,6 +929,63 @@ model SystemSetting {
 }
 
 // ============================================
+// ADMIN MODELS
+// ============================================
+
+// Admin audit log for tracking all administrative actions
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  admin      User     @relation("AdminAuditLogs", fields: [adminId], references: [id], onDelete: Cascade)
+  action     String // user_ban, user_freeze, stream_kill, content_remove, etc.
+  targetType String // user, stream, post, short, report, withdrawal, application
+  targetId   String
+  metadata   Json? // Additional context (reason, notes, etc.)
+  createdAt  DateTime @default(now())
+
+  @@index([adminId])
+  @@index([action])
+  @@index([targetType])
+  @@index([createdAt])
+  @@map("admin_audit_log")
+}
+
+// Advertisement campaigns
+model AdCreative {
+  id           String   @id @default(cuid())
+  title        String
+  mediaUrl     String // S3 URL
+  targetRegion String[] // Array of ISO country codes
+  targetGender String? // male, female, all
+  category     String? // Stream category targeting
+  cpm          Float // Cost per thousand impressions
+  frequencyCap Int // Max impressions per user per day
+  isActive     Boolean  @default(true)
+  createdBy    String // Admin user ID
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([createdAt])
+  @@map("ad_creative")
+}
+
+// Geographic content blocking for compliance
+model GeoBlock {
+  id        String   @id @default(cuid())
+  region    String // ISO country code
+  contentId String? // Optional: specific content to block
+  content   Post?    @relation("GeoBlockedContent", fields: [contentId], references: [id], onDelete: SetNull)
+  reason    String? // Legal reason
+  createdBy String // Admin user ID
+  createdAt DateTime @default(now())
+
+  @@index([region])
+  @@index([contentId])
+  @@map("geo_block")
+}
+
+// ============================================
 // ENUMS
 // ============================================
 
@@ -931,6 +994,9 @@ enum UserRole {
   CREATOR
   ADMIN
   SUPER_ADMIN
+  MODERATOR
+  FINANCE_ADMIN
+  COMPLIANCE_OFFICER
 }
 
 enum ReportReason {

@@ -18,6 +18,8 @@ import searchRoutes from './routes/search.route';
 import paymentRoutes from './routes/payment.route';
 import discountRoutes from './routes/discount.route';
 import { WebhookController } from './controllers/webhook.controller';
+import { adminRouter } from './admin/routes';
+import { adminAuthMiddleware } from './admin/middleware/admin-auth.middleware';
 
 const app = express();
 const PORT = process.env['PORT'] ?? 3000;
@@ -110,6 +112,17 @@ app.use('/api/payment', paymentRoutes);
 
 // Mount discount routes
 app.use('/api/discount', discountRoutes);
+
+// Mount admin routes
+// Auth routes are public, all other admin routes require authentication
+app.use('/api/admin', (req, res, next) => {
+  // Skip authentication for auth routes
+  if (req.path.startsWith('/auth')) {
+    return next();
+  }
+  // Apply authentication middleware for all other routes
+  return adminAuthMiddleware(req, res, next);
+}, adminRouter);
 
 // API Documentation (Swagger UI)
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
