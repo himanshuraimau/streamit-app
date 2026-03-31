@@ -22,9 +22,23 @@ This file tracks the modular admin refactor so the remaining work stays ordered 
   - Added controller hook with proper state management
   - Reused shared admin components (AdminSectionCard, AdminNotice, AdminPaginationControls)
 
+- [x] Phase 6: `TakedownsGeoBlocksPage`
+  - Split into `src/pages/takedowns-geoblocks/`
+  - Replaced all `window.prompt`, `window.alert`, and `window.confirm` with proper dialogs
+  - Created modular components for takedowns and geo-blocks management
+  - Added controller hook with proper state management
+  - Reused shared admin components
+
+- [x] Phase 7: `SecurityHardeningPage`
+  - Split into `src/pages/security-hardening/`
+  - Replaced all `window.alert` and `window.confirm` with proper dialogs
+  - Created modular components for security monitoring and rollout policy management
+  - Added controller hook with proper state management
+  - Reused shared admin components
+
 ## Next Priority
 
-- [ ] Phase 6: `TakedownsGeoBlocksPage`
+- [ ] Phase 6: `LegalCasesPage`
   - Large moderation/compliance surface
   - Several action prompts and validation alerts
 
