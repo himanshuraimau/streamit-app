@@ -787,7 +787,96 @@ export interface AdminSecuritySummary {
     };
     actionCount: number;
   }>;
+  alerts: {
+    thresholds: {
+      pendingWithdrawals: number;
+      actionRequiredLegalCases: number;
+      pendingTakedowns: number;
+      activeGeoBlocks: number;
+      monitoredActions: number;
+    };
+    status: {
+      pendingWithdrawals: {
+        count: number;
+        threshold: number;
+        isBreached: boolean;
+        overBy: number;
+      };
+      actionRequiredLegalCases: {
+        count: number;
+        threshold: number;
+        isBreached: boolean;
+        overBy: number;
+      };
+      pendingTakedowns: {
+        count: number;
+        threshold: number;
+        isBreached: boolean;
+        overBy: number;
+      };
+      activeGeoBlocks: {
+        count: number;
+        threshold: number;
+        isBreached: boolean;
+        overBy: number;
+      };
+      monitoredActions: {
+        count: number;
+        threshold: number;
+        isBreached: boolean;
+        overBy: number;
+      };
+    };
+    runbooks: {
+      security: string | null;
+      compliance: string | null;
+      finance: string | null;
+    };
+  };
   generatedAt: string;
+}
+
+export interface AdminRolloutStatus {
+  config: {
+    enabled: boolean;
+    superAdminBypass: boolean;
+    allowedRoles: Array<Extract<AdminProfile["role"], "ADMIN" | "SUPER_ADMIN">>;
+    allowedCountries: string[];
+    blockedMessage: string;
+  };
+  context: {
+    requestRole: AdminProfile["role"] | null;
+    requestCountry: string | null;
+    evaluatedRole: Extract<AdminProfile["role"], "ADMIN" | "SUPER_ADMIN">;
+    evaluatedCountry: string | null;
+  };
+  evaluation: {
+    allowed: boolean;
+    matchedBypass: boolean;
+    reasons: Array<"ROLE_NOT_IN_ROLLOUT" | "COUNTRY_NOT_IN_ROLLOUT" | "COUNTRY_UNRESOLVED">;
+  };
+  generatedAt: string;
+}
+
+export interface AdminRolloutPolicyUpdateResult {
+  config: AdminRolloutStatus["config"];
+  updatedBy: string;
+  reason: string;
+  updatedAt: string;
+}
+
+export interface AdminSecurityAlertDispatchResult {
+  dryRun: boolean;
+  days: number;
+  breachedCount: number;
+  breachedMetrics: string[];
+  deliveries: Array<{
+    channel: "SLACK" | "PAGERDUTY";
+    status: "sent" | "failed" | "skipped" | "not-configured";
+    reason: string;
+  }>;
+  summaryGeneratedAt: string;
+  triggeredBy: string;
 }
 
 export interface ComplianceAuditExportTokenResult {
@@ -1112,6 +1201,25 @@ export async function listFinanceTransactions(params: {
   );
 }
 
+export async function exportFinanceTransactionsCsv(params: {
+  type?: FinanceTransactionType;
+  status?: string;
+  search?: string;
+  userId?: string;
+}) {
+  const query = buildQuery({
+    type: params.type,
+    status: params.status,
+    search: params.search,
+    userId: params.userId,
+  });
+
+  return requestCsv(
+    `/api/admin/finance/transactions/export${query}`,
+    "finance-transactions.csv",
+  );
+}
+
 export async function listFinanceWithdrawals(params: {
   page?: number;
   limit?: number;
@@ -1179,6 +1287,21 @@ export async function getFinanceReconciliation(params?: {
 
   return requestJson<FinanceReconciliationSummary>(
     `/api/admin/finance/reconciliation${query}`,
+  );
+}
+
+export async function exportFinanceReconciliationCsv(params?: {
+  from?: string;
+  to?: string;
+}) {
+  const query = buildQuery({
+    from: params?.from,
+    to: params?.to,
+  });
+
+  return requestCsv(
+    `/api/admin/finance/reconciliation/export${query}`,
+    "finance-reconciliation.csv",
   );
 }
 
@@ -1322,6 +1445,52 @@ export async function getAdminSecuritySummary(params?: { days?: number }) {
   });
 
   return requestJson<AdminSecuritySummary>(`/api/admin/ops/security-summary${query}`);
+}
+
+export async function exportAdminSecurityOpsDigestCsv(params?: { days?: number }) {
+  const query = buildQuery({
+    days: params?.days,
+  });
+
+  return requestCsv(`/api/admin/ops/security-digest/export${query}`, "admin-ops-digest.csv");
+}
+
+export async function getAdminRolloutStatus(params?: {
+  role?: "ADMIN" | "SUPER_ADMIN";
+  country?: string;
+}) {
+  const query = buildQuery({
+    role: params?.role,
+    country: params?.country,
+  });
+
+  return requestJson<AdminRolloutStatus>(`/api/admin/ops/rollout-status${query}`);
+}
+
+export async function updateAdminRolloutPolicy(payload: {
+  enabled: boolean;
+  superAdminBypass: boolean;
+  allowedRoles: Array<"ADMIN" | "SUPER_ADMIN">;
+  allowedCountries: string[];
+  blockedMessage: string;
+  reason: string;
+}) {
+  return requestJson<AdminRolloutPolicyUpdateResult>(`/api/admin/ops/rollout-policy`, {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
+export async function dispatchAdminSecurityAlerts(payload: {
+  days?: number;
+  dryRun?: boolean;
+  channels?: Array<"SLACK" | "PAGERDUTY">;
+  reason: string;
+}) {
+  return requestJson<AdminSecurityAlertDispatchResult>(`/api/admin/ops/security-alerts/dispatch`, {
+    method: "POST",
+    body: payload,
+  });
 }
 
 export async function listLegalCases(params: {

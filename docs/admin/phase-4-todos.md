@@ -1,6 +1,6 @@
 # Phase 4 Todos
 
-Last updated: 2026-03-30
+Last updated: 2026-03-31
 Scope: finance dashboard, transaction investigation, withdrawals queue, commission config, reconciliation
 
 ## Completed
@@ -32,6 +32,5 @@ Scope: finance dashboard, transaction investigation, withdrawals queue, commissi
 ## Follow-Up Items
 
 - [x] Add creator-facing API and UI flow to submit withdrawal requests.
-- [ ] Add backend integration tests for withdrawal state transitions and permission checks.
-- [ ] Add seeded finance fixtures for local QA with realistic withdrawal queue data.
-- [ ] Add CSV export for transactions and reconciliation snapshots.
+- [x] Add CSV export for transactions and reconciliation snapshots.
+- [x] Integration tests and local finance fixtures deferred for this delivery track (per current no-tests execution directive).

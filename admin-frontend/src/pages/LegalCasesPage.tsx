@@ -247,6 +247,7 @@ export function LegalCasesPage() {
 
         <div className="mb-4 grid grid-cols-1 gap-2 md:grid-cols-4">
           <select
+            aria-label="Filter legal cases by status"
             value={statusFilter}
             onChange={(event) => {
               setPage(1);
@@ -262,6 +263,7 @@ export function LegalCasesPage() {
           </select>
 
           <select
+            aria-label="Filter legal cases by type"
             value={typeFilter}
             onChange={(event) => {
               setPage(1);
@@ -277,6 +279,7 @@ export function LegalCasesPage() {
           </select>
 
           <input
+            aria-label="Search legal cases"
             value={search}
             onChange={(event) => {
               setPage(1);

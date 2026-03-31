@@ -137,6 +137,7 @@ export function ModerationReportsPage() {
               Content Reports
             </h3>
             <select
+              aria-label="Filter content reports by status"
               value={reportStatus}
               onChange={(event) => {
                 setReportPage(1);
@@ -275,6 +276,7 @@ export function ModerationReportsPage() {
               Stream Reports
             </h3>
             <select
+              aria-label="Filter stream reports by status"
               value={streamReportStatus}
               onChange={(event) => {
                 setStreamReportPage(1);

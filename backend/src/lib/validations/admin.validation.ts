@@ -396,6 +396,47 @@ export const adminSecuritySummaryQuerySchema = z.object({
   days: z.coerce.number().int().min(1).max(30).default(7),
 });
 
+export const adminRolloutStatusQuerySchema = z.object({
+  role: z.nativeEnum(UserRole).optional(),
+  country: z
+    .string()
+    .trim()
+    .length(2)
+    .transform((value) => value.toUpperCase())
+    .optional(),
+});
+
+const adminRolloutRoleSchema = z.enum(['ADMIN', 'SUPER_ADMIN']);
+
+export const adminUpdateRolloutPolicySchema = z.object({
+  enabled: z.boolean(),
+  superAdminBypass: z.boolean(),
+  allowedRoles: z.array(adminRolloutRoleSchema).max(2).default([]),
+  allowedCountries: z
+    .array(
+      z
+        .string()
+        .trim()
+        .length(2)
+        .transform((value) => value.toUpperCase())
+    )
+    .max(150)
+    .default([]),
+  blockedMessage: z.string().trim().min(10).max(500),
+  reason: z.string().trim().min(3).max(500),
+});
+
+export const adminDispatchSecurityAlertsSchema = z.object({
+  days: z.coerce.number().int().min(1).max(30).default(7),
+  dryRun: z.coerce.boolean().default(true),
+  channels: z
+    .array(z.enum(['SLACK', 'PAGERDUTY']))
+    .min(1)
+    .max(2)
+    .default(['SLACK', 'PAGERDUTY']),
+  reason: z.string().trim().min(3).max(500),
+});
+
 export type AdminUsersQueryInput = z.infer<typeof adminUsersQuerySchema>;
 export type AdminUpdateSuspensionInput = z.infer<typeof adminUpdateSuspensionSchema>;
 export type AdminApplicationsQueryInput = z.infer<typeof adminApplicationsQuerySchema>;
@@ -441,3 +482,6 @@ export type AdminComplianceExportDownloadQueryInput = z.infer<
   typeof adminComplianceExportDownloadQuerySchema
 >;
 export type AdminSecuritySummaryQueryInput = z.infer<typeof adminSecuritySummaryQuerySchema>;
+export type AdminRolloutStatusQueryInput = z.infer<typeof adminRolloutStatusQuerySchema>;
+export type AdminUpdateRolloutPolicyInput = z.infer<typeof adminUpdateRolloutPolicySchema>;
+export type AdminDispatchSecurityAlertsInput = z.infer<typeof adminDispatchSecurityAlertsSchema>;

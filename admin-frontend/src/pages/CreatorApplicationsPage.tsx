@@ -89,6 +89,7 @@ export function CreatorApplicationsPage() {
 
       <section className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-[#111113] p-4">
         <select
+          aria-label="Filter creator applications by status"
           value={status}
           onChange={(event) => {
             setPage(1);
@@ -106,6 +107,7 @@ export function CreatorApplicationsPage() {
         <button
           type="button"
           onClick={() => void queryClient.invalidateQueries({ queryKey: ['admin', 'creator-applications'] })}
+          aria-label="Refresh creator applications"
           className="rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-sm font-medium text-zinc-100 hover:bg-white/10"
         >
           Refresh

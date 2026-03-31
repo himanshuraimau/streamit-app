@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { getAdminDashboardSummary, getAdminMe } from '../lib/admin-api';
 
 function formatCount(value: number) {
@@ -12,7 +13,7 @@ function formatDateTime(value: string | null) {
 
 function MetricCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+    <div className="rounded-2xl border border-white/10 bg-white/3 p-4">
       <p className="text-xs uppercase tracking-[0.14em] text-zinc-400">{label}</p>
       <p className="mt-2 text-3xl font-semibold text-zinc-100">{formatCount(value)}</p>
     </div>
@@ -111,6 +112,36 @@ export function DashboardPage() {
               />
               <MetricCard label="Active Live Streams" value={summary.streaming.activeLiveStreams} />
               <MetricCard label="Active Announcements" value={summary.announcements.active} />
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-white/10 bg-[#0d0d0f] p-4">
+              <h4 className="text-xs uppercase tracking-[0.14em] text-zinc-400">Queue Shortcuts</h4>
+              <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
+                <Link
+                  to="/creators/applications"
+                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-zinc-200 hover:bg-white/10"
+                >
+                  Creator Applications ({formatCount(summary.creators.pendingApplications)})
+                </Link>
+                <Link
+                  to="/moderation/reports"
+                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-zinc-200 hover:bg-white/10"
+                >
+                  Content Reports ({formatCount(summary.moderation.pendingReports)})
+                </Link>
+                <Link
+                  to="/moderation/reports"
+                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-zinc-200 hover:bg-white/10"
+                >
+                  Stream Reports ({formatCount(summary.moderation.pendingStreamReports)})
+                </Link>
+                <Link
+                  to="/finance/withdrawals"
+                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-zinc-200 hover:bg-white/10"
+                >
+                  Withdrawal Queue
+                </Link>
+              </div>
             </div>
           </>
         ) : (

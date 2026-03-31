@@ -21,10 +21,13 @@ import {
   adminCampaignAnalyticsQuerySchema,
   adminCommissionConfigSchema,
   adminCreateAdCampaignSchema,
+  adminDispatchSecurityAlertsSchema,
   adminFinanceReconciliationQuerySchema,
   adminFinanceTransactionsQuerySchema,
   adminFounderKpiQuerySchema,
   adminPermissionsQuerySchema,
+  adminRolloutStatusQuerySchema,
+  adminUpdateRolloutPolicySchema,
   adminReportsQuerySchema,
   adminReviewReportSchema,
   adminSecuritySummaryQuerySchema,
@@ -39,6 +42,12 @@ import {
   adminUsersQuerySchema,
 } from '../lib/validations/admin.validation';
 import { getAuthUser } from '../middleware/auth.middleware';
+import {
+  evaluateAdminRolloutAccess,
+  extractAdminRequestCountry,
+  getAdminRolloutConfig,
+  invalidateAdminRolloutConfigCache,
+} from '../middleware/admin-rollout.middleware';
 
 type AdminAnalyticsScope = 'GROWTH' | 'FINANCE';
 type RequestedAnalyticsScope = AdminAnalyticsScope | 'ALL';
@@ -54,6 +63,82 @@ type AdAlertThresholds = {
   lowCtrPercent: number;
   lowCtrMinImpressions: number;
   overspendPercent: number;
+};
+
+type SecuritySummaryAlertThresholds = {
+  pendingWithdrawals: number;
+  actionRequiredLegalCases: number;
+  pendingTakedowns: number;
+  activeGeoBlocks: number;
+  monitoredActions: number;
+};
+
+type SecuritySummaryRunbooks = {
+  security: string | null;
+  compliance: string | null;
+  finance: string | null;
+};
+
+type SecurityAlertChannel = 'SLACK' | 'PAGERDUTY';
+
+type AdminSecuritySummaryPayload = {
+  windowDays: number;
+  queues: {
+    pendingWithdrawals: number;
+    actionRequiredLegalCases: number;
+    pendingTakedowns: number;
+    activeGeoBlocks: number;
+  };
+  actionBreakdown: Array<{
+    action: AdminAction;
+    count: number;
+  }>;
+  topAdmins: Array<{
+    admin: {
+      id: string;
+      name: string;
+      username: string;
+      role: UserRole;
+    };
+    actionCount: number;
+  }>;
+  alerts: {
+    thresholds: SecuritySummaryAlertThresholds;
+    status: {
+      pendingWithdrawals: {
+        count: number;
+        threshold: number;
+        isBreached: boolean;
+        overBy: number;
+      };
+      actionRequiredLegalCases: {
+        count: number;
+        threshold: number;
+        isBreached: boolean;
+        overBy: number;
+      };
+      pendingTakedowns: {
+        count: number;
+        threshold: number;
+        isBreached: boolean;
+        overBy: number;
+      };
+      activeGeoBlocks: {
+        count: number;
+        threshold: number;
+        isBreached: boolean;
+        overBy: number;
+      };
+      monitoredActions: {
+        count: number;
+        threshold: number;
+        isBreached: boolean;
+        overBy: number;
+      };
+    };
+    runbooks: SecuritySummaryRunbooks;
+  };
+  generatedAt: string;
 };
 
 export class AdminController {
@@ -184,6 +269,329 @@ export class AdminController {
       lowCtrMinImpressions,
       overspendPercent,
     };
+  }
+
+  private static parseNonNegativeIntegerSetting(
+    value: string | null | undefined,
+    fallback: number
+  ): number {
+    const parsed = Number(value);
+    if (Number.isInteger(parsed) && parsed >= 0) {
+      return parsed;
+    }
+
+    return fallback;
+  }
+
+  private static async getSecuritySummaryConfig(): Promise<{
+    thresholds: SecuritySummaryAlertThresholds;
+    runbooks: SecuritySummaryRunbooks;
+  }> {
+    const defaultThresholds: SecuritySummaryAlertThresholds = {
+      pendingWithdrawals: 75,
+      actionRequiredLegalCases: 25,
+      pendingTakedowns: 30,
+      activeGeoBlocks: 200,
+      monitoredActions: 250,
+    };
+
+    const settings = await prisma.systemSetting.findMany({
+      where: {
+        key: {
+          in: [
+            'admin.ops.alertThreshold.pendingWithdrawals',
+            'admin.ops.alertThreshold.actionRequiredLegalCases',
+            'admin.ops.alertThreshold.pendingTakedowns',
+            'admin.ops.alertThreshold.activeGeoBlocks',
+            'admin.ops.alertThreshold.monitoredActions',
+            'admin.ops.runbook.security',
+            'admin.ops.runbook.compliance',
+            'admin.ops.runbook.finance',
+          ],
+        },
+      },
+      select: {
+        key: true,
+        value: true,
+      },
+    });
+
+    const thresholds = { ...defaultThresholds };
+    const runbooks: SecuritySummaryRunbooks = {
+      security: null,
+      compliance: null,
+      finance: null,
+    };
+
+    for (const setting of settings) {
+      switch (setting.key) {
+        case 'admin.ops.alertThreshold.pendingWithdrawals':
+          thresholds.pendingWithdrawals = this.parseNonNegativeIntegerSetting(
+            setting.value,
+            defaultThresholds.pendingWithdrawals
+          );
+          break;
+        case 'admin.ops.alertThreshold.actionRequiredLegalCases':
+          thresholds.actionRequiredLegalCases = this.parseNonNegativeIntegerSetting(
+            setting.value,
+            defaultThresholds.actionRequiredLegalCases
+          );
+          break;
+        case 'admin.ops.alertThreshold.pendingTakedowns':
+          thresholds.pendingTakedowns = this.parseNonNegativeIntegerSetting(
+            setting.value,
+            defaultThresholds.pendingTakedowns
+          );
+          break;
+        case 'admin.ops.alertThreshold.activeGeoBlocks':
+          thresholds.activeGeoBlocks = this.parseNonNegativeIntegerSetting(
+            setting.value,
+            defaultThresholds.activeGeoBlocks
+          );
+          break;
+        case 'admin.ops.alertThreshold.monitoredActions':
+          thresholds.monitoredActions = this.parseNonNegativeIntegerSetting(
+            setting.value,
+            defaultThresholds.monitoredActions
+          );
+          break;
+        case 'admin.ops.runbook.security':
+          runbooks.security = setting.value.trim() || null;
+          break;
+        case 'admin.ops.runbook.compliance':
+          runbooks.compliance = setting.value.trim() || null;
+          break;
+        case 'admin.ops.runbook.finance':
+          runbooks.finance = setting.value.trim() || null;
+          break;
+        default:
+          break;
+      }
+    }
+
+    return {
+      thresholds,
+      runbooks,
+    };
+  }
+
+  private static async buildSecuritySummaryPayload(
+    days: number
+  ): Promise<AdminSecuritySummaryPayload> {
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    const activityWhere: Prisma.AdminActivityLogWhereInput = {
+      action: {
+        in: this.monitoredSecurityActions,
+      },
+      createdAt: {
+        gte: since,
+      },
+    };
+
+    const [
+      pendingWithdrawals,
+      actionRequiredLegalCases,
+      pendingTakedowns,
+      activeGeoBlocks,
+      actionGroups,
+      adminGroups,
+      config,
+    ] = await Promise.all([
+      prisma.creatorWithdrawalRequest.count({
+        where: {
+          status: {
+            in: [
+              WithdrawalStatus.PENDING,
+              WithdrawalStatus.UNDER_REVIEW,
+              WithdrawalStatus.ON_HOLD,
+              WithdrawalStatus.APPROVED,
+            ],
+          },
+        },
+      }),
+      prisma.legalCase.count({
+        where: {
+          status: {
+            in: [
+              LegalCaseStatus.OPEN,
+              LegalCaseStatus.UNDER_REVIEW,
+              LegalCaseStatus.ACTION_REQUIRED,
+            ],
+          },
+        },
+      }),
+      prisma.takedownRequest.count({
+        where: {
+          status: {
+            in: [TakedownStatus.PENDING, TakedownStatus.APPEALED],
+          },
+        },
+      }),
+      prisma.geoBlockRule.count({
+        where: {
+          status: GeoBlockStatus.ACTIVE,
+        },
+      }),
+      prisma.adminActivityLog.groupBy({
+        by: ['action'],
+        where: activityWhere,
+        _count: {
+          _all: true,
+        },
+      }),
+      prisma.adminActivityLog.groupBy({
+        by: ['adminId'],
+        where: activityWhere,
+        _count: {
+          adminId: true,
+        },
+        orderBy: {
+          _count: {
+            adminId: 'desc',
+          },
+        },
+        take: 8,
+      }),
+      this.getSecuritySummaryConfig(),
+    ]);
+
+    const actionCountMap = new Map<AdminAction, number>();
+    for (const group of actionGroups) {
+      actionCountMap.set(group.action, group._count._all);
+    }
+
+    const actionBreakdown = this.monitoredSecurityActions
+      .map((action) => ({
+        action,
+        count: actionCountMap.get(action) ?? 0,
+      }))
+      .sort((a, b) => b.count - a.count || a.action.localeCompare(b.action));
+
+    const adminIds = adminGroups.map((group) => group.adminId);
+    const admins = adminIds.length
+      ? await prisma.user.findMany({
+          where: {
+            id: {
+              in: adminIds,
+            },
+          },
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            role: true,
+          },
+        })
+      : [];
+
+    const adminById = new Map(admins.map((admin) => [admin.id, admin]));
+
+    const topAdmins = adminGroups
+      .map((group) => {
+        const admin = adminById.get(group.adminId);
+        if (!admin) {
+          return null;
+        }
+
+        return {
+          admin,
+          actionCount: group._count.adminId ?? 0,
+        };
+      })
+      .filter(
+        (
+          item
+        ): item is {
+          admin: {
+            id: string;
+            name: string;
+            username: string;
+            role: UserRole;
+          };
+          actionCount: number;
+        } => Boolean(item)
+      );
+
+    const totalMonitoredActions = actionBreakdown.reduce((sum, item) => sum + item.count, 0);
+
+    const withAlertStatus = (item: { count: number; threshold: number }) => ({
+      ...item,
+      isBreached: item.count >= item.threshold,
+      overBy: Math.max(item.count - item.threshold, 0),
+    });
+
+    return {
+      windowDays: days,
+      queues: {
+        pendingWithdrawals,
+        actionRequiredLegalCases,
+        pendingTakedowns,
+        activeGeoBlocks,
+      },
+      actionBreakdown,
+      topAdmins,
+      alerts: {
+        thresholds: config.thresholds,
+        status: {
+          pendingWithdrawals: withAlertStatus({
+            count: pendingWithdrawals,
+            threshold: config.thresholds.pendingWithdrawals,
+          }),
+          actionRequiredLegalCases: withAlertStatus({
+            count: actionRequiredLegalCases,
+            threshold: config.thresholds.actionRequiredLegalCases,
+          }),
+          pendingTakedowns: withAlertStatus({
+            count: pendingTakedowns,
+            threshold: config.thresholds.pendingTakedowns,
+          }),
+          activeGeoBlocks: withAlertStatus({
+            count: activeGeoBlocks,
+            threshold: config.thresholds.activeGeoBlocks,
+          }),
+          monitoredActions: withAlertStatus({
+            count: totalMonitoredActions,
+            threshold: config.thresholds.monitoredActions,
+          }),
+        },
+        runbooks: config.runbooks,
+      },
+      generatedAt: new Date().toISOString(),
+    };
+  }
+
+  private static async getSecurityAlertWebhookUrls(): Promise<
+    Record<SecurityAlertChannel, string | null>
+  > {
+    const settings = await prisma.systemSetting.findMany({
+      where: {
+        key: {
+          in: ['admin.ops.alertWebhook.slack', 'admin.ops.alertWebhook.pagerduty'],
+        },
+      },
+      select: {
+        key: true,
+        value: true,
+      },
+    });
+
+    const urls: Record<SecurityAlertChannel, string | null> = {
+      SLACK: null,
+      PAGERDUTY: null,
+    };
+
+    for (const setting of settings) {
+      if (setting.key === 'admin.ops.alertWebhook.slack') {
+        urls.SLACK = setting.value.trim() || null;
+      }
+
+      if (setting.key === 'admin.ops.alertWebhook.pagerduty') {
+        urls.PAGERDUTY = setting.value.trim() || null;
+      }
+    }
+
+    return urls;
   }
 
   private static parseAdminAnalyticsScopes(value?: string | null): AdminAnalyticsScope[] {
@@ -327,7 +735,7 @@ export class AdminController {
     };
   }
 
-  private static escapeCsvCell(value: string | number | null | undefined): string {
+  private static escapeCsvCell(value: string | number | boolean | null | undefined): string {
     if (value === null || value === undefined) {
       return '';
     }
@@ -338,6 +746,18 @@ export class AdminController {
     }
 
     return raw;
+  }
+
+  private static getMetadataString(
+    metadata: Prisma.JsonValue | null | undefined,
+    key: string
+  ): string {
+    if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+      return '';
+    }
+
+    const value = (metadata as Record<string, unknown>)[key];
+    return typeof value === 'string' ? value : '';
   }
 
   private static isPurchaseStatus(value: string): value is PurchaseStatus {
@@ -830,65 +1250,338 @@ export class AdminController {
     }
   }
 
-  static async getSecuritySummary(req: Request, res: Response) {
+  static async getRolloutStatus(req: Request, res: Response) {
     try {
+      const query = adminRolloutStatusQuerySchema.parse(req.query);
+
+      const evaluatedRole = query.role ?? req.adminRole;
+      if (!evaluatedRole) {
+        return res.status(500).json({
+          success: false,
+          error: 'Admin role is unavailable for rollout status evaluation',
+        });
+      }
+
+      if (evaluatedRole !== UserRole.ADMIN && evaluatedRole !== UserRole.SUPER_ADMIN) {
+        return res.status(400).json({
+          success: false,
+          error: 'Rollout status can only be evaluated for ADMIN or SUPER_ADMIN roles',
+        });
+      }
+
+      const requestCountry = extractAdminRequestCountry(req);
+      const evaluatedCountry = query.country ?? requestCountry;
+
+      const config = await getAdminRolloutConfig();
+      const evaluation = evaluateAdminRolloutAccess(config, evaluatedRole, evaluatedCountry);
+
+      res.json({
+        success: true,
+        data: {
+          config,
+          context: {
+            requestRole: req.adminRole ?? null,
+            requestCountry,
+            evaluatedRole,
+            evaluatedCountry,
+          },
+          evaluation,
+          generatedAt: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid rollout status query',
+          details: error.issues,
+        });
+      }
+
+      console.error('[AdminController] Error fetching rollout status:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch rollout status',
+      });
+    }
+  }
+
+  static async updateRolloutPolicy(req: Request, res: Response) {
+    try {
+      const authUser = getAuthUser(req, res);
+      if (!authUser) return;
+
+      const payload = adminUpdateRolloutPolicySchema.parse(req.body);
+      const dedupedRoles = [...new Set(payload.allowedRoles)];
+      const dedupedCountries = [
+        ...new Set(payload.allowedCountries.map((country) => country.toUpperCase())),
+      ];
+
+      if (payload.enabled && !payload.superAdminBypass && !dedupedRoles.includes('SUPER_ADMIN')) {
+        return res.status(400).json({
+          success: false,
+          error:
+            'Unsafe rollout policy: SUPER_ADMIN must remain allowed when super-admin bypass is disabled',
+        });
+      }
+
+      const previousConfig = await getAdminRolloutConfig(true);
+
+      const nextConfig = {
+        enabled: payload.enabled,
+        superAdminBypass: payload.superAdminBypass,
+        allowedRoles: dedupedRoles,
+        allowedCountries: dedupedCountries,
+        blockedMessage: payload.blockedMessage.trim(),
+      };
+
+      await prisma.$transaction(async (tx) => {
+        const upsertSetting = async (key: string, value: string, description: string) => {
+          await tx.systemSetting.upsert({
+            where: { key },
+            update: {
+              value,
+              description,
+              updatedBy: authUser.id,
+            },
+            create: {
+              key,
+              value,
+              description,
+              isPublic: false,
+              updatedBy: authUser.id,
+            },
+          });
+        };
+
+        await Promise.all([
+          upsertSetting(
+            'admin.rollout.enabled',
+            String(nextConfig.enabled),
+            'Controls whether staged admin rollout gating is active'
+          ),
+          upsertSetting(
+            'admin.rollout.superAdminBypass',
+            String(nextConfig.superAdminBypass),
+            'Allows super admin bypass during staged rollout'
+          ),
+          upsertSetting(
+            'admin.rollout.allowedRoles',
+            nextConfig.allowedRoles.join(','),
+            'Comma-separated admin roles allowed during staged rollout'
+          ),
+          upsertSetting(
+            'admin.rollout.allowedCountries',
+            nextConfig.allowedCountries.join(','),
+            'Comma-separated ISO countries allowed during staged rollout'
+          ),
+          upsertSetting(
+            'admin.rollout.blockedMessage',
+            nextConfig.blockedMessage,
+            'Admin rollout access denial message shown to blocked admins'
+          ),
+        ]);
+
+        await tx.adminActivityLog.create({
+          data: {
+            adminId: authUser.id,
+            action: AdminAction.SETTING_UPDATED,
+            targetType: 'admin_rollout_policy',
+            targetId: 'global',
+            description: 'Updated admin rollout policy',
+            metadata: {
+              reason: payload.reason,
+              previousConfig,
+              nextConfig,
+            },
+            ipAddress: req.ip,
+          },
+        });
+      });
+
+      invalidateAdminRolloutConfigCache();
+      const updatedConfig = await getAdminRolloutConfig(true);
+
+      res.json({
+        success: true,
+        data: {
+          config: updatedConfig,
+          updatedBy: authUser.id,
+          reason: payload.reason,
+          updatedAt: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid rollout policy payload',
+          details: error.issues,
+        });
+      }
+
+      console.error('[AdminController] Error updating rollout policy:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to update rollout policy',
+      });
+    }
+  }
+
+  static async dispatchSecurityAlerts(req: Request, res: Response) {
+    try {
+      const authUser = getAuthUser(req, res);
+      if (!authUser) return;
+
+      const payload = adminDispatchSecurityAlertsSchema.parse(req.body);
+      const channels = [...new Set(payload.channels)] as SecurityAlertChannel[];
+
+      const summaryData = await this.buildSecuritySummaryPayload(payload.days);
+
+      const breachedItems = Object.entries(summaryData.alerts.status)
+        .filter(([, status]) => status.isBreached)
+        .map(([metric, status]) => ({
+          metric,
+          ...status,
+        }));
+
+      const webhookUrls = await this.getSecurityAlertWebhookUrls();
+
+      const eventPayload = {
+        eventType: 'ADMIN_SECURITY_THRESHOLD_BREACH',
+        generatedAt: new Date().toISOString(),
+        windowDays: summaryData.windowDays,
+        queues: summaryData.queues,
+        breachedItems,
+        monitoredActions: summaryData.alerts.status.monitoredActions,
+        runbooks: summaryData.alerts.runbooks,
+      };
+
+      const deliveries = await Promise.all(
+        channels.map(async (channel) => {
+          const url = webhookUrls[channel];
+
+          if (!url) {
+            return {
+              channel,
+              status: 'not-configured' as const,
+              reason: 'Webhook URL not configured',
+            };
+          }
+
+          if (payload.dryRun || breachedItems.length === 0) {
+            return {
+              channel,
+              status: 'skipped' as const,
+              reason: payload.dryRun
+                ? 'Dry-run mode enabled'
+                : 'No breached thresholds in selected window',
+            };
+          }
+
+          try {
+            const response = await fetch(url, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(eventPayload),
+            });
+
+            if (!response.ok) {
+              return {
+                channel,
+                status: 'failed' as const,
+                reason: `Webhook request failed with status ${response.status}`,
+              };
+            }
+
+            return {
+              channel,
+              status: 'sent' as const,
+              reason: `Delivered with status ${response.status}`,
+            };
+          } catch (error) {
+            return {
+              channel,
+              status: 'failed' as const,
+              reason: error instanceof Error ? error.message : 'Unknown webhook delivery error',
+            };
+          }
+        })
+      );
+
+      await this.logAdminAction({
+        adminId: authUser.id,
+        action: AdminAction.SETTING_UPDATED,
+        targetType: 'admin_security_alert_dispatch',
+        targetId: 'global',
+        description: payload.dryRun
+          ? 'Executed dry-run security alert dispatch'
+          : 'Executed security alert dispatch',
+        metadata: {
+          reason: payload.reason,
+          days: payload.days,
+          channels,
+          dryRun: payload.dryRun,
+          breachedMetrics: breachedItems.map((item) => item.metric),
+          deliveries,
+        },
+        ipAddress: req.ip,
+      });
+
+      res.json({
+        success: true,
+        data: {
+          dryRun: payload.dryRun,
+          days: payload.days,
+          breachedCount: breachedItems.length,
+          breachedMetrics: breachedItems.map((item) => item.metric),
+          deliveries,
+          summaryGeneratedAt: summaryData.generatedAt,
+          triggeredBy: authUser.id,
+        },
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid security alert dispatch payload',
+          details: error.issues,
+        });
+      }
+
+      console.error('[AdminController] Error dispatching security alerts:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to dispatch security alerts',
+      });
+    }
+  }
+
+  static async exportSecurityOpsDigestCsv(req: Request, res: Response) {
+    try {
+      const authUser = getAuthUser(req, res);
+      if (!authUser) return;
+
       const query = adminSecuritySummaryQuerySchema.parse(req.query);
+      const summaryData = await this.buildSecuritySummaryPayload(query.days);
       const since = new Date(Date.now() - query.days * 24 * 60 * 60 * 1000);
 
-      const [
-        pendingWithdrawals,
-        actionRequiredLegalCases,
-        pendingTakedowns,
-        activeGeoBlocks,
-        logs,
-      ] = await Promise.all([
-        prisma.creatorWithdrawalRequest.count({
-          where: {
-            status: {
-              in: [
-                WithdrawalStatus.PENDING,
-                WithdrawalStatus.UNDER_REVIEW,
-                WithdrawalStatus.ON_HOLD,
-                WithdrawalStatus.APPROVED,
-              ],
-            },
-          },
-        }),
-        prisma.legalCase.count({
-          where: {
-            status: {
-              in: [
-                LegalCaseStatus.OPEN,
-                LegalCaseStatus.UNDER_REVIEW,
-                LegalCaseStatus.ACTION_REQUIRED,
-              ],
-            },
-          },
-        }),
-        prisma.takedownRequest.count({
-          where: {
-            status: {
-              in: [TakedownStatus.PENDING, TakedownStatus.APPEALED],
-            },
-          },
-        }),
-        prisma.geoBlockRule.count({
-          where: {
-            status: GeoBlockStatus.ACTIVE,
-          },
-        }),
+      const [rolloutConfig, rolloutUpdates] = await Promise.all([
+        getAdminRolloutConfig(),
         prisma.adminActivityLog.findMany({
           where: {
-            action: {
-              in: this.monitoredSecurityActions,
-            },
+            targetType: 'admin_rollout_policy',
             createdAt: {
               gte: since,
             },
           },
-          select: {
-            action: true,
-            adminId: true,
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 50,
+          include: {
             admin: {
               select: {
                 id: true,
@@ -898,71 +1591,206 @@ export class AdminController {
               },
             },
           },
-          orderBy: {
-            createdAt: 'desc',
-          },
-          take: 2500,
         }),
       ]);
 
-      const actionCounts = new Map<AdminAction, number>();
-      const adminCounts = new Map<
-        string,
-        {
+      const csvHeader = [
+        'section',
+        'metric',
+        'value',
+        'threshold',
+        'isBreached',
+        'note',
+        'timestamp',
+      ];
+      const csvRows: Array<Array<string | number | boolean>> = [];
+
+      const appendThresholdRow = (
+        section: string,
+        metric: string,
+        status: {
           count: number;
-          admin: {
-            id: string;
-            name: string;
-            username: string;
-            role: UserRole;
-          };
+          threshold: number;
+          isBreached: boolean;
+          overBy: number;
         }
-      >();
+      ) => {
+        csvRows.push([
+          section,
+          metric,
+          status.count,
+          status.threshold,
+          status.isBreached,
+          status.overBy > 0 ? `over by ${status.overBy}` : 'within threshold',
+          summaryData.generatedAt,
+        ]);
+      };
 
-      for (const action of this.monitoredSecurityActions) {
-        actionCounts.set(action, 0);
+      appendThresholdRow(
+        'queue_pressure',
+        'pending_withdrawals',
+        summaryData.alerts.status.pendingWithdrawals
+      );
+      appendThresholdRow(
+        'queue_pressure',
+        'action_required_legal_cases',
+        summaryData.alerts.status.actionRequiredLegalCases
+      );
+      appendThresholdRow(
+        'queue_pressure',
+        'pending_takedowns',
+        summaryData.alerts.status.pendingTakedowns
+      );
+      appendThresholdRow(
+        'queue_pressure',
+        'active_geo_blocks',
+        summaryData.alerts.status.activeGeoBlocks
+      );
+      appendThresholdRow(
+        'privileged_actions',
+        'total_monitored_actions',
+        summaryData.alerts.status.monitoredActions
+      );
+
+      for (const item of summaryData.actionBreakdown) {
+        csvRows.push([
+          'privileged_actions',
+          'action_breakdown',
+          item.count,
+          '',
+          '',
+          `action=${item.action}`,
+          summaryData.generatedAt,
+        ]);
       }
 
-      for (const item of logs) {
-        actionCounts.set(item.action, (actionCounts.get(item.action) ?? 0) + 1);
-
-        const existing = adminCounts.get(item.adminId);
-        if (existing) {
-          existing.count += 1;
-        } else {
-          adminCounts.set(item.adminId, {
-            count: 1,
-            admin: item.admin,
-          });
-        }
+      for (const item of summaryData.topAdmins) {
+        csvRows.push([
+          'privileged_actions',
+          'top_admin_activity',
+          item.actionCount,
+          '',
+          '',
+          `${item.admin.name} (@${item.admin.username}) role=${item.admin.role}`,
+          summaryData.generatedAt,
+        ]);
       }
 
-      const actionBreakdown = [...actionCounts.entries()]
-        .map(([action, count]) => ({ action, count }))
-        .sort((a, b) => b.count - a.count);
+      csvRows.push([
+        'rollout_decisions',
+        'policy_updates_in_window',
+        rolloutUpdates.length,
+        '',
+        '',
+        'targetType=admin_rollout_policy',
+        summaryData.generatedAt,
+      ]);
+      csvRows.push([
+        'rollout_decisions',
+        'rollout_enabled',
+        rolloutConfig.enabled ? 'true' : 'false',
+        '',
+        '',
+        'current_policy',
+        summaryData.generatedAt,
+      ]);
+      csvRows.push([
+        'rollout_decisions',
+        'super_admin_bypass',
+        rolloutConfig.superAdminBypass ? 'true' : 'false',
+        '',
+        '',
+        'current_policy',
+        summaryData.generatedAt,
+      ]);
+      csvRows.push([
+        'rollout_decisions',
+        'allowed_roles',
+        rolloutConfig.allowedRoles.length ? rolloutConfig.allowedRoles.join('|') : 'ALL',
+        '',
+        '',
+        'current_policy',
+        summaryData.generatedAt,
+      ]);
+      csvRows.push([
+        'rollout_decisions',
+        'allowed_countries',
+        rolloutConfig.allowedCountries.length ? rolloutConfig.allowedCountries.join('|') : 'ALL',
+        '',
+        '',
+        'current_policy',
+        summaryData.generatedAt,
+      ]);
 
-      const topAdmins = [...adminCounts.values()]
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 8)
-        .map((item) => ({
-          admin: item.admin,
-          actionCount: item.count,
-        }));
+      for (const update of rolloutUpdates) {
+        const reason = this.getMetadataString(update.metadata, 'reason');
+        const noteParts = [
+          `${update.admin.name} (@${update.admin.username}) role=${update.admin.role}`,
+          reason ? `reason=${reason}` : null,
+        ].filter((value): value is string => Boolean(value));
+
+        csvRows.push([
+          'rollout_decisions',
+          'policy_update_event',
+          update.id,
+          '',
+          '',
+          noteParts.join(' | '),
+          update.createdAt.toISOString(),
+        ]);
+      }
+
+      const csvContent = [
+        csvHeader.join(','),
+        ...csvRows.map((row) => row.map((cell) => this.escapeCsvCell(cell)).join(',')),
+      ].join('\n');
+
+      await this.logAdminAction({
+        adminId: authUser.id,
+        action: AdminAction.SETTING_UPDATED,
+        targetType: 'admin_ops_digest_export',
+        targetId: `${query.days}d`,
+        description: 'Exported admin operations digest CSV',
+        metadata: {
+          days: query.days,
+          generatedAt: summaryData.generatedAt,
+          rolloutPolicyUpdates: rolloutUpdates.length,
+          breachedMetrics: Object.entries(summaryData.alerts.status)
+            .filter(([, status]) => status.isBreached)
+            .map(([metric]) => metric),
+        },
+        ipAddress: req.ip,
+      });
+
+      const filename = `admin-ops-digest-${query.days}d-${new Date().toISOString().slice(0, 10)}.csv`;
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      return res.status(200).send(csvContent);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid admin ops digest export query',
+          details: error.issues,
+        });
+      }
+
+      console.error('[AdminController] Error exporting admin ops digest CSV:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to export admin ops digest CSV',
+      });
+    }
+  }
+
+  static async getSecuritySummary(req: Request, res: Response) {
+    try {
+      const query = adminSecuritySummaryQuerySchema.parse(req.query);
+      const data = await this.buildSecuritySummaryPayload(query.days);
 
       res.json({
         success: true,
-        data: {
-          windowDays: query.days,
-          queues: {
-            pendingWithdrawals,
-            actionRequiredLegalCases,
-            pendingTakedowns,
-            activeGeoBlocks,
-          },
-          actionBreakdown,
-          topAdmins,
-          generatedAt: new Date().toISOString(),
-        },
+        data,
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -2541,6 +3369,298 @@ export class AdminController {
     }
   }
 
+  static async exportFinanceTransactionsCsv(req: Request, res: Response) {
+    try {
+      const authUser = getAuthUser(req, res);
+      if (!authUser) return;
+
+      const query = adminFinanceTransactionsQuerySchema.parse(req.query);
+      const { type, status, search, userId } = query;
+      const { coinToPaiseRate } = await this.getFinanceConfigValues();
+      const exportLimit = 5000;
+
+      const header = [
+        'type',
+        'id',
+        'createdAt',
+        'updatedAt',
+        'status',
+        'primaryUser',
+        'secondaryUser',
+        'amountPaise',
+        'coinAmount',
+        'totalCoins',
+        'orderId',
+        'transactionId',
+        'payoutReference',
+        'giftName',
+        'streamTitle',
+        'reviewer',
+        'reason',
+      ];
+
+      const rows: Array<Array<string | number | boolean | null | undefined>> = [];
+
+      if (type === 'PURCHASE') {
+        if (status && !this.isPurchaseStatus(status)) {
+          return res.status(400).json({
+            success: false,
+            error: `Invalid purchase status: ${status}`,
+          });
+        }
+
+        const purchaseStatus = status && this.isPurchaseStatus(status) ? status : undefined;
+        const where: Prisma.CoinPurchaseWhereInput = {};
+
+        if (purchaseStatus) {
+          where.status = purchaseStatus;
+        }
+
+        if (userId) {
+          where.userId = userId;
+        }
+
+        if (search) {
+          where.OR = [
+            { orderId: { contains: search, mode: 'insensitive' } },
+            { transactionId: { contains: search, mode: 'insensitive' } },
+            { user: { username: { contains: search, mode: 'insensitive' } } },
+            { user: { name: { contains: search, mode: 'insensitive' } } },
+            { user: { email: { contains: search, mode: 'insensitive' } } },
+          ];
+        }
+
+        const items = await prisma.coinPurchase.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          take: exportLimit,
+          include: {
+            user: {
+              select: {
+                username: true,
+              },
+            },
+          },
+        });
+
+        for (const item of items) {
+          rows.push([
+            type,
+            item.id,
+            item.createdAt.toISOString(),
+            item.updatedAt.toISOString(),
+            item.status,
+            item.user.username,
+            '',
+            item.amount,
+            '',
+            item.totalCoins,
+            item.orderId,
+            item.transactionId,
+            '',
+            '',
+            '',
+            '',
+            item.failureReason,
+          ]);
+        }
+      } else if (type === 'GIFT') {
+        if (status && status !== 'COMPLETED') {
+          return res.status(400).json({
+            success: false,
+            error: 'Gift transactions only support status=COMPLETED',
+          });
+        }
+
+        const where: Prisma.GiftTransactionWhereInput = {};
+        const andFilters: Prisma.GiftTransactionWhereInput[] = [];
+
+        if (userId) {
+          andFilters.push({
+            OR: [{ senderId: userId }, { receiverId: userId }],
+          });
+        }
+
+        if (search) {
+          andFilters.push({
+            OR: [
+              { sender: { username: { contains: search, mode: 'insensitive' } } },
+              { receiver: { username: { contains: search, mode: 'insensitive' } } },
+              { sender: { name: { contains: search, mode: 'insensitive' } } },
+              { receiver: { name: { contains: search, mode: 'insensitive' } } },
+              { gift: { name: { contains: search, mode: 'insensitive' } } },
+              { stream: { title: { contains: search, mode: 'insensitive' } } },
+            ],
+          });
+        }
+
+        if (andFilters.length > 0) {
+          where.AND = andFilters;
+        }
+
+        const items = await prisma.giftTransaction.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          take: exportLimit,
+          include: {
+            sender: {
+              select: {
+                username: true,
+              },
+            },
+            receiver: {
+              select: {
+                username: true,
+              },
+            },
+            gift: {
+              select: {
+                name: true,
+              },
+            },
+            stream: {
+              select: {
+                title: true,
+              },
+            },
+          },
+        });
+
+        for (const item of items) {
+          rows.push([
+            type,
+            item.id,
+            item.createdAt.toISOString(),
+            item.createdAt.toISOString(),
+            'COMPLETED',
+            item.sender.username,
+            item.receiver.username,
+            item.coinAmount * coinToPaiseRate,
+            item.coinAmount,
+            '',
+            '',
+            '',
+            '',
+            item.gift.name,
+            item.stream?.title ?? '',
+            '',
+            item.message,
+          ]);
+        }
+      } else {
+        if (status && !this.isWithdrawalStatus(status)) {
+          return res.status(400).json({
+            success: false,
+            error: `Invalid withdrawal status: ${status}`,
+          });
+        }
+
+        const withdrawalStatus = status && this.isWithdrawalStatus(status) ? status : undefined;
+        const where: Prisma.CreatorWithdrawalRequestWhereInput = {};
+
+        if (withdrawalStatus) {
+          where.status = withdrawalStatus;
+        }
+
+        if (userId) {
+          where.userId = userId;
+        }
+
+        if (search) {
+          where.OR = [
+            { payoutReference: { contains: search, mode: 'insensitive' } },
+            { reason: { contains: search, mode: 'insensitive' } },
+            { user: { username: { contains: search, mode: 'insensitive' } } },
+            { user: { name: { contains: search, mode: 'insensitive' } } },
+            { user: { email: { contains: search, mode: 'insensitive' } } },
+          ];
+        }
+
+        const items = await prisma.creatorWithdrawalRequest.findMany({
+          where,
+          orderBy: { requestedAt: 'desc' },
+          take: exportLimit,
+          include: {
+            user: {
+              select: {
+                username: true,
+              },
+            },
+            reviewer: {
+              select: {
+                username: true,
+              },
+            },
+          },
+        });
+
+        for (const item of items) {
+          rows.push([
+            type,
+            item.id,
+            item.requestedAt.toISOString(),
+            item.reviewedAt?.toISOString() ?? item.requestedAt.toISOString(),
+            item.status,
+            item.user.username,
+            '',
+            item.netAmountPaise,
+            '',
+            item.amountCoins,
+            '',
+            '',
+            item.payoutReference,
+            '',
+            '',
+            item.reviewer?.username,
+            item.reason,
+          ]);
+        }
+      }
+
+      const csvContent = [
+        header.join(','),
+        ...rows.map((row) => row.map((cell) => this.escapeCsvCell(cell)).join(',')),
+      ].join('\n');
+
+      await this.logAdminAction({
+        adminId: authUser.id,
+        action: AdminAction.SETTING_UPDATED,
+        targetType: 'finance_transactions_export',
+        targetId: type,
+        description: `Exported finance ${type.toLowerCase()} transactions CSV`,
+        metadata: {
+          filters: {
+            status: status ?? null,
+            search: search ?? null,
+            userId: userId ?? null,
+          },
+          exportedRows: rows.length,
+        },
+        ipAddress: req.ip,
+      });
+
+      const filename = `finance-${type.toLowerCase()}-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+      return res.status(200).send(csvContent);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid finance transaction export query',
+          details: error.issues,
+        });
+      }
+
+      console.error('[AdminController] Error exporting finance transactions CSV:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to export finance transactions CSV',
+      });
+    }
+  }
+
   static async listWithdrawals(req: Request, res: Response) {
     try {
       const query = adminWithdrawalsQuerySchema.parse(req.query);
@@ -3096,6 +4216,192 @@ export class AdminController {
       res.status(500).json({
         success: false,
         error: 'Failed to fetch finance reconciliation',
+      });
+    }
+  }
+
+  static async exportFinanceReconciliationCsv(req: Request, res: Response) {
+    try {
+      const authUser = getAuthUser(req, res);
+      if (!authUser) return;
+
+      const query = adminFinanceReconciliationQuerySchema.parse(req.query);
+      const dateFilter = this.buildDateRangeFilter(query.from, query.to);
+      const { commissionRate, coinToPaiseRate } = await this.getFinanceConfigValues();
+
+      const giftWhere: Prisma.GiftTransactionWhereInput = {};
+      const purchaseWhere: Prisma.CoinPurchaseWhereInput = {
+        status: PurchaseStatus.COMPLETED,
+      };
+      const withdrawalWhere: Prisma.CreatorWithdrawalRequestWhereInput = {};
+
+      if (dateFilter) {
+        giftWhere.createdAt = dateFilter;
+        purchaseWhere.createdAt = dateFilter;
+        withdrawalWhere.requestedAt = dateFilter;
+      }
+
+      const [giftAggregate, purchaseAggregate, withdrawalGroups] = await Promise.all([
+        prisma.giftTransaction.aggregate({
+          where: giftWhere,
+          _count: {
+            _all: true,
+          },
+          _sum: {
+            coinAmount: true,
+          },
+        }),
+        prisma.coinPurchase.aggregate({
+          where: purchaseWhere,
+          _count: {
+            _all: true,
+          },
+          _sum: {
+            amount: true,
+            totalCoins: true,
+          },
+        }),
+        prisma.creatorWithdrawalRequest.groupBy({
+          where: withdrawalWhere,
+          by: ['status'],
+          _count: {
+            _all: true,
+          },
+          _sum: {
+            netAmountPaise: true,
+          },
+        }),
+      ]);
+
+      const withdrawalNetByStatus = {
+        PENDING: 0,
+        UNDER_REVIEW: 0,
+        ON_HOLD: 0,
+        APPROVED: 0,
+        REJECTED: 0,
+        PAID: 0,
+      };
+
+      for (const group of withdrawalGroups) {
+        withdrawalNetByStatus[group.status] = group._sum.netAmountPaise ?? 0;
+      }
+
+      const totalGiftCoins = giftAggregate._sum.coinAmount ?? 0;
+      const estimatedCreatorPayoutPaise = Math.floor(
+        totalGiftCoins * coinToPaiseRate * (1 - commissionRate)
+      );
+
+      const pendingSettlementPaise =
+        withdrawalNetByStatus.PENDING +
+        withdrawalNetByStatus.UNDER_REVIEW +
+        withdrawalNetByStatus.ON_HOLD;
+
+      const approvedNotPaidPaise = withdrawalNetByStatus.APPROVED;
+      const paidOutPaise = withdrawalNetByStatus.PAID;
+      const trackedExposurePaise = pendingSettlementPaise + approvedNotPaidPaise + paidOutPaise;
+      const generatedAt = new Date().toISOString();
+
+      const header = ['metric', 'value', 'note', 'generatedAt'];
+      const rows: Array<Array<string | number | boolean | null | undefined>> = [
+        ['period.from', query.from ?? 'ALL', '', generatedAt],
+        ['period.to', query.to ?? 'ALL', '', generatedAt],
+        ['config.commissionRate', commissionRate, '', generatedAt],
+        ['config.coinToPaiseRate', coinToPaiseRate, '', generatedAt],
+        ['purchases.completedCount', purchaseAggregate._count._all, '', generatedAt],
+        ['purchases.completedVolumePaise', purchaseAggregate._sum.amount ?? 0, '', generatedAt],
+        ['purchases.completedCoins', purchaseAggregate._sum.totalCoins ?? 0, '', generatedAt],
+        ['creatorEconomy.giftTransactions', giftAggregate._count._all, '', generatedAt],
+        ['creatorEconomy.totalGiftCoins', totalGiftCoins, '', generatedAt],
+        [
+          'creatorEconomy.estimatedCreatorPayoutPaise',
+          estimatedCreatorPayoutPaise,
+          '',
+          generatedAt,
+        ],
+        ['withdrawals.pendingSettlementPaise', pendingSettlementPaise, '', generatedAt],
+        ['withdrawals.approvedNotPaidPaise', approvedNotPaidPaise, '', generatedAt],
+        ['withdrawals.paidOutPaise', paidOutPaise, '', generatedAt],
+        [
+          'withdrawals.netAmountByStatusPaise.PENDING',
+          withdrawalNetByStatus.PENDING,
+          '',
+          generatedAt,
+        ],
+        [
+          'withdrawals.netAmountByStatusPaise.UNDER_REVIEW',
+          withdrawalNetByStatus.UNDER_REVIEW,
+          '',
+          generatedAt,
+        ],
+        [
+          'withdrawals.netAmountByStatusPaise.ON_HOLD',
+          withdrawalNetByStatus.ON_HOLD,
+          '',
+          generatedAt,
+        ],
+        [
+          'withdrawals.netAmountByStatusPaise.APPROVED',
+          withdrawalNetByStatus.APPROVED,
+          '',
+          generatedAt,
+        ],
+        [
+          'withdrawals.netAmountByStatusPaise.REJECTED',
+          withdrawalNetByStatus.REJECTED,
+          '',
+          generatedAt,
+        ],
+        ['withdrawals.netAmountByStatusPaise.PAID', withdrawalNetByStatus.PAID, '', generatedAt],
+        ['reconciliation.trackedExposurePaise', trackedExposurePaise, '', generatedAt],
+        [
+          'reconciliation.gapPaise',
+          estimatedCreatorPayoutPaise - trackedExposurePaise,
+          '',
+          generatedAt,
+        ],
+      ];
+
+      const csvContent = [
+        header.join(','),
+        ...rows.map((row) => row.map((cell) => this.escapeCsvCell(cell)).join(',')),
+      ].join('\n');
+
+      await this.logAdminAction({
+        adminId: authUser.id,
+        action: AdminAction.SETTING_UPDATED,
+        targetType: 'finance_reconciliation_export',
+        targetId: 'finance',
+        description: 'Exported finance reconciliation CSV snapshot',
+        metadata: {
+          period: {
+            from: query.from ?? null,
+            to: query.to ?? null,
+          },
+          trackedExposurePaise,
+          estimatedCreatorPayoutPaise,
+          gapPaise: estimatedCreatorPayoutPaise - trackedExposurePaise,
+        },
+        ipAddress: req.ip,
+      });
+
+      const filename = `finance-reconciliation-${new Date().toISOString().slice(0, 10)}.csv`;
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+      return res.status(200).send(csvContent);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid reconciliation export query parameters',
+          details: error.issues,
+        });
+      }
+
+      console.error('[AdminController] Error exporting finance reconciliation CSV:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to export finance reconciliation CSV',
       });
     }
   }

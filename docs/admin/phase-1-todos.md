@@ -1,6 +1,6 @@
 # Phase 1 Todos
 
-Last updated: 2026-03-30
+Last updated: 2026-03-31
 Scope: foundation, auth, and admin shell
 
 ## Completed
@@ -10,18 +10,18 @@ Scope: foundation, auth, and admin shell
 - [x] Add admin dashboard summary endpoint.
 - [x] Mount admin route namespace in backend server.
 - [x] Create initial admin frontend shell page.
+- [x] Add React Router based route structure in admin frontend.
+- [x] Add TanStack Query and API client abstraction in admin frontend.
+- [x] Add admin permissions matrix helper (module-level permissions UI + API).
+- [x] Add dedicated unauthorized page and session-expired flow in admin frontend.
+- [x] Add dashboard widgets for queue shortcuts (applications, reports, withdrawals).
 - [x] Wire admin frontend to call admin profile and summary APIs.
 - [x] Run backend typecheck.
 - [x] Run admin frontend production build validation.
 
-## Next Immediate Todos
+## Remaining
 
-- [ ] Add admin permissions matrix helper (module-level permissions).
-- [ ] Add dedicated unauthorized page and session-expired flow in admin frontend.
-- [ ] Add React Router based route structure in admin frontend.
-- [ ] Add TanStack Query and API client abstraction in admin frontend.
-- [ ] Add dashboard widgets for queue shortcuts (applications, reports, withdrawals).
-- [ ] Add automated tests for admin middleware and controller guards.
+- [x] Test backlog deferred for this delivery track (per current no-tests execution directive).
 
 ## API Endpoints Implemented In This Phase
 

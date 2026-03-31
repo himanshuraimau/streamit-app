@@ -1,6 +1,6 @@
 # Phase 2 Todos
 
-Last updated: 2026-03-30
+Last updated: 2026-03-31
 Scope: user management and creator application review
 
 ## Completed
@@ -25,11 +25,11 @@ Scope: user management and creator application review
 - [x] `bun run typecheck` (backend)
 - [x] `bun run build` (admin frontend)
 
-## Next Phase Candidate (Phase 3)
+## Cross-Phase Follow-Through
 
-- [ ] Backend: unified reports queue endpoint with severity sorting.
-- [ ] Backend: report action endpoints (dismiss/hide/escalate).
-- [ ] Backend: stream report review endpoints for moderation.
-- [ ] Frontend: moderation queue page.
-- [ ] Frontend: report detail and action panel.
-- [ ] Add tests for new admin controller operations.
+- [x] Backend: unified reports queue endpoint with severity sorting.
+- [x] Backend: report action endpoints (dismiss/hide/escalate).
+- [x] Backend: stream report review endpoints for moderation.
+- [x] Frontend: moderation queue page.
+- [x] Frontend: report detail and action panel.
+- [x] Test backlog deferred for this delivery track (per current no-tests execution directive).

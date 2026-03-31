@@ -410,6 +410,7 @@ export function SettingsAnnouncementsPage() {
 
           <div className="mb-4 grid grid-cols-1 gap-2 md:grid-cols-3">
             <input
+              aria-label="Search system settings"
               value={settingsSearch}
               onChange={(event) => {
                 setSettingsPage(1);
@@ -419,6 +420,7 @@ export function SettingsAnnouncementsPage() {
               className="rounded-lg border border-white/15 bg-[#0d0d0f] px-3 py-2 text-xs text-zinc-100 placeholder:text-zinc-500"
             />
             <select
+              aria-label="Filter settings by visibility"
               value={settingsVisibility}
               onChange={(event) => {
                 setSettingsPage(1);
@@ -514,12 +516,14 @@ export function SettingsAnnouncementsPage() {
             </h4>
             <div className="grid grid-cols-1 gap-2">
               <input
+                aria-label="Setting key"
                 value={newSettingKey}
                 onChange={(event) => setNewSettingKey(event.target.value)}
                 placeholder="Setting key"
                 className="rounded-lg border border-white/15 bg-[#0d0d0f] px-3 py-2 text-xs text-zinc-100"
               />
               <textarea
+                aria-label="Setting value"
                 value={newSettingValue}
                 onChange={(event) => setNewSettingValue(event.target.value)}
                 rows={3}
@@ -527,6 +531,7 @@ export function SettingsAnnouncementsPage() {
                 className="rounded-lg border border-white/15 bg-[#0d0d0f] px-3 py-2 text-xs text-zinc-100"
               />
               <input
+                aria-label="Setting update reason"
                 value={newSettingReason}
                 onChange={(event) => setNewSettingReason(event.target.value)}
                 placeholder="Reason"
@@ -639,6 +644,7 @@ export function SettingsAnnouncementsPage() {
 
         <div className="mb-4 grid grid-cols-1 gap-2 md:grid-cols-4">
           <input
+            aria-label="Search announcements"
             value={announcementsSearch}
             onChange={(event) => {
               setAnnouncementsPage(1);
@@ -648,6 +654,7 @@ export function SettingsAnnouncementsPage() {
             className="rounded-lg border border-white/15 bg-[#0d0d0f] px-3 py-2 text-xs text-zinc-100 placeholder:text-zinc-500"
           />
           <select
+            aria-label="Filter announcements by type"
             value={announcementsType}
             onChange={(event) => {
               setAnnouncementsPage(1);
@@ -663,6 +670,7 @@ export function SettingsAnnouncementsPage() {
             ))}
           </select>
           <select
+            aria-label="Filter announcements by active state"
             value={announcementsActive}
             onChange={(event) => {
               setAnnouncementsPage(1);
@@ -783,12 +791,14 @@ export function SettingsAnnouncementsPage() {
           </h4>
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             <input
+              aria-label="New announcement title"
               value={newAnnouncementTitle}
               onChange={(event) => setNewAnnouncementTitle(event.target.value)}
               placeholder="Title"
               className="rounded-lg border border-white/15 bg-[#0d0d0f] px-3 py-2 text-xs text-zinc-100"
             />
             <select
+              aria-label="New announcement type"
               value={newAnnouncementType}
               onChange={(event) => setNewAnnouncementType(event.target.value as AnnouncementType)}
               className="rounded-lg border border-white/15 bg-[#0d0d0f] px-3 py-2 text-xs text-zinc-100"
@@ -800,6 +810,7 @@ export function SettingsAnnouncementsPage() {
               ))}
             </select>
             <textarea
+              aria-label="New announcement content"
               value={newAnnouncementContent}
               onChange={(event) => setNewAnnouncementContent(event.target.value)}
               rows={3}
@@ -807,6 +818,7 @@ export function SettingsAnnouncementsPage() {
               className="rounded-lg border border-white/15 bg-[#0d0d0f] px-3 py-2 text-xs text-zinc-100 md:col-span-2"
             />
             <select
+              aria-label="New announcement target role"
               value={newAnnouncementRole}
               onChange={(event) => setNewAnnouncementRole(event.target.value as RoleFilter)}
               className="rounded-lg border border-white/15 bg-[#0d0d0f] px-3 py-2 text-xs text-zinc-100"
@@ -834,12 +846,14 @@ export function SettingsAnnouncementsPage() {
               Pinned
             </label>
             <input
+              aria-label="Announcement start datetime"
               type="datetime-local"
               value={newAnnouncementStartsAt}
               onChange={(event) => setNewAnnouncementStartsAt(event.target.value)}
               className="rounded-lg border border-white/15 bg-[#0d0d0f] px-3 py-2 text-xs text-zinc-100"
             />
             <input
+              aria-label="Announcement end datetime"
               type="datetime-local"
               value={newAnnouncementEndsAt}
               onChange={(event) => setNewAnnouncementEndsAt(event.target.value)}

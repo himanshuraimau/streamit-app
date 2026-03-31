@@ -87,9 +87,11 @@ Workflow:
 2. Application enters review queue.
 3. Admin validates identity and financial details.
 4. Admin decision:
-  1. Approve -> creator enabled for live streaming and monetization.
-  2. Reject -> reason logged and user notified.
-5. Re-apply cooldown policy is enforced.
+
+- Approve -> creator enabled for live streaming and monetization.
+- Reject -> reason logged and user notified.
+
+1. Re-apply cooldown policy is enforced.
 
 Operational controls:
 
@@ -107,11 +109,13 @@ Workflow:
 2. Automated checks and report signals create moderation priority.
 3. Moderator reviews contextual timeline and past violations.
 4. Moderator action:
-  1. Dismiss false positive.
-  2. Hide/remove content.
-  3. Add strike and warning.
-  4. Escalate to account action.
-5. Every action is audited and visible in moderation history.
+
+- Dismiss false positive.
+- Hide/remove content.
+- Add strike and warning.
+- Escalate to account action.
+
+1. Every action is audited and visible in moderation history.
 
 ### 5.4 Reports and Complaints
 
@@ -379,6 +383,18 @@ Exit criteria:
 1. Critical path UAT sign-off completed.
 2. Error budgets and on-call runbooks are ready.
 3. Rollback plan tested.
+
+### Phase 8: Post-Rollout Automation
+
+1. Automate rollout policy management and dry-run simulation workflows.
+2. Integrate threshold breach notifications with incident channels.
+3. Produce recurring operational digests for finance, moderation, and compliance leads.
+
+Exit criteria:
+
+1. Rollout policy updates are auditable and safe to execute from admin controls.
+2. Threshold breaches can notify incident channels without manual polling.
+3. Weekly operational summaries are generated from live admin telemetry.
 
 ## 10. Definition Of Done For Admin Platform
 

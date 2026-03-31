@@ -360,6 +360,7 @@ export function TakedownsGeoBlocksPage() {
 
           <div className="mb-4 grid grid-cols-1 gap-2 md:grid-cols-3">
             <select
+              aria-label="Filter takedowns by status"
               value={takedownStatus}
               onChange={(event) => {
                 setTakedownPage(1);
@@ -375,6 +376,7 @@ export function TakedownsGeoBlocksPage() {
             </select>
 
             <select
+              aria-label="Filter takedowns by reason"
               value={takedownReason}
               onChange={(event) => {
                 setTakedownPage(1);
@@ -390,6 +392,7 @@ export function TakedownsGeoBlocksPage() {
             </select>
 
             <input
+              aria-label="Search takedown requests"
               value={takedownSearch}
               onChange={(event) => {
                 setTakedownPage(1);
@@ -525,12 +528,14 @@ export function TakedownsGeoBlocksPage() {
             </h4>
             <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
               <input
+                aria-label="Related legal case id"
                 value={newTakedownLegalCaseId}
                 onChange={(event) => setNewTakedownLegalCaseId(event.target.value)}
                 placeholder="Legal case ID (optional)"
                 className="rounded-lg border border-white/15 bg-[#0d0d0f] px-3 py-2 text-xs text-zinc-100"
               />
               <select
+                aria-label="New takedown reason"
                 value={newTakedownReason}
                 onChange={(event) => setNewTakedownReason(event.target.value as TakedownReason)}
                 className="rounded-lg border border-white/15 bg-[#0d0d0f] px-3 py-2 text-xs text-zinc-100"
@@ -542,18 +547,21 @@ export function TakedownsGeoBlocksPage() {
                 ))}
               </select>
               <input
+                aria-label="New takedown target type"
                 value={newTakedownTargetType}
                 onChange={(event) => setNewTakedownTargetType(event.target.value)}
                 placeholder="Target type"
                 className="rounded-lg border border-white/15 bg-[#0d0d0f] px-3 py-2 text-xs text-zinc-100"
               />
               <input
+                aria-label="New takedown target id"
                 value={newTakedownTargetId}
                 onChange={(event) => setNewTakedownTargetId(event.target.value)}
                 placeholder="Target id"
                 className="rounded-lg border border-white/15 bg-[#0d0d0f] px-3 py-2 text-xs text-zinc-100"
               />
               <input
+                aria-label="New takedown note"
                 value={newTakedownNote}
                 onChange={(event) => setNewTakedownNote(event.target.value)}
                 placeholder="Note (optional)"
@@ -589,6 +597,7 @@ export function TakedownsGeoBlocksPage() {
 
           <div className="mb-4 grid grid-cols-1 gap-2 md:grid-cols-4">
             <select
+              aria-label="Filter geoblocks by status"
               value={geoStatus}
               onChange={(event) => {
                 setGeoPage(1);
@@ -604,6 +613,7 @@ export function TakedownsGeoBlocksPage() {
             </select>
 
             <select
+              aria-label="Filter geoblocks by reason"
               value={geoReason}
               onChange={(event) => {
                 setGeoPage(1);
@@ -619,6 +629,7 @@ export function TakedownsGeoBlocksPage() {
             </select>
 
             <input
+              aria-label="Filter geoblocks by country code"
               value={geoCountryCode}
               onChange={(event) => {
                 setGeoPage(1);
@@ -629,6 +640,7 @@ export function TakedownsGeoBlocksPage() {
             />
 
             <input
+              aria-label="Search geoblock rules"
               value={geoSearch}
               onChange={(event) => {
                 setGeoPage(1);
@@ -737,24 +749,28 @@ export function TakedownsGeoBlocksPage() {
             </h4>
             <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
               <input
+                aria-label="New geoblock target type"
                 value={newGeoTargetType}
                 onChange={(event) => setNewGeoTargetType(event.target.value)}
                 placeholder="Target type"
                 className="rounded-lg border border-white/15 bg-[#0d0d0f] px-3 py-2 text-xs text-zinc-100"
               />
               <input
+                aria-label="New geoblock target id"
                 value={newGeoTargetId}
                 onChange={(event) => setNewGeoTargetId(event.target.value)}
                 placeholder="Target id"
                 className="rounded-lg border border-white/15 bg-[#0d0d0f] px-3 py-2 text-xs text-zinc-100"
               />
               <input
+                aria-label="New geoblock country code"
                 value={newGeoCountryCode}
                 onChange={(event) => setNewGeoCountryCode(event.target.value.toUpperCase())}
                 placeholder="Country code"
                 className="rounded-lg border border-white/15 bg-[#0d0d0f] px-3 py-2 text-xs text-zinc-100"
               />
               <select
+                aria-label="New geoblock reason"
                 value={newGeoReason}
                 onChange={(event) => setNewGeoReason(event.target.value as GeoBlockReason)}
                 className="rounded-lg border border-white/15 bg-[#0d0d0f] px-3 py-2 text-xs text-zinc-100"
@@ -766,12 +782,14 @@ export function TakedownsGeoBlocksPage() {
                 ))}
               </select>
               <input
+                aria-label="New geoblock note"
                 value={newGeoNote}
                 onChange={(event) => setNewGeoNote(event.target.value)}
                 placeholder="Note (optional)"
                 className="rounded-lg border border-white/15 bg-[#0d0d0f] px-3 py-2 text-xs text-zinc-100 md:col-span-2"
               />
               <input
+                aria-label="New geoblock expiration datetime"
                 type="datetime-local"
                 value={newGeoExpiresAt}
                 onChange={(event) => setNewGeoExpiresAt(event.target.value)}

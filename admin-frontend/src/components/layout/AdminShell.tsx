@@ -11,6 +11,12 @@ function navClassName(isActive: boolean) {
 export function AdminShell() {
   return (
     <div className="min-h-screen bg-[#0f0f10] text-[#f5f5f7]">
+      <a
+        href="#admin-main-content"
+        className="sr-only left-3 top-3 z-50 rounded-md bg-sky-500 px-3 py-2 text-xs font-medium text-white focus:not-sr-only focus:absolute"
+      >
+        Skip to main content
+      </a>
       <div className="mx-auto flex min-h-screen w-full max-w-7xl gap-6 px-5 py-6 lg:px-8">
         <aside className="hidden w-64 shrink-0 rounded-3xl border border-white/10 bg-[#17171a] p-5 lg:block">
           <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">
@@ -20,7 +26,7 @@ export function AdminShell() {
             Control Plane
           </h1>
 
-          <nav className="mt-8 flex flex-col gap-2">
+          <nav className="mt-8 flex flex-col gap-2" aria-label="Primary admin navigation">
             <NavLink
               to="/"
               end
@@ -103,8 +109,11 @@ export function AdminShell() {
           </nav>
         </aside>
 
-        <main className="flex-1 rounded-3xl border border-white/10 bg-[#17171a] p-4 md:p-6">
-          <nav className="mb-5 flex flex-wrap gap-2 border-b border-white/10 pb-4 lg:hidden">
+        <main id="admin-main-content" className="flex-1 rounded-3xl border border-white/10 bg-[#17171a] p-4 md:p-6">
+          <nav
+            className="mb-5 flex gap-2 overflow-x-auto border-b border-white/10 pb-4 whitespace-nowrap lg:hidden"
+            aria-label="Mobile admin navigation"
+          >
             <NavLink
               to="/"
               end

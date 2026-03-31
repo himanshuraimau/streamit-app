@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  exportFinanceReconciliationCsv,
+  exportFinanceTransactionsCsv,
   getFinanceCommissionConfig,
   getFinanceReconciliation,
   getFinanceSummary,
@@ -78,6 +80,8 @@ export function FinancePage() {
 
   const [commissionRateInput, setCommissionRateInput] = useState("");
   const [coinToPaiseRateInput, setCoinToPaiseRateInput] = useState("");
+  const [transactionsExportNotice, setTransactionsExportNotice] = useState<string | null>(null);
+  const [reconciliationExportNotice, setReconciliationExportNotice] = useState<string | null>(null);
 
   const summaryQuery = useQuery({
     queryKey: ["admin", "finance", "summary"],
@@ -186,6 +190,14 @@ export function FinancePage() {
         queryKey: ["admin", "finance", "reconciliation"],
       });
     },
+  });
+
+  const exportTransactionsMutation = useMutation({
+    mutationFn: exportFinanceTransactionsCsv,
+  });
+
+  const exportReconciliationMutation = useMutation({
+    mutationFn: exportFinanceReconciliationCsv,
   });
 
   const summary =
@@ -298,6 +310,50 @@ export function FinancePage() {
     if (!response.success) {
       window.alert(response.error);
     }
+  };
+
+  const downloadCsv = (blob: Blob, fileName: string) => {
+    const downloadUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = downloadUrl;
+    anchor.download = fileName;
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(downloadUrl);
+  };
+
+  const handleExportTransactions = async () => {
+    const response = await exportTransactionsMutation.mutateAsync({
+      type: transactionType,
+      status: transactionStatus.trim() || undefined,
+      search: transactionSearch.trim() || undefined,
+    });
+
+    if (!response.success) {
+      window.alert(response.error);
+      return;
+    }
+
+    downloadCsv(response.data.blob, response.data.fileName);
+    setTransactionsExportNotice(
+      `Exported ${transactionType.toLowerCase()} transactions snapshot successfully.`,
+    );
+  };
+
+  const handleExportReconciliation = async () => {
+    const response = await exportReconciliationMutation.mutateAsync({
+      from: toIsoDateTime(reconciliationFrom),
+      to: toIsoDateTime(reconciliationTo),
+    });
+
+    if (!response.success) {
+      window.alert(response.error);
+      return;
+    }
+
+    downloadCsv(response.data.blob, response.data.fileName);
+    setReconciliationExportNotice("Exported reconciliation snapshot successfully.");
   };
 
   return (
@@ -424,6 +480,7 @@ export function FinancePage() {
             Transaction Investigation
           </h3>
           <select
+            aria-label="Filter transactions by type"
             value={transactionType}
             onChange={(event) => {
               setTransactionPage(1);
@@ -437,6 +494,7 @@ export function FinancePage() {
             <option value="WITHDRAWAL">Withdrawal</option>
           </select>
           <input
+            aria-label="Filter transactions by status"
             value={transactionStatus}
             onChange={(event) => {
               setTransactionPage(1);
@@ -446,6 +504,7 @@ export function FinancePage() {
             className="rounded-lg border border-white/15 bg-[#0d0d0f] px-2 py-1 text-xs text-zinc-100 placeholder:text-zinc-500"
           />
           <input
+            aria-label="Search transactions"
             value={transactionSearch}
             onChange={(event) => {
               setTransactionPage(1);
@@ -454,13 +513,25 @@ export function FinancePage() {
             placeholder="Search by user/ref"
             className="rounded-lg border border-white/15 bg-[#0d0d0f] px-2 py-1 text-xs text-zinc-100 placeholder:text-zinc-500"
           />
+          <button
+            type="button"
+            onClick={() => void handleExportTransactions()}
+            disabled={exportTransactionsMutation.isPending}
+            className="rounded-lg border border-sky-400/30 bg-sky-500/10 px-3 py-1 text-xs font-medium text-sky-100 hover:bg-sky-500/20 disabled:opacity-40"
+          >
+            {exportTransactionsMutation.isPending ? "Exporting..." : "Export CSV"}
+          </button>
         </div>
+
+        {transactionsExportNotice ? (
+          <p className="mb-3 text-xs text-zinc-400">{transactionsExportNotice}</p>
+        ) : null}
 
         {transactionsQuery.isLoading ? (
           <p className="text-sm text-zinc-400">Loading transactions...</p>
         ) : transactionRows.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full min-w-2xl text-left text-xs">
               <thead className="text-zinc-500">
                 <tr>
                   <th className="pb-2">When</th>
@@ -550,6 +621,7 @@ export function FinancePage() {
             Withdrawal Queue
           </h3>
           <select
+            aria-label="Filter withdrawal queue by status"
             value={withdrawalStatus}
             onChange={(event) => {
               setWithdrawalPage(1);
@@ -566,6 +638,7 @@ export function FinancePage() {
             ))}
           </select>
           <input
+            aria-label="Search withdrawals"
             value={withdrawalSearch}
             onChange={(event) => {
               setWithdrawalPage(1);
@@ -752,19 +825,33 @@ export function FinancePage() {
             />
           </label>
           <div className="flex items-end">
-            <button
-              type="button"
-              onClick={() =>
-                void queryClient.invalidateQueries({
-                  queryKey: ["admin", "finance", "reconciliation"],
-                })
-              }
-              className="w-full rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-sm font-medium text-zinc-100 hover:bg-white/10"
-            >
-              Recompute
-            </button>
+            <div className="w-full space-y-2">
+              <button
+                type="button"
+                onClick={() =>
+                  void queryClient.invalidateQueries({
+                    queryKey: ["admin", "finance", "reconciliation"],
+                  })
+                }
+                className="w-full rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-sm font-medium text-zinc-100 hover:bg-white/10"
+              >
+                Recompute
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleExportReconciliation()}
+                disabled={exportReconciliationMutation.isPending}
+                className="w-full rounded-xl border border-sky-400/30 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-100 hover:bg-sky-500/20 disabled:opacity-40"
+              >
+                {exportReconciliationMutation.isPending ? "Exporting..." : "Export Snapshot CSV"}
+              </button>
+            </div>
           </div>
         </div>
+
+        {reconciliationExportNotice ? (
+          <p className="mb-3 text-xs text-zinc-400">{reconciliationExportNotice}</p>
+        ) : null}
 
         {reconciliationQuery.isLoading ? (
           <p className="text-sm text-zinc-400">Calculating reconciliation...</p>

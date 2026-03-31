@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { AdminController } from '../controllers/admin.controller';
 import { AdminComplianceController } from '../controllers/admin-compliance.controller';
 import { requireAuth } from '../middleware/auth.middleware';
+import { requireAdminRolloutAccess } from '../middleware/admin-rollout.middleware';
 import { requireComplianceScopes } from '../middleware/admin-compliance-scope.middleware';
 import { requireAdmin, requireSuperAdmin } from '../middleware/admin.middleware';
 import {
@@ -12,6 +13,28 @@ import {
 const router = Router();
 
 router.use(requireAuth, requireAdmin);
+
+router.get('/ops/rollout-status', requireSuperAdmin, AdminController.getRolloutStatus);
+router.patch(
+  '/ops/rollout-policy',
+  requireSuperAdmin,
+  adminHighRiskActionRateLimiter,
+  AdminController.updateRolloutPolicy
+);
+router.post(
+  '/ops/security-alerts/dispatch',
+  requireSuperAdmin,
+  adminHighRiskActionRateLimiter,
+  AdminController.dispatchSecurityAlerts
+);
+router.get(
+  '/ops/security-digest/export',
+  requireSuperAdmin,
+  adminComplianceExportRateLimiter,
+  AdminController.exportSecurityOpsDigestCsv
+);
+
+router.use(requireAdminRolloutAccess);
 
 /**
  * @swagger
@@ -252,6 +275,11 @@ router.get('/finance/summary', AdminController.getFinanceSummary);
  *         description: Paginated transactions list
  */
 router.get('/finance/transactions', AdminController.listFinanceTransactions);
+router.get(
+  '/finance/transactions/export',
+  adminComplianceExportRateLimiter,
+  AdminController.exportFinanceTransactionsCsv
+);
 
 /**
  * @swagger
@@ -336,6 +364,11 @@ router.patch(
  *         description: Reconciliation summary
  */
 router.get('/finance/reconciliation', AdminController.getFinanceReconciliation);
+router.get(
+  '/finance/reconciliation/export',
+  adminComplianceExportRateLimiter,
+  AdminController.exportFinanceReconciliationCsv
+);
 
 /**
  * @swagger

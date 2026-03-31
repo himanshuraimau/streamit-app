@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getAdminUserDetail,
@@ -53,10 +53,7 @@ export function UsersPage() {
       ? listQuery.data.data.pagination
       : { page: 1, limit: 15, total: 0, totalPages: 1 };
 
-  const selectedId = useMemo(() => {
-    if (selectedUserId) return selectedUserId;
-    return users[0]?.id ?? null;
-  }, [selectedUserId, users]);
+  const selectedId = selectedUserId ?? users[0]?.id ?? null;
 
   const detailQuery = useQuery({
     queryKey: ['admin', 'user-detail', selectedId],
@@ -118,6 +115,7 @@ export function UsersPage() {
 
       <section className="mb-4 grid grid-cols-1 gap-3 rounded-2xl border border-white/10 bg-[#111113] p-4 md:grid-cols-4">
         <input
+          aria-label="Search users by name, username, or email"
           value={search}
           onChange={(event) => {
             setPage(1);
@@ -128,6 +126,7 @@ export function UsersPage() {
         />
 
         <select
+          aria-label="Filter users by role"
           value={role}
           onChange={(event) => {
             setPage(1);
@@ -143,6 +142,7 @@ export function UsersPage() {
         </select>
 
         <select
+          aria-label="Filter users by account state"
           value={suspensionFilter}
           onChange={(event) => {
             setPage(1);
@@ -160,6 +160,7 @@ export function UsersPage() {
           onClick={() => {
             void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
           }}
+          aria-label="Refresh users list"
           className="rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-sm font-medium text-zinc-100 hover:bg-white/10"
         >
           Refresh
@@ -182,7 +183,7 @@ export function UsersPage() {
             <p className="text-sm text-zinc-400">No users found.</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="w-full min-w-208 text-left text-sm">
                 <thead className="text-zinc-400">
                   <tr>
                     <th className="pb-2">User</th>
@@ -197,8 +198,16 @@ export function UsersPage() {
                     <tr
                       key={user.id}
                       onClick={() => setSelectedUserId(user.id)}
-                      className={`cursor-pointer border-t border-white/5 transition hover:bg-white/[0.03] ${
-                        selectedId === user.id ? 'bg-white/[0.06]' : ''
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          setSelectedUserId(user.id);
+                        }
+                      }}
+                      tabIndex={0}
+                      aria-label={`Select user ${user.name}`}
+                      className={`cursor-pointer border-t border-white/5 transition hover:bg-white/3 ${
+                        selectedId === user.id ? 'bg-white/6' : ''
                       }`}
                     >
                       <td className="py-3">

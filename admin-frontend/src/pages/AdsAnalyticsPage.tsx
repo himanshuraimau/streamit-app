@@ -215,6 +215,7 @@ export function AdsAnalyticsPage() {
           </h3>
           <div className="flex items-center gap-2">
             <select
+              aria-label="Select KPI analytics scope"
               value={analyticsScope}
               onChange={(event) => {
                 const nextScope = event.target.value as AnalyticsScope;
@@ -429,6 +430,7 @@ export function AdsAnalyticsPage() {
           </h3>
 
           <select
+            aria-label="Filter campaigns by status"
             value={statusFilter}
             onChange={(event) => {
               setStatusFilter(event.target.value as AdCampaignStatus | "ALL");
@@ -444,6 +446,7 @@ export function AdsAnalyticsPage() {
           </select>
 
           <input
+            aria-label="Search campaigns"
             value={search}
             onChange={(event) => {
               setSearch(event.target.value);
@@ -460,7 +463,7 @@ export function AdsAnalyticsPage() {
           <p className="text-sm text-zinc-400">No campaigns found for this filter.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm text-zinc-200">
+            <table className="w-full min-w-6xl text-left text-sm text-zinc-200">
               <thead>
                 <tr className="border-b border-white/10 text-xs uppercase tracking-[0.12em] text-zinc-400">
                   <th className="px-2 py-2">Name</th>
@@ -483,6 +486,7 @@ export function AdsAnalyticsPage() {
                       <button
                         type="button"
                         onClick={() => setSelectedCampaignId(campaign.id)}
+                        aria-label={`View analytics for ${campaign.name}`}
                         className="text-left text-zinc-100 hover:text-sky-300"
                       >
                         <div className="font-medium">{campaign.name}</div>
@@ -654,7 +658,7 @@ export function AdsAnalyticsPage() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-sm text-zinc-200">
+              <table className="w-full min-w-160 text-left text-sm text-zinc-200">
                 <thead>
                   <tr className="border-b border-white/10 text-xs uppercase tracking-[0.12em] text-zinc-400">
                     <th className="px-2 py-2">Date</th>

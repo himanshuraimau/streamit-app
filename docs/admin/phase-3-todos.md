@@ -1,6 +1,6 @@
 # Phase 3 Todos
 
-Last updated: 2026-03-30
+Last updated: 2026-03-31
 Scope: moderation queue and report action workflows
 
 ## Completed
@@ -23,11 +23,11 @@ Scope: moderation queue and report action workflows
 - [x] `bun run typecheck` (backend)
 - [x] `bun run build` (admin-frontend)
 
-## Next Phase Candidate (Phase 4)
+## Cross-Phase Follow-Through
 
-- [ ] Backend: finance dashboard endpoints.
-- [ ] Backend: withdrawal queue and decision APIs.
-- [ ] Backend: reconciliation and anomaly endpoints.
-- [ ] Frontend: finance dashboard page.
-- [ ] Frontend: withdrawals review page.
-- [ ] Add tests for moderation actions and permission edge cases.
+- [x] Backend: finance dashboard endpoints.
+- [x] Backend: withdrawal queue and decision APIs.
+- [x] Backend: reconciliation and anomaly endpoints.
+- [x] Frontend: finance dashboard page.
+- [x] Frontend: withdrawals review page.
+- [x] Test backlog deferred for this delivery track (per current no-tests execution directive).
