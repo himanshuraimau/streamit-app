@@ -27,3 +27,9 @@ export interface AnnouncementEditDialogState {
   content: string;
   error: string | null;
 }
+
+export interface AnnouncementDeleteDialogState {
+  isOpen: boolean;
+  announcementId: string | null;
+  title: string;
+}

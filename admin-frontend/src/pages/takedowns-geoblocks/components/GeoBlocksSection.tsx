@@ -43,7 +43,7 @@ interface GeoBlocksSectionProps {
   onNextPage: () => void;
   onToggleStatus: (geoBlockId: string, status: GeoBlockStatus) => void;
   onEditReason: (geoBlock: GeoBlockRuleItem) => void;
-  onRemove: (geoBlockId: string) => void;
+  onRemove: (geoBlockId: string, target: string) => void;
   onRefresh: () => void;
 }
 
@@ -69,12 +69,6 @@ export function GeoBlocksSection({
   onRemove,
   onRefresh,
 }: GeoBlocksSectionProps) {
-  const handleRemove = (geoBlockId: string, target: string) => {
-    if (window.confirm(`Remove geo-block rule for ${target} permanently?`)) {
-      onRemove(geoBlockId);
-    }
-  };
-
   return (
     <AdminSectionCard
       title="Geo-Block Rules"
@@ -206,7 +200,7 @@ export function GeoBlocksSection({
                   </Button>
                   <Button
                     onClick={() =>
-                      handleRemove(item.id, `${item.targetType}:${item.targetId}`)
+                      onRemove(item.id, `${item.targetType}:${item.targetId}`)
                     }
                     disabled={isSubmitting}
                     variant="destructive"

@@ -79,6 +79,15 @@ export function useSettingsAnnouncementsPageController() {
     useState<SettingRollbackDialogState | null>(null);
   const [announcementEditDialog, setAnnouncementEditDialog] =
     useState<AnnouncementEditDialogState | null>(null);
+  const [announcementDeleteDialog, setAnnouncementDeleteDialog] = useState<{
+    isOpen: boolean;
+    announcementId: string | null;
+    title: string;
+  }>({
+    isOpen: false,
+    announcementId: null,
+    title: "",
+  });
 
   const settingsQuery = useQuery({
     queryKey: [
@@ -674,12 +683,30 @@ export function useSettingsAnnouncementsPageController() {
     }
   };
 
-  const handleDeleteAnnouncement = async (announcementId: string) => {
+  const handleOpenDeleteDialog = (announcementId: string, title: string) => {
+    setAnnouncementDeleteDialog({
+      isOpen: true,
+      announcementId,
+      title,
+    });
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setAnnouncementDeleteDialog({
+      isOpen: false,
+      announcementId: null,
+      title: "",
+    });
+  };
+
+  const handleDeleteAnnouncement = async () => {
+    if (!announcementDeleteDialog.announcementId) return;
+
     setAnnouncementsNotice(null);
 
     try {
       const response = await deleteAnnouncementMutation.mutateAsync(
-        announcementId,
+        announcementDeleteDialog.announcementId,
       );
 
       if (!response.success) {
@@ -688,6 +715,7 @@ export function useSettingsAnnouncementsPageController() {
           title: "Unable to delete announcement",
           description: response.error,
         });
+        handleCloseDeleteDialog();
         return;
       }
 
@@ -696,6 +724,7 @@ export function useSettingsAnnouncementsPageController() {
         title: "Announcement deleted",
         description: "Announcement has been deleted successfully.",
       });
+      handleCloseDeleteDialog();
     } catch (error) {
       setAnnouncementsNotice({
         tone: "error",
@@ -705,6 +734,7 @@ export function useSettingsAnnouncementsPageController() {
           "Something went wrong while deleting the announcement.",
         ),
       });
+      handleCloseDeleteDialog();
     }
   };
 
@@ -794,7 +824,7 @@ export function useSettingsAnnouncementsPageController() {
       onEdit: openAnnouncementEditDialog,
       onToggleActive: handleToggleAnnouncementActive,
       onTogglePinned: handleToggleAnnouncementPinned,
-      onDelete: handleDeleteAnnouncement,
+      onDelete: handleOpenDeleteDialog,
       onRefresh: () => {
         void queryClient.invalidateQueries({
           queryKey: ["admin", "phase6", "announcements"],
@@ -898,6 +928,13 @@ export function useSettingsAnnouncementsPageController() {
             : current,
         ),
       onSubmit: handleConfirmAnnouncementEdit,
+    },
+    announcementDeleteDialog: {
+      isOpen: announcementDeleteDialog.isOpen,
+      title: announcementDeleteDialog.title,
+      isPending: deleteAnnouncementMutation.isPending,
+      onClose: handleCloseDeleteDialog,
+      onConfirm: handleDeleteAnnouncement,
     },
   };
 }

@@ -17,3 +17,8 @@ export interface GeoBlockReasonDialogState {
   reason: string;
   error: string | null;
 }
+
+export interface GeoBlockRemoveDialogState {
+  geoBlockId: string;
+  target: string;
+}

@@ -16,6 +16,12 @@ export function UnauthorizedPage() {
   const [searchParams] = useSearchParams();
   const reason = searchParams.get("reason");
   const from = searchParams.get("from");
+  const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+
+  const handleLogin = () => {
+    const returnUrl = encodeURIComponent(window.location.origin + (from || "/"));
+    window.location.href = `${API_BASE_URL}/auth/login?returnTo=${returnUrl}`;
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#0f0f10] px-4 text-[#f5f5f7]">
@@ -28,19 +34,29 @@ export function UnauthorizedPage() {
           <p className="mt-2 text-xs text-zinc-500">Requested route: {from}</p>
         ) : null}
 
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-          <a
-            href="/"
-            className="rounded-lg border border-sky-400/30 bg-sky-500/10 px-3 py-2 text-xs font-medium text-sky-100 hover:bg-sky-500/20"
+        <div className="mt-5 flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={handleLogin}
+            className="w-full rounded-xl bg-sky-500 px-4 py-3 text-sm font-medium text-white hover:bg-sky-600 transition-colors"
           >
-            Retry Admin Session
-          </a>
-          <Link
-            to="/404"
-            className="rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-xs font-medium text-zinc-100 hover:bg-white/10"
-          >
-            Open Safe Fallback
-          </Link>
+            Sign In to Admin Panel
+          </button>
+          
+          <div className="flex gap-2">
+            <a
+              href="/"
+              className="flex-1 rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-xs font-medium text-zinc-100 hover:bg-white/10"
+            >
+              Retry Session
+            </a>
+            <Link
+              to="/login"
+              className="flex-1 rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-xs font-medium text-zinc-100 hover:bg-white/10"
+            >
+              Go to Login
+            </Link>
+          </div>
         </div>
       </article>
     </div>

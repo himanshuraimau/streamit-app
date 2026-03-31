@@ -39,17 +39,27 @@ StreamIt is a modern streaming platform built with TypeScript, offering a compre
 
 ```
 streamit/
-├── frontend/           # React application
+├── frontend/              # User-facing React application (Port 5173)
 │   ├── src/
-│   │   ├── pages/     # Page components
-│   │   ├── components/# Reusable UI components
-│   │   ├── hooks/     # Custom React hooks
-│   │   ├── stores/    # Zustand state stores
-│   │   ├── lib/       # Utility libraries
-│   │   └── types/     # TypeScript definitions
+│   │   ├── pages/        # Page components
+│   │   ├── components/   # Reusable UI components
+│   │   ├── hooks/        # Custom React hooks
+│   │   ├── stores/       # Zustand state stores
+│   │   ├── lib/          # Utility libraries
+│   │   └── types/        # TypeScript definitions
+│   ├── .env.example      # Frontend environment template
 │   └── Dockerfile
 │
-├── backend/           # Express API server
+├── admin-frontend/        # Admin dashboard React app (Port 5174)
+│   ├── src/
+│   │   ├── pages/        # Admin page components
+│   │   ├── components/   # Admin UI components
+│   │   ├── lib/          # Admin utilities
+│   │   └── hooks/        # Admin hooks
+│   ├── .env.example      # Admin environment template
+│   └── ADMIN_DASHBOARD_GUIDE.md
+│
+├── backend/               # Express API server (Port 3000)
 │   ├── src/
 │   │   ├── controllers/  # Request handlers
 │   │   ├── routes/       # API route definitions
@@ -57,10 +67,12 @@ streamit/
 │   │   ├── middleware/   # Express middleware
 │   │   ├── lib/          # Shared libraries
 │   │   └── types/        # TypeScript definitions
-│   ├── prisma/          # Database schema & migrations
+│   ├── prisma/           # Database schema & migrations
+│   ├── scripts/          # Utility scripts (admin promotion, etc.)
+│   ├── .env.example      # Backend environment template
 │   └── Dockerfile
 │
-└── docker-compose.yml  # Container orchestration
+└── docker-compose.yml     # Container orchestration
 ```
 
 ## ✨ Features
@@ -150,6 +162,64 @@ streamit/
 - View creator profiles
 - Like and comment on posts
 - Discover new content
+
+### 🛡️ Admin Dashboard
+
+**User Management:**
+- View all users with filtering and search
+- Suspend/unsuspend users with reasons
+- Change user roles (USER, CREATOR, ADMIN, SUPER_ADMIN)
+- View user activity and login history
+- Bulk user operations
+
+**Creator Applications:**
+- Review pending creator applications
+- Approve or reject with reasons
+- View identity verification documents
+- Verify financial details
+- Track application status
+
+**Content Moderation:**
+- Review user reports (posts, comments, streams)
+- Hide/unhide content
+- Delete inappropriate content
+- View report history and resolution
+- Bulk moderation actions
+
+**Financial Operations:**
+- View wallet balances and transactions
+- Process creator withdrawal requests
+- Approve/reject/hold withdrawals
+- Financial reconciliation tools
+- Transaction history and exports
+- Commission configuration
+
+**Advertising:**
+- Create and manage ad campaigns
+- Set budgets and targeting
+- View campaign analytics
+- Track impressions, clicks, conversions
+- Campaign performance metrics
+
+**Legal & Compliance:**
+- Manage legal cases
+- Process takedown requests
+- Configure geo-blocking rules
+- Track compliance actions
+- Audit trail for all actions
+
+**System Settings:**
+- Configure platform settings
+- Create announcements
+- Manage discount codes
+- System setting version history
+- Rollback capability
+
+**Security & Monitoring:**
+- View admin activity logs
+- Permission management
+- Security hardening controls
+- Audit history tracking
 
 ### 🔍 Search & Discovery
 
@@ -256,43 +326,130 @@ streamit/
 
 ### Environment Variables
 
-**Backend:**
+See `.env.example` files in each directory for complete documentation.
+
+**Backend (`backend/.env`):**
+- `PORT` - Server port (default: 3000)
+- `NODE_ENV` - Environment mode (development/production)
 - `DATABASE_URL` - PostgreSQL connection string
-- `BETTER_AUTH_SECRET` - Authentication secret
+- `BETTER_AUTH_SECRET` - Authentication secret (min 32 chars)
+- `BETTER_AUTH_URL` - Backend URL for OAuth callbacks
+- `FRONTEND_URL` - User-facing frontend URL
+- `ADMIN_FRONTEND_URL` - Admin dashboard URL (required for CORS)
 - `RESEND_API_KEY` - Email service API key
-- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_BUCKET` - S3 storage
+- `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `S3_BUCKET_NAME` - S3 storage
 - `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` - Streaming service
+- `DODO_API_KEY`, `DODO_WEBHOOK_SECRET` - Payment gateway
+- `ADMIN_EXPORT_SIGNING_SECRET` - Admin export security (optional)
 
-**Frontend:**
-- `VITE_API_URL` - Backend API URL
-- `VITE_LIVEKIT_WS_URL` - LiveKit WebSocket URL
+**Frontend (`frontend/.env`):**
+- `VITE_API_URL` - Backend API URL (http://localhost:3000)
+- `VITE_LIVEKIT_WS_URL` - LiveKit WebSocket URL (optional, from backend)
 
-## 🛠️ Development
+**Admin Frontend (`admin-frontend/.env`):**
+- `VITE_API_URL` - Backend API URL (http://localhost:3000)
 
-### Backend
+## 🛠️ Development Setup
+
+### Prerequisites
+
+- [Bun](https://bun.sh) v1.3.0 or higher
+- PostgreSQL 16
+- Node.js 18+ (for some tooling)
+
+### Quick Start
+
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd streamit
+   ```
+
+2. **Set up environment variables:**
+   ```bash
+   # Backend
+   cd backend
+   cp .env.example .env
+   # Edit .env with your credentials
+   
+   # Frontend
+   cd ../frontend
+   cp .env.example .env
+   # Edit .env with backend URL
+   
+   # Admin Frontend
+   cd ../admin-frontend
+   cp .env.example .env
+   # Edit .env with backend URL
+   ```
+
+3. **Start the backend:**
+   ```bash
+   cd backend
+   bun install
+   bun run db:generate      # Generate Prisma client
+   bun run db:migrate       # Run database migrations
+   bun run db:seed          # Seed payment data
+   bun run db:seed-discount # Seed discount codes
+   bun run dev              # Start on http://localhost:3000
+   ```
+
+4. **Start the frontend:**
+   ```bash
+   cd frontend
+   bun install
+   bun run dev              # Start on http://localhost:5173
+   ```
+
+5. **Start the admin dashboard (optional):**
+   ```bash
+   cd admin-frontend
+   bun install
+   bun run dev              # Start on http://localhost:5174
+   ```
+
+### Admin Access
+
+To access the admin dashboard, promote a user to admin role:
 
 ```bash
 cd backend
-bun install
-bun run db:migrate    # Run database migrations
-bun run dev           # Start development server
+bun run admin:promote user@example.com          # Promote to ADMIN
+bun run admin:promote user@example.com SUPER_ADMIN  # Promote to SUPER_ADMIN
 ```
 
-### Frontend
-
-```bash
-cd frontend
-bun install
-bun run dev           # Start development server
-```
+Then login at http://localhost:5174
 
 ### Database Management
 
 ```bash
-bun run db:studio     # Open Prisma Studio
+cd backend
+bun run db:studio     # Open Prisma Studio (GUI)
 bun run db:migrate    # Create new migration
-bun run db:push       # Push schema changes
+bun run db:push       # Push schema changes without migration
+bun run db:generate   # Regenerate Prisma client
 ```
+
+### Development Scripts
+
+**Backend:**
+- `bun run dev` - Start with hot reload
+- `bun run build` - Build for production
+- `bun run start` - Start production server
+- `bun run typecheck` - Run TypeScript checks
+- `bun run lint` - Run ESLint
+- `bun run format` - Format with Prettier
+
+**Frontend:**
+- `bun run dev` - Start dev server (port 5173)
+- `bun run build` - Build for production
+- `bun run preview` - Preview production build
+- `bun run lint` - Run ESLint
+
+**Admin Frontend:**
+- `bun run dev` - Start dev server (port 5174)
+- `bun run build` - Build for production
+- `bun run preview` - Preview production build
 
 ## 🎨 UI/UX Features
 

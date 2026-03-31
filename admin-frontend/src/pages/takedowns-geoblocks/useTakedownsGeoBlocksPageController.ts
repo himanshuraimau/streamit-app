@@ -19,6 +19,7 @@ import {
 
 import type {
   GeoBlockReasonDialogState,
+  GeoBlockRemoveDialogState,
   TakedownAction,
   TakedownActionDialogState,
   TakedownsNoticeState,
@@ -64,6 +65,7 @@ export function useTakedownsGeoBlocksPageController() {
   const [geoBlocksNotice, setGeoBlocksNotice] = useState<TakedownsNoticeState | null>(null);
   const [takedownActionDialog, setTakedownActionDialog] = useState<TakedownActionDialogState | null>(null);
   const [geoBlockReasonDialog, setGeoBlockReasonDialog] = useState<GeoBlockReasonDialogState | null>(null);
+  const [geoBlockRemoveDialog, setGeoBlockRemoveDialog] = useState<GeoBlockRemoveDialogState | null>(null);
 
   const takedownsQuery = useQuery({
     queryKey: [
@@ -213,6 +215,19 @@ export function useTakedownsGeoBlocksPageController() {
   const closeGeoBlockReasonDialog = (open: boolean) => {
     if (!open && !updateGeoBlockMutation.isPending) {
       setGeoBlockReasonDialog(null);
+    }
+  };
+
+  const openGeoBlockRemoveDialog = (geoBlockId: string, target: string) => {
+    setGeoBlockRemoveDialog({
+      geoBlockId,
+      target,
+    });
+  };
+
+  const closeGeoBlockRemoveDialog = () => {
+    if (!removeGeoBlockMutation.isPending) {
+      setGeoBlockRemoveDialog(null);
     }
   };
 
@@ -497,11 +512,15 @@ export function useTakedownsGeoBlocksPageController() {
     }
   };
 
-  const handleRemoveGeoBlock = async (geoBlockId: string) => {
+  const handleConfirmRemoveGeoBlock = async () => {
+    if (!geoBlockRemoveDialog) {
+      return;
+    }
+
     setGeoBlocksNotice(null);
 
     try {
-      const response = await removeGeoBlockMutation.mutateAsync(geoBlockId);
+      const response = await removeGeoBlockMutation.mutateAsync(geoBlockRemoveDialog.geoBlockId);
 
       if (!response.success) {
         setGeoBlocksNotice({
@@ -509,9 +528,11 @@ export function useTakedownsGeoBlocksPageController() {
           title: "Unable to remove geo-block",
           description: response.error,
         });
+        setGeoBlockRemoveDialog(null);
         return;
       }
 
+      setGeoBlockRemoveDialog(null);
       setGeoBlocksNotice({
         tone: "success",
         title: "Geo-block removed",
@@ -526,6 +547,7 @@ export function useTakedownsGeoBlocksPageController() {
           "Something went wrong while removing the geo-block.",
         ),
       });
+      setGeoBlockRemoveDialog(null);
     }
   };
 
@@ -614,7 +636,7 @@ export function useTakedownsGeoBlocksPageController() {
         ),
       onToggleStatus: handleToggleGeoBlockStatus,
       onEditReason: openGeoBlockReasonDialog,
-      onRemove: handleRemoveGeoBlock,
+      onRemove: openGeoBlockRemoveDialog,
       onRefresh: () => {
         void queryClient.invalidateQueries({ queryKey: ["admin", "phase6", "geoblocks"] });
       },
@@ -667,6 +689,13 @@ export function useTakedownsGeoBlocksPageController() {
             : current,
         ),
       onSubmit: handleConfirmGeoBlockReasonChange,
+    },
+    geoBlockRemoveDialog: {
+      isOpen: geoBlockRemoveDialog !== null,
+      target: geoBlockRemoveDialog?.target ?? "",
+      onClose: closeGeoBlockRemoveDialog,
+      onConfirm: handleConfirmRemoveGeoBlock,
+      isPending: removeGeoBlockMutation.isPending,
     },
   };
 }

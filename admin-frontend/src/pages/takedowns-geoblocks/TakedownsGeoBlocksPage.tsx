@@ -1,5 +1,6 @@
 import { GeoBlockCreateSection } from "./components/GeoBlockCreateSection";
 import { GeoBlockReasonDialog } from "./components/GeoBlockReasonDialog";
+import { GeoBlockRemoveDialog } from "./components/GeoBlockRemoveDialog";
 import { GeoBlocksSection } from "./components/GeoBlocksSection";
 import { TakedownActionDialog } from "./components/TakedownActionDialog";
 import { TakedownCreateSection } from "./components/TakedownCreateSection";
@@ -36,6 +37,7 @@ export function TakedownsGeoBlocksPage() {
 
       <TakedownActionDialog {...controller.takedownActionDialog} />
       <GeoBlockReasonDialog {...controller.geoBlockReasonDialog} />
+      <GeoBlockRemoveDialog {...controller.geoBlockRemoveDialog} />
     </div>
   );
 }

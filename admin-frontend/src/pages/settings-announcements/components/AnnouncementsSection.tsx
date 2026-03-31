@@ -38,7 +38,7 @@ interface AnnouncementsSectionProps {
   onEdit: (announcement: AnnouncementItem) => void;
   onToggleActive: (announcementId: string, nextValue: boolean) => void;
   onTogglePinned: (announcementId: string, nextValue: boolean) => void;
-  onDelete: (announcementId: string) => void;
+  onDelete: (announcementId: string, title: string) => void;
   onRefresh: () => void;
 }
 
@@ -63,11 +63,6 @@ export function AnnouncementsSection({
   onDelete,
   onRefresh,
 }: AnnouncementsSectionProps) {
-  const handleDelete = (announcementId: string, title: string) => {
-    if (window.confirm(`Delete "${title}" permanently?`)) {
-      onDelete(announcementId);
-    }
-  };
 
   return (
     <AdminSectionCard
@@ -193,7 +188,7 @@ export function AnnouncementsSection({
                     {item.isPinned ? "Unpin" : "Pin"}
                   </Button>
                   <Button
-                    onClick={() => handleDelete(item.id, item.title)}
+                    onClick={() => onDelete(item.id, item.title)}
                     disabled={isSubmitting}
                     variant="destructive"
                     size="sm"

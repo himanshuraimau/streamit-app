@@ -8,19 +8,22 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { AdminShell } from "./components/layout/AdminShell";
 import { getAdminMe } from "./lib/admin-api";
-import { DashboardPage } from "./pages/DashboardPage";
-import { UsersPage } from "./pages/UsersPage";
-import { CreatorApplicationsPage } from "./pages/CreatorApplicationsPage";
-import { ModerationReportsPage } from "./pages/ModerationReportsPage";
-import { FinancePage } from "./pages/FinancePage";
-import { AdsAnalyticsPage } from "./pages/AdsAnalyticsPage";
-import { LegalCasesPage } from "./pages/LegalCasesPage";
-import { TakedownsGeoBlocksPage } from "./pages/TakedownsGeoBlocksPage";
-import { SettingsAnnouncementsPage } from "./pages/SettingsAnnouncementsPage";
-import { ComplianceAuditHistoryPage } from "./pages/ComplianceAuditHistoryPage";
-import { PermissionsPage } from "./pages/PermissionsPage";
-import { SecurityHardeningPage } from "./pages/SecurityHardeningPage";
-import { UnauthorizedPage } from "./pages/UnauthorizedPage";
+import {
+  DashboardPage,
+  UsersPage,
+  CreatorApplicationsPage,
+  ModerationReportsPage,
+  FinancePage,
+  AdsAnalyticsPage,
+  LegalCasesPage,
+  TakedownsGeoBlocksPage,
+  SettingsAnnouncementsPage,
+  ComplianceAuditHistoryPage,
+  PermissionsPage,
+  SecurityHardeningPage,
+  UnauthorizedPage,
+  LoginPage,
+} from "./pages";
 
 function isAuthorizationError(message: string) {
   const normalized = message.toLowerCase();
@@ -105,6 +108,10 @@ function NotFoundPage() {
 }
 
 const router = createBrowserRouter([
+  {
+    path: "/login",
+    element: <LoginPage />,
+  },
   {
     path: "/unauthorized",
     element: <UnauthorizedPage />,

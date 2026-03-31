@@ -1,4 +1,5 @@
 import { AnnouncementCreateSection } from "./components/AnnouncementCreateSection";
+import { AnnouncementDeleteDialog } from "./components/AnnouncementDeleteDialog";
 import { AnnouncementEditDialog } from "./components/AnnouncementEditDialog";
 import { AnnouncementsSection } from "./components/AnnouncementsSection";
 import { SettingCreateSection } from "./components/SettingCreateSection";
@@ -41,6 +42,7 @@ export function SettingsAnnouncementsPage() {
       <SettingEditDialog {...controller.settingEditDialog} />
       <SettingRollbackDialog {...controller.settingRollbackDialog} />
       <AnnouncementEditDialog {...controller.announcementEditDialog} />
+      <AnnouncementDeleteDialog {...controller.announcementDeleteDialog} />
     </div>
   );
 }

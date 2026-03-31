@@ -5,6 +5,7 @@ export { CreatorApplicationsPage } from "./creator-applications/CreatorApplicati
 export { DashboardPage } from "./DashboardPage";
 export { FinancePage } from "./finance/FinancePage";
 export { LegalCasesPage } from "./legal-cases/LegalCasesPage";
+export { LoginPage } from "./LoginPage";
 export { ModerationReportsPage } from "./moderation-reports/ModerationReportsPage";
 export { PermissionsPage } from "./permissions/PermissionsPage";
 export { SecurityHardeningPage } from "./security-hardening/SecurityHardeningPage";
