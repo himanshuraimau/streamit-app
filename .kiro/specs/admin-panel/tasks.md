@@ -700,7 +700,7 @@ The implementation uses TypeScript for both backend and frontend, with Better Au
   - **Property 13: Coin Purchase Wallet Balance Invariant**
   - **Validates: Requirements 8.20**
 
-- [-] 11. Phase 5: Monetization - Frontend Implementation
+- [x] 11. Phase 5: Monetization - Frontend Implementation
   - [x] 11.1 Create monetization API client
     - Create admin-fe/src/lib/api/monetization.api.ts
     - Implement getLedger(params) function
@@ -747,7 +747,7 @@ The implementation uses TypeScript for both backend and frontend, with Better Au
     - Show success/error toast
     - _Requirements: 8.17_
   
-  - [-] 11.6 Create GiftsPage
+  - [x] 11.6 Create GiftsPage
     - Create admin-fe/src/pages/monetization/GiftsPage.tsx
     - Use TanStack Query to fetch gift transactions
     - Display gifts in DataTable
@@ -755,22 +755,22 @@ The implementation uses TypeScript for both backend and frontend, with Better Au
     - Add filters for date range and amount
     - _Requirements: 8.18_
   
-  - [ ] 11.7 Add monetization routes to router
+  - [x] 11.7 Add monetization routes to router
     - Add /monetization/ledger route with PermissionRoute
     - Add /monetization/withdrawals route with PermissionRoute
     - Add /monetization/gifts route with PermissionRoute
     - Set allowedRoles appropriately
     - _Requirements: 2.6_
 
-- [~] 12. Phase 6: Advertisements - Backend Implementation
-  - [ ] 12.1 Create ads validation schemas
+- [x] 12. Phase 6: Advertisements - Backend Implementation
+  - [x] 12.1 Create ads validation schemas
     - Create backend/src/admin/validations/ads.schema.ts
     - Define createAdSchema with all required fields
     - Define updateAdSchema with optional fields
     - Validate targetRegion array, CPM value, frequency cap
     - _Requirements: 17.5_
   
-  - [ ] 12.2 Implement AdsService
+  - [x] 12.2 Implement AdsService
     - Create backend/src/admin/services/ads.service.ts
     - Implement listAds(filters, pagination)
     - Implement createAd(data, adminId)
@@ -780,14 +780,14 @@ The implementation uses TypeScript for both backend and frontend, with Better Au
     - Create audit log entries for create, update, delete
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8_
   
-  - [ ] 12.3 Integrate with AWS S3 for ad uploads
+  - [x] 12.3 Integrate with AWS S3 for ad uploads
     - Import AWS SDK in AdsService
     - Generate presigned URLs for uploads
     - Store S3 URLs in AdCreative.mediaUrl
     - Handle upload errors gracefully
     - _Requirements: 9.4, 9.12_
   
-  - [ ] 12.4 Implement AdsController
+  - [x] 12.4 Implement AdsController
     - Create backend/src/admin/controllers/ads.controller.ts
     - Implement listAds handler
     - Implement createAd handler
@@ -796,7 +796,7 @@ The implementation uses TypeScript for both backend and frontend, with Better Au
     - Implement getAdPerformance handler
     - _Requirements: 17.2_
   
-  - [ ] 12.5 Create ads routes
+  - [x] 12.5 Create ads routes
     - Create backend/src/admin/routes/ads.route.ts
     - Define GET /api/admin/ads
     - Define POST /api/admin/ads
@@ -805,7 +805,7 @@ The implementation uses TypeScript for both backend and frontend, with Better Au
     - Define GET /api/admin/ads/:id/performance
     - _Requirements: 17.4_
   
-  - [ ] 12.6 Implement ad filtering
+  - [x] 12.6 Implement ad filtering
     - Add filters for status (active/inactive), target region, category, date range
     - Support sorting by creation date, CPM, impressions
     - _Requirements: 9.2, 9.3_
@@ -818,8 +818,8 @@ The implementation uses TypeScript for both backend and frontend, with Better Au
   - **Property 15: Active Ad Eligibility Invariant**
   - **Validates: Requirements 9.16**
 
-- [ ] 13. Phase 6: Advertisements - Frontend Implementation
-  - [ ] 13.1 Create ads API client
+- [x] 13. Phase 6: Advertisements - Frontend Implementation
+  - [x] 13.1 Create ads API client
     - Create admin-fe/src/lib/api/ads.api.ts
     - Implement list(params) function
     - Implement create(data) function
@@ -829,7 +829,7 @@ The implementation uses TypeScript for both backend and frontend, with Better Au
     - Implement getPresignedUrl() function for S3 uploads
     - _Requirements: 9.9_
   
-  - [ ] 13.2 Create AdsPage
+  - [x] 13.2 Create AdsPage
     - Create admin-fe/src/pages/ads/AdsPage.tsx
     - Use TanStack Query to fetch ads
     - Display ads in DataTable
@@ -838,7 +838,7 @@ The implementation uses TypeScript for both backend and frontend, with Better Au
     - Add "Create Ad" button navigating to /ads/new
     - _Requirements: 9.9_
   
-  - [ ] 13.3 Create AdEditorPage
+  - [x] 13.3 Create AdEditorPage
     - Create admin-fe/src/pages/ads/AdEditorPage.tsx
     - Use React Hook Form with Zod validation
     - Add form fields: title Input, creative file upload, target regions MultiSelect, target gender Select, category MultiSelect, CPM number Input, frequency cap number Input, active Switch
@@ -846,7 +846,7 @@ The implementation uses TypeScript for both backend and frontend, with Better Au
     - Pre-fill form in edit mode
     - _Requirements: 9.10, 9.11_
   
-  - [ ] 13.4 Implement S3 upload flow
+  - [x] 13.4 Implement S3 upload flow
     - Create admin-fe/src/components/ads/MediaUpload.tsx
     - Request presigned URL from backend
     - Upload file directly to S3 using presigned URL
@@ -854,22 +854,22 @@ The implementation uses TypeScript for both backend and frontend, with Better Au
     - Handle upload errors
     - _Requirements: 9.12_
   
-  - [ ] 13.5 Create ad performance charts
+  - [x] 13.5 Create ad performance charts
     - Create admin-fe/src/components/ads/AdPerformanceChart.tsx
     - Use Recharts for visualizations
     - Display metrics: impressions, clicks, CTR, total spend, average CPM
     - Show charts in Card components
     - _Requirements: 9.15_
   
-  - [ ] 13.6 Add ads routes to router
+  - [x] 13.6 Add ads routes to router
     - Add /ads route with PermissionRoute
     - Add /ads/new route with PermissionRoute
     - Add /ads/:id route with PermissionRoute
     - Set allowedRoles to ['super_admin', 'finance_admin']
     - _Requirements: 2.6_
 
-- [ ] 14. Phase 7: Analytics - Backend Implementation
-  - [ ] 14.1 Implement AnalyticsService
+- [x] 14. Phase 7: Analytics - Backend Implementation
+  - [x] 14.1 Implement AnalyticsService
     - Create backend/src/admin/services/analytics.service.ts
     - Implement getOverview(dateRange) calculating DAU, MAU, revenue, concurrent users, conversion rate
     - Implement getTopStreamers(dateRange, limit) with revenue ranking
@@ -878,14 +878,14 @@ The implementation uses TypeScript for both backend and frontend, with Better Au
     - Use Prisma aggregations for calculations
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7, 10.8_
   
-  - [ ] 14.2 Implement query result caching
+  - [x] 14.2 Implement query result caching
     - Add caching layer for expensive analytics queries
     - Use in-memory cache with TTL
     - Cache overview metrics for 5 minutes
     - Cache top streamers/content for 10 minutes
     - _Requirements: 23.11_
   
-  - [ ] 14.3 Implement AnalyticsController
+  - [x] 14.3 Implement AnalyticsController
     - Create backend/src/admin/controllers/analytics.controller.ts
     - Implement getOverview handler with date range parameter
     - Implement getTopStreamers handler
@@ -893,7 +893,7 @@ The implementation uses TypeScript for both backend and frontend, with Better Au
     - Implement getConversionFunnel handler
     - _Requirements: 17.2_
   
-  - [ ] 14.4 Create analytics routes
+  - [x] 14.4 Create analytics routes
     - Create backend/src/admin/routes/analytics.route.ts
     - Define GET /api/admin/analytics/overview
     - Define GET /api/admin/analytics/streamers
@@ -901,7 +901,7 @@ The implementation uses TypeScript for both backend and frontend, with Better Au
     - Define GET /api/admin/analytics/conversion
     - _Requirements: 17.4_
   
-  - [ ] 14.5 Optimize analytics queries
+  - [x] 14.5 Optimize analytics queries
     - Add database indexes for analytics queries
     - Use Prisma select to fetch only required fields
     - Implement efficient aggregation queries

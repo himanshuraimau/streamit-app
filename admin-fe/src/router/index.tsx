@@ -9,6 +9,11 @@ import { LiveMonitorPage } from '@/pages/streamers/LiveMonitorPage';
 import { ModerationQueuePage } from '@/pages/moderation/ModerationQueuePage';
 import { ReportsPage } from '@/pages/reports/ReportsPage';
 import { ReportDetailPage } from '@/pages/reports/ReportDetailPage';
+import { LedgerPage } from '@/pages/monetization/LedgerPage';
+import { WithdrawalsPage } from '@/pages/monetization/WithdrawalsPage';
+import { GiftsPage } from '@/pages/monetization/GiftsPage';
+import { AdsPage } from '@/pages/ads/AdsPage';
+import { AdEditorPage } from '@/pages/ads/AdEditorPage';
 import { ProtectedRoute } from './ProtectedRoute';
 import { PermissionRoute } from './PermissionRoute';
 import { AdminLayout } from '@/components/layout/AdminLayout';
@@ -117,6 +122,54 @@ export const router = createBrowserRouter([
       {
         path: ':id',
         element: <ReportDetailPage />,
+      },
+    ],
+  },
+  {
+    path: '/monetization',
+    element: (
+      <ProtectedRoute>
+        <PermissionRoute allowedRoles={['super_admin', 'finance_admin', 'compliance_officer']}>
+          <AdminLayout />
+        </PermissionRoute>
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        path: 'ledger',
+        element: <LedgerPage />,
+      },
+      {
+        path: 'withdrawals',
+        element: <WithdrawalsPage />,
+      },
+      {
+        path: 'gifts',
+        element: <GiftsPage />,
+      },
+    ],
+  },
+  {
+    path: '/ads',
+    element: (
+      <ProtectedRoute>
+        <PermissionRoute allowedRoles={['super_admin', 'finance_admin']}>
+          <AdminLayout />
+        </PermissionRoute>
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: <AdsPage />,
+      },
+      {
+        path: 'new',
+        element: <AdEditorPage />,
+      },
+      {
+        path: ':id/edit',
+        element: <AdEditorPage />,
       },
     ],
   },

@@ -25,8 +25,8 @@ import streamerMgmtRouter from './streamer-mgmt.route';
 import contentModRouter from './content-mod.route';
 import reportsRouter from './reports.route';
 import monetizationRouter from './monetization.route';
-// import adsRouter from './ads.route';
-// import analyticsRouter from './analytics.route';
+import adsRouter from './ads.route';
+import analyticsRouter from './analytics.route';
 // import complianceRouter from './compliance.route';
 // import settingsRouter from './settings.route';
 
@@ -80,24 +80,24 @@ adminRouter.use(
 
 // Ads Module
 // Allowed roles: super_admin, finance_admin
-// adminRouter.use(
-//   '/ads',
-//   requirePermission([UserRole.SUPER_ADMIN, UserRole.FINANCE_ADMIN]),
-//   adsRouter
-// );
+adminRouter.use(
+  '/ads',
+  requirePermission([UserRole.SUPER_ADMIN, UserRole.FINANCE_ADMIN]),
+  adsRouter
+);
 
 // Analytics Module
 // Allowed roles: super_admin, moderator, finance_admin, compliance_officer
-// adminRouter.use(
-//   '/analytics',
-//   requirePermission([
-//     UserRole.SUPER_ADMIN,
-//     UserRole.MODERATOR,
-//     UserRole.FINANCE_ADMIN,
-//     UserRole.COMPLIANCE_OFFICER,
-//   ]),
-//   analyticsRouter
-// );
+adminRouter.use(
+  '/analytics',
+  requirePermission([
+    UserRole.SUPER_ADMIN,
+    UserRole.MODERATOR,
+    UserRole.FINANCE_ADMIN,
+    UserRole.COMPLIANCE_OFFICER,
+  ]),
+  analyticsRouter
+);
 
 // Compliance Module
 // Allowed roles: super_admin, compliance_officer

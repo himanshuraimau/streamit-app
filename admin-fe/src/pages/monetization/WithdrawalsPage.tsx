@@ -51,7 +51,7 @@ export function WithdrawalsPage() {
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: queryKeys.monetization.withdrawals(params),
+    queryKey: queryKeys.monetization.withdrawals.list(params),
     queryFn: () => monetizationApi.getWithdrawals(params),
     refetchInterval: params.status === 'PENDING' ? 30000 : false,
   });

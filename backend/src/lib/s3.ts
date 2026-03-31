@@ -56,6 +56,8 @@ const getFolderByPurpose = (purpose: string): string => {
       return 'posts/videos';
     case 'POST_GIF':
       return 'posts/gifs';
+    case 'AD_CREATIVE':
+      return 'ads/creatives';
     default:
       return 'misc';
   }

@@ -40,9 +40,13 @@ export const queryKeys = {
   // Monetization
   monetization: {
     all: ['monetization'] as const,
+    _def: ['monetization'] as const,
     ledger: (params: Record<string, unknown>) => [...queryKeys.monetization.all, 'ledger', params] as const,
-    withdrawals: (params: Record<string, unknown>) =>
-      [...queryKeys.monetization.all, 'withdrawals', params] as const,
+    withdrawals: {
+      _def: ['monetization', 'withdrawals'] as const,
+      list: (params: Record<string, unknown>) =>
+        ['monetization', 'withdrawals', params] as const,
+    },
     gifts: (params: Record<string, unknown>) => [...queryKeys.monetization.all, 'gifts', params] as const,
     wallet: (userId: string) => [...queryKeys.monetization.all, 'wallet', userId] as const,
   },
