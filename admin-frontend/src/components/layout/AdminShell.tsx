@@ -1,4 +1,7 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { logout } from "../../lib/auth-client";
+import { Button } from "../ui/button";
 
 function navClassName(isActive: boolean) {
   return `rounded-xl px-3 py-2 text-sm transition ${
@@ -9,6 +12,21 @@ function navClassName(isActive: boolean) {
 }
 
 export function AdminShell() {
+  const navigate = useNavigate();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Force redirect even if logout fails
+      navigate("/login", { replace: true });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#0f0f10] text-[#f5f5f7]">
       <a
@@ -107,6 +125,17 @@ export function AdminShell() {
               Security Ops
             </NavLink>
           </nav>
+
+          <div className="mt-8 border-t border-white/10 pt-4">
+            <Button
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              variant="outline"
+              className="w-full text-sm"
+            >
+              {isLoggingOut ? "Signing out..." : "Sign Out"}
+            </Button>
+          </div>
         </aside>
 
         <main id="admin-main-content" className="flex-1 rounded-3xl border border-white/10 bg-[#17171a] p-4 md:p-6">

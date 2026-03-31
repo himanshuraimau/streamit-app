@@ -22,7 +22,8 @@ import {
   PermissionsPage,
   SecurityHardeningPage,
   UnauthorizedPage,
-  LoginPage,
+  AdminLoginPage,
+  ForgotPasswordPage,
 } from "./pages";
 
 function isAuthorizationError(message: string) {
@@ -110,7 +111,11 @@ function NotFoundPage() {
 const router = createBrowserRouter([
   {
     path: "/login",
-    element: <LoginPage />,
+    element: <AdminLoginPage />,
+  },
+  {
+    path: "/forgot-password",
+    element: <ForgotPasswordPage />,
   },
   {
     path: "/unauthorized",

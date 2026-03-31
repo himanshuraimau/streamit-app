@@ -1,9 +1,11 @@
 // Page re-exports - centralized for cleaner organization
 export { AdsAnalyticsPage } from "./ads/AdsAnalyticsPage";
+export { AdminLoginPage } from "./AdminLoginPage";
 export { ComplianceAuditHistoryPage } from "./compliance-audit-history/ComplianceAuditHistoryPage";
 export { CreatorApplicationsPage } from "./creator-applications/CreatorApplicationsPage";
 export { DashboardPage } from "./DashboardPage";
 export { FinancePage } from "./finance/FinancePage";
+export { ForgotPasswordPage } from "./ForgotPasswordPage";
 export { LegalCasesPage } from "./legal-cases/LegalCasesPage";
 export { LoginPage } from "./LoginPage";
 export { ModerationReportsPage } from "./moderation-reports/ModerationReportsPage";

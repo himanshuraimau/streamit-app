@@ -27,14 +27,18 @@
  */
 
 import { PrismaClient, UserRole } from "@prisma/client";
+import crypto from "crypto";
 
 const prisma = new PrismaClient();
 
-async function hashPassword(password: string): Promise<string> {
-  // Use Bun's built-in password hashing
-  return await Bun.password.hash(password, {
-    algorithm: "bcrypt",
-    cost: 10,
+async function hashPasswordBetterAuth(password: string): Promise<string> {
+  // Better Auth uses scrypt with salt:key format
+  return new Promise((resolve, reject) => {
+    const salt = crypto.randomBytes(16).toString("hex");
+    crypto.scrypt(password, salt, 64, (err, derivedKey) => {
+      if (err) reject(err);
+      resolve(`${salt}:${derivedKey.toString("hex")}`);
+    });
   });
 }
 
@@ -70,8 +74,8 @@ async function createTestAdmin(
     // Generate username from email
     const username = email.split("@")[0] + "_" + Math.random().toString(36).substring(2, 7);
 
-    // Hash password
-    const hashedPassword = await hashPassword(password);
+    // Hash password using Better Auth format (salt:key)
+    const hashedPassword = await hashPasswordBetterAuth(password);
 
     // Generate user ID
     const userId = await generateUserId();
