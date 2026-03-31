@@ -15,12 +15,14 @@ This file tracks the modular admin refactor so the remaining work stays ordered 
   - Reuse shared section, metric, pagination, and notice components
   - Replace campaign status prompt flow with dialog-based review
 
-## Next Priority
+- [x] Phase 6: `SettingsAnnouncementsPage`
+  - Split into `src/pages/settings-announcements/`
+  - Replaced all `window.prompt` and `window.alert` with proper dialogs
+  - Created modular components for settings and announcements management
+  - Added controller hook with proper state management
+  - Reused shared admin components (AdminSectionCard, AdminNotice, AdminPaginationControls)
 
-- [ ] Phase 6: `SettingsAnnouncementsPage`
-  - Highest remaining page size
-  - Multiple native prompt / alert flows
-  - Needs dialog-based edit / rollback / announcement actions
+## Next Priority
 
 - [ ] Phase 6: `TakedownsGeoBlocksPage`
   - Large moderation/compliance surface
