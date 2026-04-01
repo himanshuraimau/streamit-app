@@ -274,3 +274,5 @@ export function ReportDetailPage() {
     </div>
   );
 }
+
+export default ReportDetailPage;

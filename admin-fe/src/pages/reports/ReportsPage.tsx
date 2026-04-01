@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/common/DataTable';
 import { FilterBar } from '@/components/common/FilterBar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { reportsApi, Report } from '@/lib/api/reports.api';
+import { reportsApi } from '@/lib/api/reports.api';
+import type { Report } from '@/lib/api/reports.api';
 import { Eye } from 'lucide-react';
 
 export function ReportsPage() {
@@ -159,7 +160,6 @@ export function ReportsPage() {
               { label: 'Resolved', value: 'RESOLVED' },
               { label: 'Dismissed', value: 'DISMISSED' },
             ],
-            value: statusFilter,
           },
           {
             key: 'category',
@@ -172,13 +172,12 @@ export function ReportsPage() {
               { label: 'Copyright', value: 'copyright' },
               { label: 'Other', value: 'other' },
             ],
-            value: categoryFilter,
           },
         ]}
         onSearchChange={setSearch}
         onFilterChange={(key, value) => {
-          if (key === 'status') setStatusFilter(value);
-          if (key === 'category') setCategoryFilter(value);
+          if (key === 'status') setStatusFilter(value || '');
+          if (key === 'category') setCategoryFilter(value || '');
         }}
       />
 
@@ -187,17 +186,18 @@ export function ReportsPage() {
         data={data?.data || []}
         isLoading={isLoading}
         pagination={{
-          pageIndex: page - 1,
+          currentPage: page,
           pageSize,
+          totalPages: data?.pagination?.totalPages || 0,
+          hasNextPage: data?.pagination?.hasNextPage || false,
+          hasPreviousPage: data?.pagination?.hasPreviousPage || false,
         }}
-        onPaginationChange={(updater) => {
-          const newState = typeof updater === 'function' 
-            ? updater({ pageIndex: page - 1, pageSize })
-            : updater;
-          setPage(newState.pageIndex + 1);
+        onPaginationChange={(newPage) => {
+          setPage(newPage);
         }}
-        pageCount={data?.pagination?.totalPages || 0}
       />
     </div>
   );
 }
+
+export default ReportsPage;

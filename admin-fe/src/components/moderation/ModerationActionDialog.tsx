@@ -23,7 +23,8 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ContentPreview } from './ContentPreview';
-import { moderationApi, ContentDetail, ModerationActionData } from '@/lib/api/moderation.api';
+import { moderationApi } from '@/lib/api/moderation.api';
+import type { ContentDetail, ModerationActionData } from '@/lib/api/moderation.api';
 import { AlertTriangle, Ban, Flag, MessageSquare, Trash2, X } from 'lucide-react';
 
 interface ModerationActionDialogProps {

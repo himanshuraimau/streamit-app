@@ -75,13 +75,14 @@ export const queryKeys = {
     all: ['compliance'] as const,
     auditLog: (params: Record<string, unknown>) =>
       [...queryKeys.compliance.all, 'audit-log', params] as const,
-    takedowns: () => [...queryKeys.compliance.all, 'takedowns'] as const,
+    takedowns: (params: Record<string, unknown>) => 
+      [...queryKeys.compliance.all, 'takedowns', params] as const,
   },
 
   // Settings
   settings: {
     all: ['settings'] as const,
     general: () => [...queryKeys.settings.all, 'general'] as const,
-    admins: () => [...queryKeys.settings.all, 'admins'] as const,
+    admins: ['settings', 'admins'] as const,
   },
 };

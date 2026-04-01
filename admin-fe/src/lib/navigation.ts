@@ -100,11 +100,39 @@ export const NAV_ITEMS: NavItem[] = [
     href: '/compliance',
     icon: Shield,
     allowedRoles: ['super_admin', 'compliance_officer'],
+    children: [
+      {
+        label: 'Compliance Tools',
+        href: '/compliance',
+        icon: Shield,
+        allowedRoles: ['super_admin', 'compliance_officer'],
+      },
+      {
+        label: 'Audit Log',
+        href: '/compliance/audit',
+        icon: Shield,
+        allowedRoles: ['super_admin', 'compliance_officer'],
+      },
+    ],
   },
   {
     label: 'Settings',
     href: '/settings',
     icon: Settings,
     allowedRoles: ['super_admin'],
+    children: [
+      {
+        label: 'Platform Settings',
+        href: '/settings',
+        icon: Settings,
+        allowedRoles: ['super_admin'],
+      },
+      {
+        label: 'Admin Roles',
+        href: '/settings/roles',
+        icon: Settings,
+        allowedRoles: ['super_admin'],
+      },
+    ],
   },
 ];

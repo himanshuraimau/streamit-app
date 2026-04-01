@@ -208,3 +208,5 @@ export function AdsPage() {
     </div>
   );
 }
+
+export default AdsPage;

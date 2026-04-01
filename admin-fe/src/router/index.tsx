@@ -14,6 +14,11 @@ import { WithdrawalsPage } from '@/pages/monetization/WithdrawalsPage';
 import { GiftsPage } from '@/pages/monetization/GiftsPage';
 import { AdsPage } from '@/pages/ads/AdsPage';
 import { AdEditorPage } from '@/pages/ads/AdEditorPage';
+import { AnalyticsPage } from '@/pages/analytics/AnalyticsPage';
+import { CompliancePage } from '@/pages/compliance/CompliancePage';
+import { AuditLogPage } from '@/pages/compliance/AuditLogPage';
+import { SettingsPage } from '@/pages/settings/SettingsPage';
+import { AdminRolesPage } from '@/pages/settings/AdminRolesPage';
 import { ProtectedRoute } from './ProtectedRoute';
 import { PermissionRoute } from './PermissionRoute';
 import { AdminLayout } from '@/components/layout/AdminLayout';
@@ -170,6 +175,62 @@ export const router = createBrowserRouter([
       {
         path: ':id/edit',
         element: <AdEditorPage />,
+      },
+    ],
+  },
+  {
+    path: '/analytics',
+    element: (
+      <ProtectedRoute>
+        <PermissionRoute allowedRoles={['super_admin', 'moderator', 'finance_admin', 'compliance_officer']}>
+          <AdminLayout />
+        </PermissionRoute>
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: <AnalyticsPage />,
+      },
+    ],
+  },
+  {
+    path: '/compliance',
+    element: (
+      <ProtectedRoute>
+        <PermissionRoute allowedRoles={['super_admin', 'compliance_officer']}>
+          <AdminLayout />
+        </PermissionRoute>
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: <CompliancePage />,
+      },
+      {
+        path: 'audit',
+        element: <AuditLogPage />,
+      },
+    ],
+  },
+  {
+    path: '/settings',
+    element: (
+      <ProtectedRoute>
+        <PermissionRoute allowedRoles={['super_admin']}>
+          <AdminLayout />
+        </PermissionRoute>
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: <SettingsPage />,
+      },
+      {
+        path: 'roles',
+        element: <AdminRolesPage />,
       },
     ],
   },

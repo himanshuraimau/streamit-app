@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { UserRole } from '@prisma/client';
+import { logger } from '../../lib/logger';
 
 /**
  * Factory function that creates middleware to enforce role-based access control
@@ -21,6 +22,12 @@ export const requirePermission = (allowedRoles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     // Step 1: Verify adminUser exists (should be set by adminAuthMiddleware)
     if (!req.adminUser) {
+      logger.authzFailure(
+        'unknown',
+        req.path,
+        'Admin user not found in request',
+        req.ip || 'unknown'
+      );
       return res.status(401).json({
         error: 'Unauthorized',
         message: 'Admin authentication required',
@@ -29,6 +36,12 @@ export const requirePermission = (allowedRoles: UserRole[]) => {
 
     // Step 2: Check if the admin's role is in the allowed roles list
     if (!allowedRoles.includes(req.adminUser.role)) {
+      logger.authzFailure(
+        req.adminUser.id,
+        req.path,
+        `Role ${req.adminUser.role} not in allowed roles: ${allowedRoles.join(', ')}`,
+        req.ip || 'unknown'
+      );
       return res.status(403).json({
         error: 'Forbidden',
         message: 'You do not have permission to access this resource',

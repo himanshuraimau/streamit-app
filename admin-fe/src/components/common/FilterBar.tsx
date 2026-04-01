@@ -62,12 +62,13 @@ export function FilterBar({
     <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <RiSearchLine className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <RiSearchLine className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <Input
             placeholder={searchPlaceholder}
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
             className="pl-9"
+            aria-label={searchPlaceholder}
           />
         </div>
 
@@ -77,7 +78,10 @@ export function FilterBar({
             value={activeFilters[filter.key] || ''}
             onValueChange={(value) => onFilterChange?.(filter.key, value || null)}
           >
-            <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectTrigger 
+              className="w-full sm:w-[180px]"
+              aria-label={`Filter by ${filter.label}`}
+            >
               <SelectValue placeholder={filter.label} />
             </SelectTrigger>
             <SelectContent>
@@ -93,7 +97,7 @@ export function FilterBar({
       </div>
 
       {activeFilterCount > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2" role="region" aria-label="Active filters">
           <span className="text-sm text-muted-foreground">Active filters:</span>
           {Object.entries(activeFilters).map(
             ([key, value]) =>
@@ -103,13 +107,19 @@ export function FilterBar({
                   <button
                     onClick={() => handleClearFilter(key)}
                     className="ml-1 rounded-full hover:bg-muted"
+                    aria-label={`Remove ${filters.find((f) => f.key === key)?.label} filter`}
                   >
-                    <RiCloseLine className="h-3 w-3" />
+                    <RiCloseLine className="h-3 w-3" aria-hidden="true" />
                   </button>
                 </Badge>
               )
           )}
-          <Button variant="ghost" size="sm" onClick={handleClearAll}>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleClearAll}
+            aria-label="Clear all filters"
+          >
             Clear all
           </Button>
         </div>

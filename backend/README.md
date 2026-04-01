@@ -140,6 +140,15 @@ FRONTEND_URL="http://localhost:5173"
 ADMIN_FRONTEND_URL="http://localhost:5174"
 ```
 
+**Production Configuration:**
+- `ADMIN_FRONTEND_URL` is required for admin panel CORS configuration
+- In production, set to your admin panel domain (e.g., `https://admin.streamit.com`)
+- The backend automatically includes this URL in CORS allowed origins
+- Secure cookies are automatically enabled in production (`NODE_ENV=production`)
+- Rate limiting is stricter in production:
+  - Admin routes: 500 requests per 15 minutes (vs 1000 in development)
+  - Auth routes: 5 attempts per 15 minutes (vs 10 in development)
+
 #### Email (Resend)
 ```env
 RESEND_API_KEY="re_your_api_key"
@@ -524,7 +533,12 @@ chmod +x deploy.sh
 - Use different secrets for each environment
 
 ### Database
-- Use connection pooling
+- Use connection pooling (configured via DATABASE_URL parameters)
+  - `connection_limit`: Max connections in pool (default: 10, production: 20-30)
+  - `pool_timeout`: Max wait time for connection in seconds (default: 10, production: 20-30)
+  - `connect_timeout`: Max wait time for initial connection (default: 5, production: 5-10)
+  - Example: `postgresql://user:pass@host:5432/db?connection_limit=25&pool_timeout=30&connect_timeout=10`
+  - See `backend/src/admin/CONNECTION_POOLING.md` for detailed configuration guide
 - Enable SSL for production
 - Regular backups
 - Restrict database access

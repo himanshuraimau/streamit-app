@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { adminClient } from './client';
 
 export interface ModerationQueueParams {
   page?: number;
@@ -42,27 +42,27 @@ export interface ModerationActionData {
 
 export const moderationApi = {
   getQueue: async (params: ModerationQueueParams) => {
-    const response = await apiClient.get('/admin/moderation/queue', { params });
+    const response = await adminClient.get('/admin/moderation/queue', { params });
     return response.data;
   },
 
   getContentById: async (id: string): Promise<ContentDetail> => {
-    const response = await apiClient.get(`/admin/moderation/${id}`);
+    const response = await adminClient.get(`/admin/moderation/${id}`);
     return response.data;
   },
 
   moderationAction: async (contentId: string, data: ModerationActionData) => {
-    const response = await apiClient.patch(`/admin/moderation/${contentId}/action`, data);
+    const response = await adminClient.patch(`/admin/moderation/${contentId}/action`, data);
     return response.data;
   },
 
   getShorts: async (params: Omit<ModerationQueueParams, 'contentType'>) => {
-    const response = await apiClient.get('/admin/moderation/shorts', { params });
+    const response = await adminClient.get('/admin/moderation/shorts', { params });
     return response.data;
   },
 
   getPosts: async (params: Omit<ModerationQueueParams, 'contentType'>) => {
-    const response = await apiClient.get('/admin/moderation/posts', { params });
+    const response = await adminClient.get('/admin/moderation/posts', { params });
     return response.data;
   },
 };

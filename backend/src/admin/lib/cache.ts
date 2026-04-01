@@ -1,110 +1,80 @@
 /**
- * Simple in-memory cache with TTL support
+ * Simple in-memory cache for admin analytics queries
+ * Requirements: 23.11 - Implement query result caching for frequently accessed data
  */
 
 interface CacheEntry<T> {
-  value: T;
+  data: T;
   expiresAt: number;
 }
 
-class InMemoryCache {
-  private cache: Map<string, CacheEntry<any>> = new Map();
+class Cache {
+  private store: Map<string, CacheEntry<any>> = new Map();
 
   /**
-   * Get value from cache
+   * Get cached value
+   * @param key Cache key
+   * @returns Cached value or undefined if not found or expired
    */
-  get<T>(key: string): T | null {
-    const entry = this.cache.get(key);
-
+  get<T>(key: string): T | undefined {
+    const entry = this.store.get(key);
+    
     if (!entry) {
-      return null;
+      return undefined;
     }
 
     // Check if expired
     if (Date.now() > entry.expiresAt) {
-      this.cache.delete(key);
-      return null;
+      this.store.delete(key);
+      return undefined;
     }
 
-    return entry.value as T;
+    return entry.data as T;
   }
 
   /**
-   * Set value in cache with TTL in seconds
+   * Set cached value
+   * @param key Cache key
+   * @param data Data to cache
+   * @param ttlSeconds Time to live in seconds
    */
-  set<T>(key: string, value: T, ttlSeconds: number): void {
-    const expiresAt = Date.now() + ttlSeconds * 1000;
-    this.cache.set(key, { value, expiresAt });
+  set<T>(key: string, data: T, ttlSeconds: number): void {
+    const expiresAt = Date.now() + (ttlSeconds * 1000);
+    this.store.set(key, { data, expiresAt });
   }
 
   /**
-   * Delete value from cache
+   * Delete cached value
+   * @param key Cache key
    */
   delete(key: string): void {
-    this.cache.delete(key);
+    this.store.delete(key);
   }
 
   /**
-   * Clear all cache entries
+   * Clear all cached values
    */
   clear(): void {
-    this.cache.clear();
+    this.store.clear();
   }
 
   /**
-   * Clean up expired entries
+   * Clear expired entries
    */
-  cleanup(): void {
+  clearExpired(): void {
     const now = Date.now();
-    for (const [key, entry] of this.cache.entries()) {
+    for (const [key, entry] of this.store.entries()) {
       if (now > entry.expiresAt) {
-        this.cache.delete(key);
+        this.store.delete(key);
       }
     }
   }
 }
 
-// Singleton instance
-export const cache = new InMemoryCache();
+// Export singleton instance
+export const cache = new Cache();
 
-// Run cleanup every 5 minutes
+// Clear expired entries every 5 minutes
 setInterval(() => {
-  cache.cleanup();
+  cache.clearExpired();
 }, 5 * 60 * 1000);
-
-/**
- * Cache decorator for async functions
- */
-export function cached<T>(
-  keyPrefix: string,
-  ttlSeconds: number
-): MethodDecorator {
-  return function (
-    target: any,
-    propertyKey: string | symbol,
-    descriptor: PropertyDescriptor
-  ) {
-    const originalMethod = descriptor.value;
-
-    descriptor.value = async function (...args: any[]): Promise<T> {
-      // Generate cache key from function name and arguments
-      const cacheKey = `${keyPrefix}:${JSON.stringify(args)}`;
-
-      // Try to get from cache
-      const cachedValue = cache.get<T>(cacheKey);
-      if (cachedValue !== null) {
-        return cachedValue;
-      }
-
-      // Call original method
-      const result = await originalMethod.apply(this, args);
-
-      // Store in cache
-      cache.set(cacheKey, result, ttlSeconds);
-
-      return result;
-    };
-
-    return descriptor;
-  };
-}

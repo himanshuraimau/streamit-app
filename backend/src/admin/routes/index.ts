@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requirePermission } from '../middleware/permissions.middleware';
+import { adminErrorHandler } from '../middleware/error-handler.middleware';
 import { UserRole } from '@prisma/client';
 
 /**
@@ -20,6 +21,7 @@ const adminRouter = Router();
 
 // TODO: Import module routers as they are implemented
 import adminAuthRouter from './admin-auth.route';
+import healthRouter from './health.route';
 import userMgmtRouter from './user-mgmt.route';
 import streamerMgmtRouter from './streamer-mgmt.route';
 import contentModRouter from './content-mod.route';
@@ -27,8 +29,12 @@ import reportsRouter from './reports.route';
 import monetizationRouter from './monetization.route';
 import adsRouter from './ads.route';
 import analyticsRouter from './analytics.route';
-// import complianceRouter from './compliance.route';
-// import settingsRouter from './settings.route';
+import complianceRouter from './compliance.route';
+import settingsRouter from './settings.route';
+
+// Health check route (no authentication required)
+// Requirements: 28.3, 28.4
+adminRouter.use('/health', healthRouter);
 
 // Auth routes (no permission check - handled within the auth routes)
 adminRouter.use('/auth', adminAuthRouter);
@@ -101,14 +107,17 @@ adminRouter.use(
 
 // Compliance Module
 // Allowed roles: super_admin, compliance_officer
-// adminRouter.use(
-//   '/compliance',
-//   requirePermission([UserRole.SUPER_ADMIN, UserRole.COMPLIANCE_OFFICER]),
-//   complianceRouter
-// );
+adminRouter.use(
+  '/compliance',
+  requirePermission([UserRole.SUPER_ADMIN, UserRole.COMPLIANCE_OFFICER]),
+  complianceRouter
+);
 
 // Settings Module
 // Allowed roles: super_admin only
-// adminRouter.use('/settings', requirePermission([UserRole.SUPER_ADMIN]), settingsRouter);
+adminRouter.use('/settings', requirePermission([UserRole.SUPER_ADMIN]), settingsRouter);
+
+// Error handler - must be last
+adminRouter.use(adminErrorHandler);
 
 export { adminRouter };

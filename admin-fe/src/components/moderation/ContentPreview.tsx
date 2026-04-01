@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ContentDetail } from '@/lib/api/moderation.api';
+import type { ContentDetail } from '@/lib/api/moderation.api';
 import { FileText, Image as ImageIcon, Video } from 'lucide-react';
 
 interface ContentPreviewProps {

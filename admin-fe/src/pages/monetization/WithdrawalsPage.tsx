@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ColumnDef } from '@tanstack/react-table';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 import { MoreHorizontal } from 'lucide-react';
 import { DataTable } from '@/components/common/DataTable';
 import { Badge } from '@/components/ui/badge';
@@ -12,11 +12,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { monetizationApi, WithdrawalParams } from '@/lib/api/monetization.api';
+import { monetizationApi } from '@/lib/api/monetization.api';
+import type { WithdrawalParams } from '@/lib/api/monetization.api';
 import { queryKeys } from '@/lib/queryKeys';
 import { ApproveWithdrawalDialog } from '@/components/monetization/ApproveWithdrawalDialog';
 import { RejectWithdrawalDialog } from '@/components/monetization/RejectWithdrawalDialog';
-import { toast } from 'sonner';
 
 interface Withdrawal {
   id: string;
@@ -54,6 +54,7 @@ export function WithdrawalsPage() {
     queryKey: queryKeys.monetization.withdrawals.list(params),
     queryFn: () => monetizationApi.getWithdrawals(params),
     refetchInterval: params.status === 'PENDING' ? 30000 : false,
+    staleTime: params.status === 'PENDING' ? 1000 * 30 : 1000 * 60 * 5, // 30s for pending, 5min for others
   });
 
   const columns: ColumnDef<Withdrawal>[] = [
@@ -171,15 +172,16 @@ export function WithdrawalsPage() {
             data={data?.data?.data || []}
             isLoading={isLoading}
             pagination={{
-              pageIndex: params.page! - 1,
+              currentPage: params.page!,
               pageSize: params.pageSize!,
+              totalPages: data?.data?.pagination?.totalPages || 0,
+              hasNextPage: data?.data?.pagination?.hasNextPage || false,
+              hasPreviousPage: data?.data?.pagination?.hasPreviousPage || false,
             }}
-            pageCount={data?.data?.pagination?.totalPages || 0}
-            onPaginationChange={(state) => {
+            onPaginationChange={(newPage) => {
               setParams((prev) => ({
                 ...prev,
-                page: state.pageIndex + 1,
-                pageSize: state.pageSize,
+                page: newPage,
               }));
             }}
           />
@@ -215,3 +217,5 @@ export function WithdrawalsPage() {
     </div>
   );
 }
+
+export default WithdrawalsPage;

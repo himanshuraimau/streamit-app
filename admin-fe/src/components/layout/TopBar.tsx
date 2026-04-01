@@ -24,10 +24,10 @@ export function TopBar() {
   });
 
   return (
-    <header className="flex h-14 items-center gap-4 border-b bg-background px-6">
-      <SidebarTrigger />
+    <header className="flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6" role="banner">
+      <SidebarTrigger aria-label="Toggle sidebar" />
 
-      <Breadcrumb>
+      <Breadcrumb aria-label="Breadcrumb navigation">
         <BreadcrumbList>
           {breadcrumbs.map((crumb, index) => (
             <div key={crumb.href} className="flex items-center gap-2">
@@ -45,9 +45,14 @@ export function TopBar() {
       </Breadcrumb>
 
       <div className="ml-auto flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          <span className="absolute right-1 top-1 flex h-2 w-2">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="relative min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
+          aria-label="View notifications"
+        >
+          <Bell className="h-5 w-5" aria-hidden="true" />
+          <span className="absolute right-1 top-1 flex h-2 w-2" aria-label="New notifications available">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75"></span>
             <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive"></span>
           </span>

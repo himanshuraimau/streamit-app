@@ -10,7 +10,7 @@ export function AdminLayout() {
         <AppSidebar />
         <div className="flex flex-1 flex-col">
           <TopBar />
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-4 sm:p-6" role="main">
             <Outlet />
           </main>
         </div>

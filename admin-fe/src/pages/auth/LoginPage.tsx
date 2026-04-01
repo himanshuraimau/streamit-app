@@ -48,7 +48,7 @@ export function LoginPage() {
           <CardDescription>Sign in to access the admin dashboard</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" aria-label="Admin login form">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -57,8 +57,14 @@ export function LoginPage() {
                 placeholder="admin@example.com"
                 {...register('email')}
                 disabled={isLoading}
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? 'email-error' : undefined}
               />
-              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+              {errors.email && (
+                <p id="email-error" className="text-sm text-destructive" role="alert">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -69,16 +75,25 @@ export function LoginPage() {
                 placeholder="••••••••"
                 {...register('password')}
                 disabled={isLoading}
+                aria-invalid={!!errors.password}
+                aria-describedby={errors.password ? 'password-error' : undefined}
               />
               {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
+                <p id="password-error" className="text-sm text-destructive" role="alert">
+                  {errors.password.message}
+                </p>
               )}
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button 
+              type="submit" 
+              className="w-full min-h-[44px]" 
+              disabled={isLoading}
+              aria-label={isLoading ? 'Signing in, please wait' : 'Sign in to admin panel'}
+            >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                   Signing in...
                 </>
               ) : (
@@ -91,3 +106,5 @@ export function LoginPage() {
     </div>
   );
 }
+
+export default LoginPage;

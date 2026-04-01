@@ -13,6 +13,7 @@ export function LiveMonitorPage() {
     queryKey: queryKeys.streamers.live(),
     queryFn: () => streamersApi.listLiveStreams(),
     refetchInterval: 10000, // Refresh every 10 seconds
+    staleTime: 1000 * 10, // 10 seconds for live data
   });
 
   const formatDuration = (seconds: number) => {
@@ -144,3 +145,5 @@ export function LiveMonitorPage() {
     </div>
   );
 }
+
+export default LiveMonitorPage;

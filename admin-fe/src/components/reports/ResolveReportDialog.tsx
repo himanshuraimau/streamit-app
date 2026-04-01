@@ -28,7 +28,8 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { reportsApi, ResolveReportData } from '@/lib/api/reports.api';
+import { reportsApi } from '@/lib/api/reports.api';
+import type { ResolveReportData } from '@/lib/api/reports.api';
 
 const resolveReportSchema = z.object({
   action: z.enum(['dismiss', 'warning_sent', 'content_removed', 'user_suspended', 'user_banned']),

@@ -19,6 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RiArrowUpSLine, RiArrowDownSLine } from '@remixicon/react';
+import { EmptyState } from './EmptyState';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -35,6 +36,14 @@ interface DataTableProps<TData, TValue> {
   toolbar?: ReactNode;
   enableRowSelection?: boolean;
   onRowSelectionChange?: (selectedRows: TData[]) => void;
+  emptyState?: {
+    title: string;
+    description?: string;
+    action?: {
+      label: string;
+      onClick: () => void;
+    };
+  };
 }
 
 export function DataTable<TData, TValue>({
@@ -46,6 +55,7 @@ export function DataTable<TData, TValue>({
   toolbar,
   enableRowSelection = false,
   onRowSelectionChange,
+  emptyState,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -76,7 +86,7 @@ export function DataTable<TData, TValue>({
     return (
       <div className="space-y-4">
         {toolbar && <div className="mb-4">{toolbar}</div>}
-        <div className="rounded-md border">
+        <div className="rounded-md border overflow-x-auto">
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -109,7 +119,7 @@ export function DataTable<TData, TValue>({
   return (
     <div className="space-y-4">
       {toolbar && <div className="mb-4">{toolbar}</div>}
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto" role="region" aria-label="Data table">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -130,10 +140,33 @@ export function DataTable<TData, TValue>({
                           onClick={
                             canSort ? header.column.getToggleSortingHandler() : undefined
                           }
+                          onKeyDown={
+                            canSort
+                              ? (e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    header.column.getToggleSortingHandler()?.(e as any);
+                                  }
+                                }
+                              : undefined
+                          }
+                          role={canSort ? 'button' : undefined}
+                          tabIndex={canSort ? 0 : undefined}
+                          aria-label={
+                            canSort
+                              ? `Sort by ${header.column.columnDef.header}${
+                                  isSorted === 'asc'
+                                    ? ', currently sorted ascending'
+                                    : isSorted === 'desc'
+                                    ? ', currently sorted descending'
+                                    : ''
+                                }`
+                              : undefined
+                          }
                         >
                           {flexRender(header.column.columnDef.header, header.getContext())}
                           {canSort && (
-                            <span className="ml-auto">
+                            <span className="ml-auto" aria-hidden="true">
                               {isSorted === 'asc' ? (
                                 <RiArrowUpSLine className="h-4 w-4" />
                               ) : isSorted === 'desc' ? (
@@ -164,8 +197,20 @@ export function DataTable<TData, TValue>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No results found.
+                <TableCell colSpan={columns.length} className="h-24">
+                  {emptyState ? (
+                    <div className="py-8">
+                      <EmptyState
+                        title={emptyState.title}
+                        description={emptyState.description}
+                        action={emptyState.action}
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-center text-muted-foreground">
+                      No results found.
+                    </div>
+                  )}
                 </TableCell>
               </TableRow>
             )}
@@ -174,7 +219,10 @@ export function DataTable<TData, TValue>({
       </div>
 
       {pagination && (
-        <div className="flex items-center justify-between px-2">
+        <nav 
+          className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2" 
+          aria-label="Table pagination"
+        >
           <div className="text-sm text-muted-foreground">
             Page {pagination.currentPage} of {pagination.totalPages}
           </div>
@@ -182,21 +230,25 @@ export function DataTable<TData, TValue>({
             <Button
               variant="outline"
               size="sm"
+              className="min-h-[44px] sm:min-h-0"
               onClick={() => onPaginationChange?.(pagination.currentPage - 1)}
               disabled={!pagination.hasPreviousPage}
+              aria-label="Go to previous page"
             >
               Previous
             </Button>
             <Button
               variant="outline"
               size="sm"
+              className="min-h-[44px] sm:min-h-0"
               onClick={() => onPaginationChange?.(pagination.currentPage + 1)}
               disabled={!pagination.hasNextPage}
+              aria-label="Go to next page"
             >
               Next
             </Button>
           </div>
-        </div>
+        </nav>
       )}
     </div>
   );

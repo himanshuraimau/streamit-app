@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/common/DataTable';
 import { FilterBar } from '@/components/common/FilterBar';
-import { monetizationApi, GiftParams } from '@/lib/api/monetization.api';
+import { monetizationApi } from '@/lib/api/monetization.api';
+import type { GiftParams } from '@/lib/api/monetization.api';
 import { queryKeys } from '@/lib/queryKeys';
 
 interface GiftTransaction {
@@ -86,7 +87,7 @@ export function GiftsPage() {
     setParams((prev) => ({ ...prev, [key]: value, page: 1 }));
   };
 
-  const handleSearchChange = (value: string) => {
+  const handleSearchChange = (_value: string) => {
     // Search functionality can be extended if needed
     setParams((prev) => ({ ...prev, page: 1 }));
   };
@@ -105,15 +106,16 @@ export function GiftsPage() {
         data={data?.data?.data || []}
         isLoading={isLoading}
         pagination={{
-          pageIndex: params.page! - 1,
+          currentPage: params.page!,
           pageSize: params.pageSize!,
+          totalPages: data?.data?.pagination?.totalPages || 0,
+          hasNextPage: data?.data?.pagination?.hasNextPage || false,
+          hasPreviousPage: data?.data?.pagination?.hasPreviousPage || false,
         }}
-        pageCount={data?.data?.pagination?.totalPages || 0}
-        onPaginationChange={(state) => {
+        onPaginationChange={(newPage) => {
           setParams((prev) => ({
             ...prev,
-            page: state.pageIndex + 1,
-            pageSize: state.pageSize,
+            page: newPage,
           }));
         }}
         toolbar={
@@ -123,12 +125,12 @@ export function GiftsPage() {
               {
                 key: 'minAmount',
                 label: 'Min Amount',
-                type: 'number',
+                options: [],
               },
               {
                 key: 'maxAmount',
                 label: 'Max Amount',
-                type: 'number',
+                options: [],
               },
             ]}
             onSearchChange={handleSearchChange}
@@ -139,3 +141,5 @@ export function GiftsPage() {
     </div>
   );
 }
+
+export default GiftsPage;

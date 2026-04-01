@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { adminClient } from './client';
 
 export interface ReportListParams {
   page?: number;
@@ -69,22 +69,22 @@ export interface AuditLogParams {
 
 export const reportsApi = {
   list: async (params: ReportListParams) => {
-    const response = await apiClient.get('/admin/reports', { params });
+    const response = await adminClient.get('/admin/reports', { params });
     return response.data;
   },
 
   getById: async (id: string): Promise<ReportDetail> => {
-    const response = await apiClient.get(`/admin/reports/${id}`);
+    const response = await adminClient.get(`/admin/reports/${id}`);
     return response.data;
   },
 
   resolve: async (id: string, data: ResolveReportData) => {
-    const response = await apiClient.patch(`/admin/reports/${id}/resolve`, data);
+    const response = await adminClient.patch(`/admin/reports/${id}/resolve`, data);
     return response.data;
   },
 
   getAuditLog: async (params: AuditLogParams) => {
-    const response = await apiClient.get('/admin/reports/audit-log', { params });
+    const response = await adminClient.get('/admin/reports/audit-log', { params });
     return response.data;
   },
 };

@@ -1,4 +1,4 @@
-import { db } from '../../lib/db';
+import { prisma } from '../../lib/db';
 import { cache } from '../lib/cache';
 
 interface DateRange {
@@ -86,7 +86,7 @@ export class AnalyticsService {
     // Calculate DAU (Daily Active Users) - users who logged in today
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const dau = await db.user.count({
+    const dau = await prisma.user.count({
       where: {
         lastLoginAt: {
           gte: today,
@@ -96,7 +96,7 @@ export class AnalyticsService {
 
     // Calculate MAU (Monthly Active Users) - users who logged in last 30 days
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const mau = await db.user.count({
+    const mau = await prisma.user.count({
       where: {
         lastLoginAt: {
           gte: thirtyDaysAgo,
@@ -104,19 +104,8 @@ export class AnalyticsService {
       },
     });
 
-    // Calculate concurrent viewers (users currently watching live streams)
-    const concurrentViewers = await db.stream.aggregate({
-      where: {
-        isLive: true,
-      },
-      _sum: {
-        // Note: This would need a currentViewers field in Stream model
-        // For now, we'll use a placeholder calculation
-      },
-    });
-
-    // Get concurrent viewers from stream stats
-    const liveStreams = await db.streamStats.findMany({
+    // Calculate concurrent viewers from stream stats
+    const liveStreams = await prisma.streamStats.findMany({
       where: {
         stream: {
           isLive: true,
@@ -133,7 +122,7 @@ export class AnalyticsService {
     );
 
     // Calculate total revenue from gift transactions in date range
-    const giftRevenue = await db.giftTransaction.aggregate({
+    const giftRevenue = await prisma.giftTransaction.aggregate({
       where: {
         createdAt: {
           gte: start,
@@ -148,7 +137,7 @@ export class AnalyticsService {
     const totalRevenue = giftRevenue._sum.coinAmount || 0;
 
     // Calculate conversion rate (viewers who sent gifts / total viewers)
-    const totalViewers = await db.user.count({
+    const totalViewers = await prisma.user.count({
       where: {
         lastLoginAt: {
           gte: start,
@@ -157,7 +146,7 @@ export class AnalyticsService {
       },
     });
 
-    const viewersWhoSentGifts = await db.user.count({
+    const viewersWhoSentGifts = await prisma.user.count({
       where: {
         giftsSent: {
           some: {
@@ -204,7 +193,7 @@ export class AnalyticsService {
     const { start, end } = this.parseDateRange(dateRange);
 
     // Get streamers with their gift revenue
-    const topStreamers = await db.user.findMany({
+    const topStreamers = await prisma.user.findMany({
       where: {
         role: 'CREATOR',
         giftsReceived: {
@@ -312,7 +301,7 @@ export class AnalyticsService {
 
     if (type === 'shorts') {
       // Get top shorts by views
-      const topShorts = await db.post.findMany({
+      const topShorts = await prisma.post.findMany({
         where: {
           isShort: true,
           type: 'VIDEO',
@@ -357,7 +346,7 @@ export class AnalyticsService {
       return result;
     } else if (type === 'posts') {
       // Get top posts by engagement
-      const topPosts = await db.post.findMany({
+      const topPosts = await prisma.post.findMany({
         where: {
           isShort: false,
           isPublic: true,
@@ -403,7 +392,7 @@ export class AnalyticsService {
       return result;
     } else {
       // Get top streams by peak viewers
-      const topStreams = await db.stream.findMany({
+      const topStreams = await prisma.stream.findMany({
         where: {
           stats: {
             startedAt: {
@@ -469,7 +458,7 @@ export class AnalyticsService {
     const { start, end } = this.parseDateRange(dateRange);
 
     // Total viewers (users who logged in during period)
-    const totalViewers = await db.user.count({
+    const totalViewers = await prisma.user.count({
       where: {
         lastLoginAt: {
           gte: start,
@@ -479,7 +468,7 @@ export class AnalyticsService {
     });
 
     // Viewers who sent gifts
-    const viewersWhoSentGifts = await db.user.count({
+    const viewersWhoSentGifts = await prisma.user.count({
       where: {
         giftsSent: {
           some: {
@@ -493,7 +482,7 @@ export class AnalyticsService {
     });
 
     // Calculate average gift value
-    const giftStats = await db.giftTransaction.aggregate({
+    const giftStats = await prisma.giftTransaction.aggregate({
       where: {
         createdAt: {
           gte: start,

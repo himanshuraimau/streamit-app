@@ -20,7 +20,8 @@
     "db:seed": "bun prisma/seed-payment.ts",
     "db:seed-discount": "bun prisma/seed-discount.ts",
     "auth:generate": "bunx @better-auth/cli generate",
-    "setup": "bun install && bunx prisma generate && bunx prisma migrate dev"
+    "setup": "bun install && bunx prisma generate && bunx prisma migrate dev",
+    "test:connection-pool": "bun scripts/test-connection-pool.ts"
   },
   "prisma": {
     "seed": "bun prisma/seed-payment.ts"
@@ -56,6 +57,7 @@
     "dodopayments": "^2.4.4",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.3.2",
     "livekit-server-sdk": "^2.14.0",
     "multer": "^2.0.2",
     "resend": "^6.2.1",

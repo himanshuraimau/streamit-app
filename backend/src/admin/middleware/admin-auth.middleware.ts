@@ -3,6 +3,7 @@ import { auth } from '../../lib/auth';
 import { fromNodeHeaders } from 'better-auth/node';
 import { prisma } from '../../lib/db';
 import { UserRole } from '@prisma/client';
+import { logger } from '../../lib/logger';
 
 // Extend Express Request type to include adminUser
 declare global {
@@ -51,6 +52,11 @@ export const adminAuthMiddleware = async (req: Request, res: Response, next: Nex
 
     // Step 2: Return 401 if no session
     if (!session) {
+      logger.authFailure(
+        'unknown',
+        req.ip || 'unknown',
+        'No session found'
+      );
       return res.status(401).json({
         error: 'Unauthorized',
         message: 'You must be signed in to access admin resources',
@@ -70,6 +76,11 @@ export const adminAuthMiddleware = async (req: Request, res: Response, next: Nex
     });
 
     if (!user) {
+      logger.authFailure(
+        session.user.email,
+        req.ip || 'unknown',
+        'User not found in database'
+      );
       return res.status(401).json({
         error: 'Unauthorized',
         message: 'User not found',
@@ -78,6 +89,12 @@ export const adminAuthMiddleware = async (req: Request, res: Response, next: Nex
 
     // Step 4: Check if user has an admin role
     if (!ADMIN_ROLES.includes(user.role)) {
+      logger.authzFailure(
+        user.id,
+        req.path,
+        'User does not have admin role',
+        req.ip || 'unknown'
+      );
       return res.status(403).json({
         error: 'Forbidden',
         message: 'You do not have permission to access admin resources',
@@ -95,7 +112,15 @@ export const adminAuthMiddleware = async (req: Request, res: Response, next: Nex
 
     next();
   } catch (error) {
-    console.error('Admin auth middleware error:', error);
+    logger.apiError(
+      'Admin auth middleware error',
+      error instanceof Error ? error : new Error(String(error)),
+      {
+        path: req.path,
+        method: req.method,
+        ip: req.ip,
+      }
+    );
     res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to authenticate admin user',

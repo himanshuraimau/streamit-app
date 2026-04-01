@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/common/DataTable';
 import { FilterBar } from '@/components/common/FilterBar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ModerationActionDialog } from '@/components/moderation/ModerationActionDialog';
-import { moderationApi, ContentDetail } from '@/lib/api/moderation.api';
+import { moderationApi } from '@/lib/api/moderation.api';
+import type { ContentDetail } from '@/lib/api/moderation.api';
 import { Eye, Flag, Image as ImageIcon, Video } from 'lucide-react';
 
 type ContentType = 'all' | 'shorts' | 'posts';
@@ -171,16 +172,15 @@ export function ModerationQueuePage() {
             data={data?.data || []}
             isLoading={isLoading}
             pagination={{
-              pageIndex: page - 1,
+              currentPage: page,
               pageSize,
+              totalPages: data?.pagination?.totalPages || 0,
+              hasNextPage: data?.pagination?.hasNextPage || false,
+              hasPreviousPage: data?.pagination?.hasPreviousPage || false,
             }}
-            onPaginationChange={(updater) => {
-              const newState = typeof updater === 'function' 
-                ? updater({ pageIndex: page - 1, pageSize })
-                : updater;
-              setPage(newState.pageIndex + 1);
+            onPaginationChange={(newPage) => {
+              setPage(newPage);
             }}
-            pageCount={data?.pagination?.totalPages || 0}
           />
         </TabsContent>
       </Tabs>
@@ -195,3 +195,5 @@ export function ModerationQueuePage() {
     </div>
   );
 }
+
+export default ModerationQueuePage;

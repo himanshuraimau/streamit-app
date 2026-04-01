@@ -1,5 +1,6 @@
 import { prisma } from '../../lib/db';
 import type { Prisma } from '@prisma/client';
+import { logger } from '../../lib/logger';
 
 /**
  * Audit action types that can be logged
@@ -115,6 +116,22 @@ export class AuditLogService {
     targetId: string,
     metadata?: Record<string, any>
   ) {
+    // Get admin details for logging
+    const admin = await prisma.user.findUnique({
+      where: { id: adminId },
+      select: { email: true },
+    });
+
+    // Log the admin action
+    logger.adminAction(
+      action,
+      adminId,
+      admin?.email || 'unknown',
+      targetType,
+      targetId,
+      metadata
+    );
+
     return await prisma.adminAuditLog.create({
       data: {
         adminId,

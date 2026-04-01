@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/common/DataTable';
 import { FilterBar } from '@/components/common/FilterBar';
 import { Badge } from '@/components/ui/badge';
-import { monetizationApi, LedgerParams } from '@/lib/api/monetization.api';
+import { monetizationApi } from '@/lib/api/monetization.api';
+import type { LedgerParams } from '@/lib/api/monetization.api';
 import { queryKeys } from '@/lib/queryKeys';
 
 interface LedgerEntry {
@@ -111,15 +112,16 @@ export function LedgerPage() {
         data={data?.data?.data || []}
         isLoading={isLoading}
         pagination={{
-          pageIndex: params.page! - 1,
+          currentPage: params.page!,
           pageSize: params.pageSize!,
+          totalPages: data?.data?.pagination?.totalPages || 0,
+          hasNextPage: data?.data?.pagination?.hasNextPage || false,
+          hasPreviousPage: data?.data?.pagination?.hasPreviousPage || false,
         }}
-        pageCount={data?.data?.pagination?.totalPages || 0}
-        onPaginationChange={(state) => {
+        onPaginationChange={(newPage) => {
           setParams((prev) => ({
             ...prev,
-            page: state.pageIndex + 1,
-            pageSize: state.pageSize,
+            page: newPage,
           }));
         }}
         toolbar={
@@ -155,3 +157,5 @@ export function LedgerPage() {
     </div>
   );
 }
+
+export default LedgerPage;

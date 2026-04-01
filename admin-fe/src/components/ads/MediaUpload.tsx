@@ -23,7 +23,7 @@ export function MediaUpload({ value, onChange, accept = 'image/*,video/*', maxSi
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
       // Get presigned URL
-      const { url, key } = await adsApi.getPresignedUrl();
+      const { url } = await adsApi.getPresignedUrl();
 
       // Upload to S3
       await axios.put(url, file, {

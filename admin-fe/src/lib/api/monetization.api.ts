@@ -1,6 +1,6 @@
-import { apiClient } from './client';
+import { adminClient } from './client';
 
-export interface LedgerParams {
+export interface LedgerParams extends Record<string, unknown> {
   page?: number;
   pageSize?: number;
   userId?: string;
@@ -12,7 +12,7 @@ export interface LedgerParams {
   paymentGateway?: string;
 }
 
-export interface WithdrawalParams {
+export interface WithdrawalParams extends Record<string, unknown> {
   page?: number;
   pageSize?: number;
   status?: string;
@@ -23,7 +23,7 @@ export interface WithdrawalParams {
   maxAmount?: number;
 }
 
-export interface GiftParams {
+export interface GiftParams extends Record<string, unknown> {
   page?: number;
   pageSize?: number;
   startDate?: string;
@@ -38,26 +38,26 @@ export interface RejectWithdrawalData {
 
 export const monetizationApi = {
   getLedger: (params: LedgerParams) => {
-    return apiClient.get('/admin/monetization/ledger', { params });
+    return adminClient.get('/admin/monetization/ledger', { params });
   },
 
   getWithdrawals: (params: WithdrawalParams) => {
-    return apiClient.get('/admin/monetization/withdrawals', { params });
+    return adminClient.get('/admin/monetization/withdrawals', { params });
   },
 
   approveWithdrawal: (id: string) => {
-    return apiClient.patch(`/admin/monetization/withdrawals/${id}/approve`);
+    return adminClient.patch(`/admin/monetization/withdrawals/${id}/approve`);
   },
 
   rejectWithdrawal: (id: string, data: RejectWithdrawalData) => {
-    return apiClient.patch(`/admin/monetization/withdrawals/${id}/reject`, data);
+    return adminClient.patch(`/admin/monetization/withdrawals/${id}/reject`, data);
   },
 
   getGifts: (params: GiftParams) => {
-    return apiClient.get('/admin/monetization/gifts', { params });
+    return adminClient.get('/admin/monetization/gifts', { params });
   },
 
   getWalletDetails: (userId: string) => {
-    return apiClient.get(`/admin/monetization/wallets/${userId}`);
+    return adminClient.get(`/admin/monetization/wallets/${userId}`);
   },
 };

@@ -113,11 +113,24 @@ src/
 
 ## Environment Variables
 
+### Development
+
 Create a `.env` file in the root directory:
 
 ```env
 VITE_API_URL=http://localhost:3000
 ```
+
+### Production
+
+The `.env.production` file is used for production builds. Update the following variables:
+
+```env
+# Backend API URL - Update to your production backend URL
+VITE_API_URL=https://api.streamit.com
+```
+
+**Important:** Before deploying to production, update `VITE_API_URL` to match your production backend URL. The admin panel must be deployed to a domain that is included in the backend's `ADMIN_FRONTEND_URL` environment variable for CORS to work correctly.
 
 ## Admin Roles
 
@@ -156,6 +169,25 @@ bunx shadcn@latest add [component-name]
 ```
 
 This will place the ui components in the `src/components/ui` directory.
+
+## Deployment
+
+For production deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md).
+
+Supported deployment platforms:
+- **Vercel** (recommended) - Zero-config deployment with automatic SSL
+- **Netlify** - Similar to Vercel with automatic SSL and CDN
+- **AWS S3 + CloudFront** - Scalable hosting with AWS infrastructure
+- **Nginx** - Self-hosted deployment on your own server
+- **Docker** - Containerized deployment
+
+The deployment guide includes:
+- Step-by-step setup for each platform
+- SSL certificate configuration
+- Custom domain setup (admin.streamit.com)
+- CI/CD pipeline examples
+- Security best practices
+- Troubleshooting tips
 
 ## Next Steps
 

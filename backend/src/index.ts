@@ -7,6 +7,7 @@ import { auth } from './lib/auth';
 import { toNodeHandler, fromNodeHeaders } from 'better-auth/node';
 import { ALLOWED_ORIGINS } from './lib/config';
 import { swaggerSpec } from './lib/swagger';
+import { logger } from './lib/logger';
 import authRoutes from './routes/auth.route';
 import creatorRoutes from './routes/creator.route';
 import contentRoutes from './routes/content.route';
@@ -20,6 +21,7 @@ import discountRoutes from './routes/discount.route';
 import { WebhookController } from './controllers/webhook.controller';
 import { adminRouter } from './admin/routes';
 import { adminAuthMiddleware } from './admin/middleware/admin-auth.middleware';
+import { adminRateLimiter, authRateLimiter } from './admin/middleware/rate-limit.middleware';
 
 const app = express();
 const PORT = process.env['PORT'] ?? 3000;
@@ -114,14 +116,18 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/discount', discountRoutes);
 
 // Mount admin routes
-// Auth routes are public, all other admin routes require authentication
+// Auth routes and health check are public, all other admin routes require authentication
 app.use('/api/admin', (req, res, next) => {
-  // Skip authentication for auth routes
-  if (req.path.startsWith('/auth')) {
-    return next();
+  // Skip authentication for auth routes and health check
+  if (req.path.startsWith('/auth') || req.path.startsWith('/health')) {
+    // Apply stricter rate limiting for auth routes
+    return authRateLimiter(req, res, () => next());
   }
-  // Apply authentication middleware for all other routes
-  return adminAuthMiddleware(req, res, next);
+  // Apply general rate limiting for all other admin routes
+  return adminRateLimiter(req, res, () => {
+    // Apply authentication middleware after rate limiting
+    return adminAuthMiddleware(req, res, next);
+  });
 }, adminRouter);
 
 // API Documentation (Swagger UI)
@@ -190,7 +196,11 @@ process.on('SIGTERM', async () => {
 // Global error handler - must be last middleware registered
 
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error('[Global Error Handler]', err);
+  logger.apiError('Global error handler', err, {
+    path: _req.path,
+    method: _req.method,
+    ip: _req.ip,
+  });
   res.status(500).json({
     success: false,
     error: err.message ?? 'Internal server error',
