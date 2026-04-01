@@ -1,16 +1,19 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { analyticsApi } from '@/lib/api/analytics.api';
 import type { DateRange } from '@/lib/api/analytics.api';
 import { StatCard } from '@/components/common/StatCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, Eye, DollarSign, TrendingUp, Video, FileText, Radio } from 'lucide-react';
+import { Users, Eye, DollarSign, TrendingUp, Video, FileText, Radio, ArrowRight } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export function AnalyticsPage() {
   const [dateRange, setDateRange] = useState<DateRange>('7days');
+  const navigate = useNavigate();
 
   const { data: overview, isLoading: overviewLoading } = useQuery({
     queryKey: ['analytics', 'overview', dateRange],
@@ -26,19 +29,19 @@ export function AnalyticsPage() {
 
   const { data: topShorts, isLoading: shortsLoading } = useQuery({
     queryKey: ['analytics', 'content', 'shorts', dateRange],
-    queryFn: () => analyticsApi.getTopContent(dateRange, 'shorts'),
+    queryFn: () => analyticsApi.getTopContent(dateRange, 'shorts', 5),
     staleTime: 1000 * 60 * 5, // 5 minutes for analytics data
   });
 
   const { data: topPosts, isLoading: postsLoading } = useQuery({
     queryKey: ['analytics', 'content', 'posts', dateRange],
-    queryFn: () => analyticsApi.getTopContent(dateRange, 'posts'),
+    queryFn: () => analyticsApi.getTopContent(dateRange, 'posts', 5),
     staleTime: 1000 * 60 * 5, // 5 minutes for analytics data
   });
 
   const { data: topStreams, isLoading: streamsLoading } = useQuery({
     queryKey: ['analytics', 'content', 'streams', dateRange],
-    queryFn: () => analyticsApi.getTopContent(dateRange, 'streams'),
+    queryFn: () => analyticsApi.getTopContent(dateRange, 'streams', 5),
     staleTime: 1000 * 60 * 5, // 5 minutes for analytics data
   });
 
@@ -157,15 +160,26 @@ export function AnalyticsPage() {
       {/* Revenue per Streamer Chart */}
       <Card>
         <CardHeader>
-          <CardTitle>Top Streamers by Revenue</CardTitle>
-          <CardDescription>Top 10 earning streamers in selected period</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Top Streamers by Revenue</CardTitle>
+              <CardDescription>Top 10 earning streamers in selected period</CardDescription>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => navigate('/analytics/streamers')}
+            >
+              View All <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {streamersLoading ? (
             <Skeleton className="h-[300px]" />
           ) : topStreamers && topStreamers.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={topStreamers}>
+              <BarChart data={topStreamers.slice(0, 10)}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
@@ -187,18 +201,29 @@ export function AnalyticsPage() {
         {/* Top Shorts */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Video className="h-4 w-4" />
-              Top Shorts
-            </CardTitle>
-            <CardDescription>By views</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Video className="h-4 w-4" />
+                  Top Shorts
+                </CardTitle>
+                <CardDescription>By views</CardDescription>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigate('/analytics/shorts')}
+              >
+                View All <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {shortsLoading ? (
               <Skeleton className="h-[250px]" />
             ) : topShorts && topShorts.length > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={topShorts} layout="vertical">
+                <BarChart data={topShorts.slice(0, 5)} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" />
                   <YAxis dataKey="title" type="category" width={80} />
@@ -217,18 +242,29 @@ export function AnalyticsPage() {
         {/* Top Posts */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Top Posts
-            </CardTitle>
-            <CardDescription>By likes</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Top Posts
+                </CardTitle>
+                <CardDescription>By likes</CardDescription>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigate('/analytics/posts')}
+              >
+                View All <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {postsLoading ? (
               <Skeleton className="h-[250px]" />
             ) : topPosts && topPosts.length > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={topPosts} layout="vertical">
+                <BarChart data={topPosts.slice(0, 5)} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" />
                   <YAxis dataKey="title" type="category" width={80} />
@@ -247,18 +283,29 @@ export function AnalyticsPage() {
         {/* Top Streams */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Radio className="h-4 w-4" />
-              Top Streams
-            </CardTitle>
-            <CardDescription>By peak viewers</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Radio className="h-4 w-4" />
+                  Top Streams
+                </CardTitle>
+                <CardDescription>By peak viewers</CardDescription>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigate('/analytics/streams')}
+              >
+                View All <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {streamsLoading ? (
               <Skeleton className="h-[250px]" />
             ) : topStreams && topStreams.length > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={topStreams} layout="vertical">
+                <BarChart data={topStreams.slice(0, 5)} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" />
                   <YAxis dataKey="title" type="category" width={80} />

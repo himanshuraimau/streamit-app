@@ -57,9 +57,9 @@ export const analyticsApi = {
     return response.data.data || response.data;
   },
 
-  getTopContent: async (dateRange: DateRange, type: 'shorts' | 'posts' | 'streams'): Promise<TopContent[]> => {
+  getTopContent: async (dateRange: DateRange, type: 'shorts' | 'posts' | 'streams', limit: number = 50): Promise<TopContent[]> => {
     const response = await adminClient.get('/api/admin/analytics/content', {
-      params: { dateRange, type },
+      params: { dateRange, type, limit },
     });
     return response.data.data || response.data;
   },

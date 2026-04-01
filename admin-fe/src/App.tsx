@@ -24,6 +24,10 @@ const GiftsPage = lazy(() => import('@/pages/monetization/GiftsPage'));
 const AdsPage = lazy(() => import('@/pages/ads/AdsPage'));
 const AdEditorPage = lazy(() => import('@/pages/ads/AdEditorPage'));
 const AnalyticsPage = lazy(() => import('@/pages/analytics/AnalyticsPage'));
+const TopShortsPage = lazy(() => import('@/pages/analytics/TopShortsPage'));
+const TopPostsPage = lazy(() => import('@/pages/analytics/TopPostsPage'));
+const TopStreamsPage = lazy(() => import('@/pages/analytics/TopStreamsPage'));
+const TopStreamersPage = lazy(() => import('@/pages/analytics/TopStreamersPage'));
 const CompliancePage = lazy(() => import('@/pages/compliance/CompliancePage'));
 const AuditLogPage = lazy(() => import('@/pages/compliance/AuditLogPage'));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
@@ -235,6 +239,38 @@ export function App() {
               element={
                 <PermissionRoute allowedRoles={['super_admin', 'moderator', 'finance_admin', 'compliance_officer']}>
                   <AnalyticsPage />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="analytics/shorts"
+              element={
+                <PermissionRoute allowedRoles={['super_admin', 'moderator', 'finance_admin', 'compliance_officer']}>
+                  <TopShortsPage />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="analytics/posts"
+              element={
+                <PermissionRoute allowedRoles={['super_admin', 'moderator', 'finance_admin', 'compliance_officer']}>
+                  <TopPostsPage />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="analytics/streams"
+              element={
+                <PermissionRoute allowedRoles={['super_admin', 'moderator', 'finance_admin', 'compliance_officer']}>
+                  <TopStreamsPage />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="analytics/streamers"
+              element={
+                <PermissionRoute allowedRoles={['super_admin', 'moderator', 'finance_admin', 'compliance_officer']}>
+                  <TopStreamersPage />
                 </PermissionRoute>
               }
             />
