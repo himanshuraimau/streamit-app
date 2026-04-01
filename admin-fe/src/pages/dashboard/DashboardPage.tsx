@@ -22,18 +22,18 @@ export function DashboardPage() {
 
   const { data: reportsData, isLoading: reportsLoading } = useQuery({
     queryKey: ['reports', 'list', 1, 5],
-    queryFn: () => reportsApi.listReports({ page: 1, pageSize: 5, status: 'PENDING' }),
+    queryFn: () => reportsApi.list({ page: 1, pageSize: 5, status: 'PENDING' }),
   });
 
   const { data: liveStreams, isLoading: streamsLoading } = useQuery({
-    queryKey: ['streamers', 'live', 1, 5],
-    queryFn: () => streamersApi.getLiveStreams({ page: 1, pageSize: 5 }),
+    queryKey: ['streamers', 'live'],
+    queryFn: () => streamersApi.listLiveStreams(),
   });
 
   const { data: usersData, isLoading: usersLoading } = useQuery({
     queryKey: ['users', 'stats'],
     queryFn: async () => {
-      const response = await usersApi.listUsers({ page: 1, pageSize: 1 });
+      const response = await usersApi.list({ page: 1, pageSize: 1 });
       return response;
     },
   });
@@ -72,19 +72,19 @@ export function DashboardPage() {
             <>
               <StatCard
                 label="Total Users"
-                value={formatNumber(usersData?.pagination?.totalItems || 0)}
+                value={formatNumber(usersData?.pagination?.totalCount || 0)}
                 icon={<Users className="h-4 w-4" />}
               />
               <StatCard
                 label="Active Streams"
-                value={formatNumber(liveStreams?.pagination?.totalItems || 0)}
+                value={formatNumber(liveStreams?.length || 0)}
                 icon={<Radio className="h-4 w-4" />}
               />
               <StatCard
                 label="Pending Reports"
-                value={formatNumber(reportsData?.pagination?.totalItems || 0)}
+                value={formatNumber(reportsData?.pagination?.totalCount || 0)}
                 icon={<Flag className="h-4 w-4" />}
-                variant={reportsData?.pagination?.totalItems ? 'warning' : 'default'}
+                variant={reportsData?.pagination?.totalCount ? 'warning' : 'default'}
               />
               <StatCard
                 label="Revenue (7d)"
@@ -133,7 +133,7 @@ export function DashboardPage() {
                 <Radio className="h-4 w-4" />
                 Live Streams
               </span>
-              <Badge variant="secondary">{liveStreams?.pagination?.totalItems || 0}</Badge>
+              <Badge variant="secondary">{liveStreams?.length || 0}</Badge>
             </CardTitle>
             <CardDescription>Currently streaming</CardDescription>
           </CardHeader>
@@ -144,9 +144,9 @@ export function DashboardPage() {
                 <Skeleton className="h-16" />
                 <Skeleton className="h-16" />
               </div>
-            ) : liveStreams?.data && liveStreams.data.length > 0 ? (
+            ) : liveStreams && liveStreams.length > 0 ? (
               <div className="space-y-3">
-                {liveStreams.data.map((stream: any) => (
+                {liveStreams.slice(0, 5).map((stream: any) => (
                   <div key={stream.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{stream.title}</p>
@@ -175,7 +175,7 @@ export function DashboardPage() {
                 <AlertCircle className="h-4 w-4" />
                 Pending Reports
               </span>
-              <Badge variant="destructive">{reportsData?.pagination?.totalItems || 0}</Badge>
+              <Badge variant="destructive">{reportsData?.pagination?.totalCount || 0}</Badge>
             </CardTitle>
             <CardDescription>Require attention</CardDescription>
           </CardHeader>
@@ -251,7 +251,7 @@ export function DashboardPage() {
                 <p className="text-3xl font-bold">{formatNumber(overview?.concurrentViewers || 0)}</p>
                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
                   <Video className="h-4 w-4" />
-                  <span>Across {liveStreams?.pagination?.totalItems || 0} streams</span>
+                  <span>Across {liveStreams?.length || 0} streams</span>
                 </div>
               </div>
             )}

@@ -7,7 +7,7 @@ interface StatCardProps {
   value: string | number;
   changePercentage?: number;
   trend?: 'up' | 'down' | 'neutral';
-  variant?: 'default' | 'positive' | 'negative';
+  variant?: 'default' | 'positive' | 'negative' | 'warning';
   icon?: React.ReactNode;
   description?: string;
 }
@@ -43,7 +43,9 @@ export function StatCard({
   const trendColorClass = determinedVariant === 'positive' 
     ? 'text-green-600 dark:text-green-400' 
     : determinedVariant === 'negative' 
-    ? 'text-red-600 dark:text-red-400' 
+    ? 'text-red-600 dark:text-red-400'
+    : determinedVariant === 'warning'
+    ? 'text-yellow-600 dark:text-yellow-400'
     : 'text-muted-foreground';
 
   const trendLabel = determinedTrend === 'up' ? 'increased' : 

@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, FileText, Eye, Heart, MessageSquare, Share2 } from 'lucide-react';
+import { ArrowLeft, FileText, Eye, Heart } from 'lucide-react';
 
 export function TopPostsPage() {
   const navigate = useNavigate();

@@ -19,6 +19,7 @@ export interface OverviewMetrics {
 export interface TopStreamer {
   id: string;
   name: string;
+  username: string;
   totalRevenue: number;
   giftCount: number;
   averageViewers: number;

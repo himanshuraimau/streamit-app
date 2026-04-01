@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Radio, Eye, Heart, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Radio, Eye, Heart } from 'lucide-react';
 
 export function TopStreamsPage() {
   const navigate = useNavigate();

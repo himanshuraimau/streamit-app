@@ -27,7 +27,7 @@ export function UsersPage() {
   });
 
   // Dialog states
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser] = useState<User | null>(null);
   const [freezeDialogOpen, setFreezeDialogOpen] = useState(false);
   const [banDialogOpen, setBanDialogOpen] = useState(false);
   const [disableChatDialogOpen, setDisableChatDialogOpen] = useState(false);

@@ -5,7 +5,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { analyticsApi } from '@/lib/api/analytics.api';
 import type { DateRange, TopStreamer } from '@/lib/api/analytics.api';
 import { DataTable } from '@/components/common/DataTable';
-import { Badge } from '@/components/ui/badge';
+
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
