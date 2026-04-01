@@ -13,15 +13,15 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import { ContentPreview } from './ContentPreview';
 import { moderationApi } from '@/lib/api/moderation.api';
 import type { ContentDetail, ModerationActionData } from '@/lib/api/moderation.api';
@@ -98,83 +98,104 @@ export function ModerationActionDialog({
 
   return (
     <>
-      <Dialog open={open && !showConfirm} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Moderate Content</DialogTitle>
-            <DialogDescription>
+      <Sheet open={open && !showConfirm} onOpenChange={onOpenChange}>
+        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Moderate Content</SheetTitle>
+            <SheetDescription>
               Review the flagged content and take appropriate action
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
 
-          <ContentPreview content={content} />
+          <div className="mt-6 space-y-6">
+            <ContentPreview content={content} />
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Warning Message (for Warn action)</Label>
-              <Textarea
-                placeholder="Enter warning message to send to the author..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                rows={2}
-              />
+            <Separator />
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="warning-message">Warning Message (for Warn action)</Label>
+                <Textarea
+                  id="warning-message"
+                  placeholder="Enter warning message to send to the author (min 10 characters)..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="action-reason">Reason (for Remove, Strike, or Ban actions)</Label>
+                <Textarea
+                  id="action-reason"
+                  placeholder="Enter reason for the action (min 10 characters)..."
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  rows={3}
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Reason (for Remove, Strike, or Ban actions)</Label>
-              <Textarea
-                placeholder="Enter reason for the action..."
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                rows={2}
-              />
+            <Separator />
+
+            <div className="space-y-3">
+              <h3 className="font-semibold text-sm">Moderation Actions</h3>
+              
+              <div className="grid gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => handleAction('dismiss')}
+                  disabled={mutation.isPending}
+                  className="justify-start"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Dismiss Flags
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  onClick={() => handleAction('warn')}
+                  disabled={mutation.isPending || message.length < 10}
+                  className="justify-start"
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Warn Author
+                </Button>
+                
+                <Button
+                  variant="secondary"
+                  onClick={() => handleAction('remove')}
+                  disabled={mutation.isPending || reason.length < 10}
+                  className="justify-start"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Remove Content
+                </Button>
+                
+                <Button
+                  variant="destructive"
+                  onClick={() => handleAction('strike')}
+                  disabled={mutation.isPending || reason.length < 10}
+                  className="justify-start"
+                >
+                  <Flag className="h-4 w-4 mr-2" />
+                  Strike Author
+                </Button>
+                
+                <Button
+                  variant="destructive"
+                  onClick={() => handleAction('ban')}
+                  disabled={mutation.isPending || reason.length < 10}
+                  className="justify-start"
+                >
+                  <Ban className="h-4 w-4 mr-2" />
+                  Ban Author
+                </Button>
+              </div>
             </div>
           </div>
-
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button
-              variant="outline"
-              onClick={() => handleAction('dismiss')}
-              disabled={mutation.isPending}
-            >
-              <X className="h-4 w-4 mr-2" />
-              Dismiss Flags
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => handleAction('warn')}
-              disabled={mutation.isPending || !message}
-            >
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Warn Author
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => handleAction('remove')}
-              disabled={mutation.isPending || !reason}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Remove Content
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => handleAction('strike')}
-              disabled={mutation.isPending || !reason}
-            >
-              <Flag className="h-4 w-4 mr-2" />
-              Strike Author
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => handleAction('ban')}
-              disabled={mutation.isPending || !reason}
-            >
-              <Ban className="h-4 w-4 mr-2" />
-              Ban Author
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
         <AlertDialogContent>
