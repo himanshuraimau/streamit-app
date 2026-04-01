@@ -49,9 +49,18 @@ export function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Admin Panel</CardTitle>
-          <CardDescription>Sign in to access the admin dashboard</CardDescription>
+        <CardHeader className="space-y-4">
+          <div className="flex justify-center">
+            <img 
+              src="/logo_light.svg" 
+              alt="StreamIt Logo" 
+              className="h-16 w-16"
+            />
+          </div>
+          <div className="space-y-1 text-center">
+            <CardTitle className="text-2xl font-bold">StreamIt Admin Panel</CardTitle>
+            <CardDescription>Sign in to access the admin dashboard</CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" aria-label="Admin login form">

@@ -54,8 +54,17 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b p-4">
         <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground" role="img" aria-label="StreamIt Admin Logo">
-            <span className="text-sm font-bold">SA</span>
+          <div className="flex h-8 w-8 items-center justify-center" role="img" aria-label="StreamIt Admin Logo">
+            <img 
+              src="/logo_dark.svg" 
+              alt="StreamIt Logo" 
+              className="h-8 w-8 dark:block hidden"
+            />
+            <img 
+              src="/logo_light.svg" 
+              alt="StreamIt Logo" 
+              className="h-8 w-8 dark:hidden block"
+            />
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
             <span className="text-sm font-semibold">StreamIt Admin</span>

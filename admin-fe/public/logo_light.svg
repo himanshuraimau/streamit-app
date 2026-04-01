@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">StreamIt mark (colored)</title>
+  <desc id="desc">Circular dual-tone mark with play triangle, streaming waves and a spark — for light backgrounds.</desc>
+
+  <!-- Gradient background circle -->
+  <defs>
+    <linearGradient id="gBlend" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#FF3B30"/>
+      <stop offset="100%" stop-color="#1E90FF"/>
+    </linearGradient>
+
+    <!-- subtle inner shadow to add depth -->
+    <filter id="innerShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="2" result="off"/>
+      <feGaussianBlur in="off" stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <!-- tiny soft highlight -->
+    <radialGradient id="highlight" cx="0.35" cy="0.3" r="0.8">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- main circular mark -->
+  <circle cx="100" cy="100" r="90" fill="url(#gBlend)" filter="url(#innerShadow)"/>
+
+  <!-- highlight for subtle glossy finish -->
+  <ellipse cx="85" cy="70" rx="48" ry="28" fill="url(#highlight)" opacity="0.9"/>
+
+  <!-- play triangle (white) -->
+  <polygon points="88,70 88,130 140,100" fill="#FFFFFF" />
+
+  <!-- streaming waves (white, slight transparency) -->
+  <g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-width="6" stroke-opacity="0.95">
+    <path d="M148 80 C168 92, 168 108, 148 120" />
+    <path d="M156 68 C182 86, 182 114, 156 132" stroke-opacity="0.6" stroke-width="4"/>
+  </g>
+
+  <!-- spark / energy (small rotated diamond) -->
+  <g transform="translate(56,36) rotate(20)">
+    <rect x="-6" y="-6" width="12" height="12" rx="2" ry="2" fill="#FFFFFF" opacity="0.95"/>
+    <!-- tiny glow -->
+    <circle cx="0" cy="0" r="10" fill="#FFFFFF" opacity="0.06"/>
+  </g>
+</svg>
