@@ -29,8 +29,10 @@ export interface TopContent {
   id: string;
   title: string;
   authorName: string;
-  metric: number; // views, likes, or peak viewers depending on type
-  type: 'short' | 'post' | 'stream';
+  views: number;
+  likes: number;
+  engagement: number;
+  type?: 'short' | 'post' | 'stream';
 }
 
 export interface ConversionFunnel {
@@ -45,27 +47,27 @@ export const analyticsApi = {
     const response = await adminClient.get('/api/admin/analytics/overview', {
       params: { dateRange },
     });
-    return response.data;
+    return response.data.data || response.data;
   },
 
   getTopStreamers: async (dateRange: DateRange, limit: number = 10): Promise<TopStreamer[]> => {
     const response = await adminClient.get('/api/admin/analytics/streamers', {
       params: { dateRange, limit },
     });
-    return response.data;
+    return response.data.data || response.data;
   },
 
   getTopContent: async (dateRange: DateRange, type: 'shorts' | 'posts' | 'streams'): Promise<TopContent[]> => {
     const response = await adminClient.get('/api/admin/analytics/content', {
       params: { dateRange, type },
     });
-    return response.data;
+    return response.data.data || response.data;
   },
 
   getConversionFunnel: async (dateRange: DateRange): Promise<ConversionFunnel> => {
     const response = await adminClient.get('/api/admin/analytics/conversion', {
       params: { dateRange },
     });
-    return response.data;
+    return response.data.data || response.data;
   },
 };

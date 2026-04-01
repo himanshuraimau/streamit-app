@@ -203,7 +203,7 @@ export function AnalyticsPage() {
                   <XAxis type="number" />
                   <YAxis dataKey="title" type="category" width={80} />
                   <Tooltip />
-                  <Bar dataKey="metric" fill="#8884d8" name="Views" />
+                  <Bar dataKey="views" fill="#8884d8" name="Views" />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -233,7 +233,7 @@ export function AnalyticsPage() {
                   <XAxis type="number" />
                   <YAxis dataKey="title" type="category" width={80} />
                   <Tooltip />
-                  <Bar dataKey="metric" fill="#82ca9d" name="Likes" />
+                  <Bar dataKey="likes" fill="#82ca9d" name="Likes" />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -263,7 +263,7 @@ export function AnalyticsPage() {
                   <XAxis type="number" />
                   <YAxis dataKey="title" type="category" width={80} />
                   <Tooltip />
-                  <Bar dataKey="metric" fill="#ffc658" name="Peak Viewers" />
+                  <Bar dataKey="views" fill="#ffc658" name="Peak Viewers" />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
