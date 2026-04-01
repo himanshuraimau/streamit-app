@@ -454,7 +454,6 @@ export class ComplianceService {
         id: true,
         type: true,
         content: true,
-        mediaUrl: true,
         authorId: true,
         isHidden: true,
         hiddenReason: true,
@@ -463,6 +462,11 @@ export class ComplianceService {
         author: {
           select: {
             name: true,
+          },
+        },
+        media: {
+          select: {
+            url: true,
           },
         },
       },
@@ -475,7 +479,7 @@ export class ComplianceService {
       id: post.id,
       type: post.type as string,
       content: post.content,
-      mediaUrl: post.mediaUrl,
+      mediaUrl: post.media[0]?.url || null,
       authorId: post.authorId,
       authorName: post.author.name,
       isHidden: post.isHidden,

@@ -303,7 +303,7 @@ export function AnalyticsPage() {
               />
               <StatCard
                 label="Conversion Rate"
-                value={`${conversionFunnel.conversionPercentage.toFixed(2)}%`}
+                value={`${(conversionFunnel.conversionPercentage || 0).toFixed(2)}%`}
                 icon={<TrendingUp className="h-4 w-4" />}
                 variant="positive"
               />

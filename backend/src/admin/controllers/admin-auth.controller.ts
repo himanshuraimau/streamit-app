@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { auth } from '../../lib/auth';
 import { fromNodeHeaders } from 'better-auth/node';
+import { prisma } from '../../lib/db';
 
 /**
  * Admin Authentication Controller
@@ -35,13 +36,14 @@ export class AdminAuthController {
         });
       }
 
-      // Call Better Auth sign-in endpoint
+      // Call Better Auth sign-in endpoint with asResponse to get headers
       const signInResponse = await auth.api.signInEmail({
         body: {
           email,
           password,
         },
         headers: fromNodeHeaders(req.headers),
+        asResponse: true,
       });
 
       // Better Auth returns the session and user data
@@ -52,11 +54,40 @@ export class AdminAuthController {
         });
       }
 
+      // Forward Set-Cookie headers from Better Auth to the client
+      const setCookieHeader = signInResponse.headers.get('set-cookie');
+      if (setCookieHeader) {
+        res.setHeader('Set-Cookie', setCookieHeader);
+      }
+
+      // Parse response body
+      const data = await signInResponse.json() as any;
+
+      // Check if user data exists
+      if (!data.user) {
+        return res.status(401).json({
+          error: 'Unauthorized',
+          message: 'Invalid credentials',
+        });
+      }
+
+      // Fetch the actual role from the database (Better Auth doesn't sync existing fields)
+      const dbUser = await prisma.user.findUnique({
+        where: { id: data.user.id },
+        select: { role: true },
+      });
+
+      // Transform role to lowercase with underscores for frontend
+      const transformedUser = {
+        ...data.user,
+        role: dbUser?.role.toLowerCase() || 'user',
+      };
+
       // Return session data
       res.json({
         success: true,
-        user: signInResponse.user,
-        session: signInResponse.session,
+        user: transformedUser,
+        session: data.session,
       });
     } catch (error) {
       console.error('Admin sign-in error:', error);
@@ -113,10 +144,22 @@ export class AdminAuthController {
         });
       }
 
+      // Fetch the actual role from the database (Better Auth doesn't sync existing fields)
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true },
+      });
+
+      // Transform role to lowercase with underscores for frontend
+      const transformedUser = session.user ? {
+        ...session.user,
+        role: dbUser?.role.toLowerCase() || 'user',
+      } : null;
+
       // Return session data with user info
       res.json({
         success: true,
-        user: session.user,
+        user: transformedUser,
         session: session.session,
       });
     } catch (error) {

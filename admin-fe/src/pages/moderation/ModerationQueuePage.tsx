@@ -10,6 +10,7 @@ import { ModerationActionDialog } from '@/components/moderation/ModerationAction
 import { moderationApi } from '@/lib/api/moderation.api';
 import type { ContentDetail } from '@/lib/api/moderation.api';
 import { Eye, Flag, Image as ImageIcon, Video } from 'lucide-react';
+import { toast } from 'sonner';
 
 type ContentType = 'all' | 'shorts' | 'posts';
 
@@ -42,13 +43,14 @@ export function ModerationQueuePage() {
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  const handleViewContent = async (contentId: string) => {
+  const handleViewContent = async (contentId: string, type: 'post' | 'short' | 'comment') => {
     try {
-      const content = await moderationApi.getContentById(contentId);
+      const content = await moderationApi.getContentById(contentId, type);
       setSelectedContent(content);
       setDialogOpen(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch content details:', error);
+      toast.error(error.response?.data?.error || 'Failed to load content details');
     }
   };
 
@@ -134,7 +136,7 @@ export function ModerationQueuePage() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => handleViewContent(row.original.id)}
+          onClick={() => handleViewContent(row.original.id, row.original.type as 'post' | 'short' | 'comment')}
         >
           <Eye className="h-4 w-4 mr-2" />
           Review

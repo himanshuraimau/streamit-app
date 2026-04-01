@@ -12,12 +12,12 @@ export const listReportsSchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 
   // Filters
-  reason: z.enum(['SPAM', 'HARASSMENT', 'HATE_SPEECH', 'NUDITY', 'VIOLENCE', 'COPYRIGHT', 'MISINFORMATION', 'SELF_HARM', 'OTHER']).optional(),
-  status: z.enum(['PENDING', 'UNDER_REVIEW', 'RESOLVED', 'DISMISSED']).optional(),
-  reporterId: z.string().optional(),
-  reportedUserId: z.string().optional(),
-  dateFrom: z.coerce.date().optional(),
-  dateTo: z.coerce.date().optional(),
+  reason: z.preprocess((val) => val === '' ? undefined : val, z.enum(['SPAM', 'HARASSMENT', 'HATE_SPEECH', 'NUDITY', 'VIOLENCE', 'COPYRIGHT', 'MISINFORMATION', 'SELF_HARM', 'OTHER']).optional()),
+  status: z.preprocess((val) => val === '' ? undefined : val, z.enum(['PENDING', 'UNDER_REVIEW', 'RESOLVED', 'DISMISSED']).optional()),
+  reporterId: z.preprocess((val) => val === '' ? undefined : val, z.string().optional()),
+  reportedUserId: z.preprocess((val) => val === '' ? undefined : val, z.string().optional()),
+  dateFrom: z.preprocess((val) => val === '' ? undefined : val, z.coerce.date().optional()),
+  dateTo: z.preprocess((val) => val === '' ? undefined : val, z.coerce.date().optional()),
 
   // Sorting
   sortBy: z.enum(['createdAt', 'priority', 'reportCount']).default('createdAt'),

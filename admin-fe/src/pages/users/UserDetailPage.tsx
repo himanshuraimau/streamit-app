@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,18 +6,54 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { FreezeUserDialog } from '@/components/users/FreezeUserDialog';
+import { BanUserDialog } from '@/components/users/BanUserDialog';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { usersApi } from '@/lib/api/users.api';
 import { queryKeys } from '@/lib/queryKeys';
 import { format } from 'date-fns';
 import { RiLockLine, RiBankLine, RiChatOffLine, RiKeyLine } from '@remixicon/react';
+import { toast } from 'sonner';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export function UserDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
+
+  // Dialog states
+  const [freezeDialogOpen, setFreezeDialogOpen] = useState(false);
+  const [banDialogOpen, setBanDialogOpen] = useState(false);
+  const [disableChatDialogOpen, setDisableChatDialogOpen] = useState(false);
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
 
   const { data: user, isLoading } = useQuery({
     queryKey: queryKeys.users.detail(id!),
     queryFn: () => usersApi.getById(id!),
     enabled: !!id,
+  });
+
+  // Mutations
+  const disableChatMutation = useMutation({
+    mutationFn: (userId: string) => usersApi.disableChat(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(id!) });
+      toast.success('Chat disabled for 24 hours');
+      setDisableChatDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Failed to disable chat');
+    },
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: (userId: string) => usersApi.resetPassword(userId),
+    onSuccess: () => {
+      toast.success('Password reset email sent');
+      setResetPasswordDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Failed to reset password');
+    },
   });
 
   if (isLoading) {
@@ -44,19 +81,19 @@ export function UserDetailPage() {
           <p className="text-muted-foreground">{user.email}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => setFreezeDialogOpen(true)}>
             <RiLockLine className="mr-2 h-4 w-4" />
             Freeze
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => setDisableChatDialogOpen(true)}>
             <RiChatOffLine className="mr-2 h-4 w-4" />
             Disable Chat
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => setResetPasswordDialogOpen(true)}>
             <RiKeyLine className="mr-2 h-4 w-4" />
             Reset Password
           </Button>
-          <Button variant="destructive" size="sm">
+          <Button variant="destructive" size="sm" onClick={() => setBanDialogOpen(true)}>
             <RiBankLine className="mr-2 h-4 w-4" />
             Ban User
           </Button>
@@ -209,6 +246,26 @@ export function UserDetailPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Dialogs */}
+      <FreezeUserDialog user={user} open={freezeDialogOpen} onOpenChange={setFreezeDialogOpen} />
+      <BanUserDialog user={user} open={banDialogOpen} onOpenChange={setBanDialogOpen} />
+      <ConfirmDialog
+        open={disableChatDialogOpen}
+        onOpenChange={setDisableChatDialogOpen}
+        title="Disable Chat"
+        description={`Are you sure you want to disable chat for ${user?.name}? They will not be able to send messages for 24 hours.`}
+        confirmText="Disable Chat"
+        onConfirm={() => disableChatMutation.mutate(user!.id)}
+      />
+      <ConfirmDialog
+        open={resetPasswordDialogOpen}
+        onOpenChange={setResetPasswordDialogOpen}
+        title="Reset Password"
+        description={`Are you sure you want to send a password reset email to ${user?.email}?`}
+        confirmText="Send Reset Email"
+        onConfirm={() => resetPasswordMutation.mutate(user!.id)}
+      />
     </div>
   );
 }

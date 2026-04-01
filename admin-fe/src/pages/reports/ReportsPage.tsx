@@ -154,7 +154,6 @@ export function ReportsPage() {
             key: 'status',
             label: 'Status',
             options: [
-              { label: 'All', value: '' },
               { label: 'Pending', value: 'PENDING' },
               { label: 'Under Review', value: 'UNDER_REVIEW' },
               { label: 'Resolved', value: 'RESOLVED' },
@@ -165,7 +164,6 @@ export function ReportsPage() {
             key: 'category',
             label: 'Category',
             options: [
-              { label: 'All', value: '' },
               { label: 'Harassment', value: 'harassment' },
               { label: 'Spam', value: 'spam' },
               { label: 'Inappropriate Content', value: 'inappropriate' },

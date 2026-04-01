@@ -46,7 +46,7 @@ export function ModerationActionDialog({
 
   const mutation = useMutation({
     mutationFn: (data: ModerationActionData) =>
-      moderationApi.moderationAction(content.id, data),
+      moderationApi.moderationAction(content.id, content.type as 'post' | 'short' | 'comment', data),
     onSuccess: () => {
       toast.success('Moderation action completed successfully');
       queryClient.invalidateQueries({ queryKey: ['moderation'] });

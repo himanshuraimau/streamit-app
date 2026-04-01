@@ -111,7 +111,7 @@ export function ReportDetailPage() {
             <Separator />
             <div>
               <p className="text-sm text-muted-foreground mb-2">Previous Reports</p>
-              {report.reporterHistory.length > 0 ? (
+              {report.reporterHistory && report.reporterHistory.length > 0 ? (
                 <div className="space-y-2">
                   {report.reporterHistory.slice(0, 5).map((item) => (
                     <div key={item.id} className="text-sm p-2 bg-muted rounded">
@@ -150,7 +150,7 @@ export function ReportDetailPage() {
             <Separator />
             <div>
               <p className="text-sm text-muted-foreground mb-2">Reports Against User</p>
-              {report.reportedUserHistory.length > 0 ? (
+              {report.reportedUserHistory && report.reportedUserHistory.length > 0 ? (
                 <div className="space-y-2">
                   {report.reportedUserHistory.slice(0, 5).map((item) => (
                     <div key={item.id} className="text-sm p-2 bg-muted rounded">
@@ -189,7 +189,7 @@ export function ReportDetailPage() {
             <div>
               <p className="text-sm text-muted-foreground">Priority</p>
               <Badge variant={getPriorityVariant(report.priority)} className="mt-1">
-                {report.priority.toUpperCase()}
+                {report.priority?.toUpperCase() || 'N/A'}
               </Badge>
             </div>
             <div>

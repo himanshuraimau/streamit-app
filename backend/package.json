@@ -19,6 +19,7 @@
     "db:studio": "bunx prisma studio",
     "db:seed": "bun prisma/seed-payment.ts",
     "db:seed-discount": "bun prisma/seed-discount.ts",
+    "db:seed-admin": "bun prisma/seed-admin.ts",
     "auth:generate": "bunx @better-auth/cli generate",
     "setup": "bun install && bunx prisma generate && bunx prisma migrate dev",
     "test:connection-pool": "bun scripts/test-connection-pool.ts"
@@ -49,6 +50,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.918.0",
     "@aws-sdk/s3-request-presigner": "^3.918.0",
+    "@node-rs/argon2": "^2.0.0",
     "@prisma/adapter-pg": "^6.17.1",
     "@prisma/client": "^6.17.1",
     "@types/multer": "^2.0.0",

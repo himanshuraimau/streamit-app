@@ -42,27 +42,31 @@ export interface ModerationActionData {
 
 export const moderationApi = {
   getQueue: async (params: ModerationQueueParams) => {
-    const response = await adminClient.get('/admin/moderation/queue', { params });
+    const response = await adminClient.get('/api/admin/moderation/queue', { params });
     return response.data;
   },
 
-  getContentById: async (id: string): Promise<ContentDetail> => {
-    const response = await adminClient.get(`/admin/moderation/${id}`);
+  getContentById: async (id: string, type: 'post' | 'short' | 'comment'): Promise<ContentDetail> => {
+    const response = await adminClient.get(`/api/admin/moderation/${id}`, {
+      params: { type }
+    });
     return response.data;
   },
 
-  moderationAction: async (contentId: string, data: ModerationActionData) => {
-    const response = await adminClient.patch(`/admin/moderation/${contentId}/action`, data);
+  moderationAction: async (contentId: string, type: 'post' | 'short' | 'comment', data: ModerationActionData) => {
+    const response = await adminClient.patch(`/api/admin/moderation/${contentId}/action`, data, {
+      params: { type }
+    });
     return response.data;
   },
 
   getShorts: async (params: Omit<ModerationQueueParams, 'contentType'>) => {
-    const response = await adminClient.get('/admin/moderation/shorts', { params });
+    const response = await adminClient.get('/api/admin/moderation/shorts', { params });
     return response.data;
   },
 
   getPosts: async (params: Omit<ModerationQueueParams, 'contentType'>) => {
-    const response = await adminClient.get('/admin/moderation/posts', { params });
+    const response = await adminClient.get('/api/admin/moderation/posts', { params });
     return response.data;
   },
 };

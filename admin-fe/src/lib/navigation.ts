@@ -27,7 +27,7 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     label: 'Streamers',
-    href: '/streamers',
+    href: '/streamers/applications',
     icon: Video,
     allowedRoles: ['super_admin', 'moderator', 'support_admin'],
     children: [

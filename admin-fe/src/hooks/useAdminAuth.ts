@@ -13,50 +13,67 @@ interface SessionResponse {
   user: AdminUser;
 }
 
-export function useAdminAuth() {
-  const { setUser, setLoading, logout } = useAdminAuthStore();
+// Global flag to prevent multiple simultaneous session checks
+let isCheckingSession = false;
+let sessionCheckCount = 0;
 
+export function useAdminAuth() {
   const initSession = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await adminClient.get<SessionResponse>('/api/admin/auth/session');
-      setUser(response.data.user);
-    } catch (error) {
-      // Session doesn't exist or is invalid
-      setUser(null);
-    } finally {
-      setLoading(false);
+    sessionCheckCount++;
+    console.log(`[Auth] initSession called (count: ${sessionCheckCount})`);
+    
+    // Prevent multiple simultaneous session checks
+    if (isCheckingSession) {
+      console.log('[Auth] Already checking session, skipping');
+      return;
     }
-  }, [setUser, setLoading]);
+
+    try {
+      isCheckingSession = true;
+      console.log('[Auth] Starting session check');
+      useAdminAuthStore.setState({ isLoading: true });
+      const response = await adminClient.get<SessionResponse>('/api/admin/auth/session');
+      console.log('[Auth] Session check successful');
+      useAdminAuthStore.getState().setUser(response.data.user);
+    } catch (error) {
+      console.log('[Auth] Session check failed (no session)');
+      // Session doesn't exist or is invalid
+      useAdminAuthStore.getState().setUser(null);
+    } finally {
+      useAdminAuthStore.setState({ isLoading: false });
+      isCheckingSession = false;
+      console.log('[Auth] Session check complete');
+    }
+  }, []); // No dependencies - use store directly
 
   const signIn = useCallback(
     async (data: SignInData) => {
       try {
-        setLoading(true);
+        useAdminAuthStore.setState({ isLoading: true });
         const response = await adminClient.post<SessionResponse>('/api/admin/auth/sign-in', data);
-        setUser(response.data.user);
+        useAdminAuthStore.getState().setUser(response.data.user);
         toast.success('Signed in successfully');
         return true;
       } catch (error) {
         toast.error('Invalid credentials');
         return false;
       } finally {
-        setLoading(false);
+        useAdminAuthStore.setState({ isLoading: false });
       }
     },
-    [setUser, setLoading]
+    [] // No dependencies - use store directly
   );
 
   const signOut = useCallback(async () => {
     try {
       await adminClient.post('/api/admin/auth/sign-out');
-      logout();
+      useAdminAuthStore.getState().logout();
       toast.success('Signed out successfully');
     } catch (error) {
       // Still logout locally even if API call fails
-      logout();
+      useAdminAuthStore.getState().logout();
     }
-  }, [logout]);
+  }, []); // No dependencies - use store directly
 
   return {
     initSession,

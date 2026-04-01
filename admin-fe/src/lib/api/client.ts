@@ -17,18 +17,27 @@ adminClient.interceptors.response.use(
   (error: AxiosError<{ error: string; details?: object }>) => {
     const status = error.response?.status;
     const message = error.response?.data?.error || 'An error occurred';
+    const url = error.config?.url || '';
 
+    // Don't redirect on session check failures - let the app handle it
+    const isSessionCheck = url.includes('/api/admin/auth/session');
+    
     // Handle authentication errors
-    if (status === 401) {
-      toast.error('Session expired. Please login again.');
-      window.location.href = '/login';
+    if (status === 401 && !isSessionCheck) {
+      // Only show toast and redirect if not already on login page
+      if (!window.location.pathname.includes('/login')) {
+        toast.error('Session expired. Please login again.');
+        window.location.href = '/login';
+      }
       return Promise.reject(error);
     }
 
     // Handle authorization errors
     if (status === 403) {
       toast.error('You do not have permission to perform this action.');
-      window.location.href = '/unauthorized';
+      if (!window.location.pathname.includes('/unauthorized')) {
+        window.location.href = '/unauthorized';
+      }
       return Promise.reject(error);
     }
 

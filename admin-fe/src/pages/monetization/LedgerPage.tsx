@@ -132,7 +132,6 @@ export function LedgerPage() {
                 key: 'status',
                 label: 'Status',
                 options: [
-                  { label: 'All', value: '' },
                   { label: 'Completed', value: 'COMPLETED' },
                   { label: 'Pending', value: 'PENDING' },
                   { label: 'Failed', value: 'FAILED' },
@@ -142,7 +141,6 @@ export function LedgerPage() {
                 key: 'paymentGateway',
                 label: 'Gateway',
                 options: [
-                  { label: 'All', value: '' },
                   { label: 'Stripe', value: 'stripe' },
                   { label: 'PayPal', value: 'paypal' },
                   { label: 'Razorpay', value: 'razorpay' },

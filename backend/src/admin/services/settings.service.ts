@@ -240,7 +240,11 @@ export class SettingsService {
       },
     });
 
-    return admins;
+    // Transform role format from SUPER_ADMIN to super_admin for frontend
+    return admins.map(admin => ({
+      ...admin,
+      role: admin.role.toLowerCase() as any,
+    }));
   }
 
   /**

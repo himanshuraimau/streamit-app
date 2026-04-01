@@ -38,26 +38,26 @@ export interface RejectWithdrawalData {
 
 export const monetizationApi = {
   getLedger: (params: LedgerParams) => {
-    return adminClient.get('/admin/monetization/ledger', { params });
+    return adminClient.get('/api/admin/monetization/ledger', { params });
   },
 
   getWithdrawals: (params: WithdrawalParams) => {
-    return adminClient.get('/admin/monetization/withdrawals', { params });
+    return adminClient.get('/api/admin/monetization/withdrawals', { params });
   },
 
   approveWithdrawal: (id: string) => {
-    return adminClient.patch(`/admin/monetization/withdrawals/${id}/approve`);
+    return adminClient.patch(`/api/admin/monetization/withdrawals/${id}/approve`);
   },
 
   rejectWithdrawal: (id: string, data: RejectWithdrawalData) => {
-    return adminClient.patch(`/admin/monetization/withdrawals/${id}/reject`, data);
+    return adminClient.patch(`/api/admin/monetization/withdrawals/${id}/reject`, data);
   },
 
   getGifts: (params: GiftParams) => {
-    return adminClient.get('/admin/monetization/gifts', { params });
+    return adminClient.get('/api/admin/monetization/gifts', { params });
   },
 
   getWalletDetails: (userId: string) => {
-    return adminClient.get(`/admin/monetization/wallets/${userId}`);
+    return adminClient.get(`/api/admin/monetization/wallets/${userId}`);
   },
 };

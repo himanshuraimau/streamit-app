@@ -43,12 +43,12 @@ export const adminRateLimiter = rateLimit({
 
 /**
  * Stricter rate limiter for auth routes
- * Development: 10 attempts per 15 minutes
+ * Development: 100 attempts per 15 minutes (generous for testing)
  * Production: 5 attempts per 15 minutes (stricter to prevent brute force attacks)
  */
 export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 5 : 10, // Stricter limit in production
+  max: process.env.NODE_ENV === 'production' ? 5 : 100, // Much more generous in development
   message: {
     error: 'Too many authentication attempts',
     message: 'Too many authentication attempts from this IP, please try again later',

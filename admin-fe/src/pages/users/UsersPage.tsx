@@ -6,18 +6,12 @@ import { DataTable } from '@/components/common/DataTable';
 import { FilterBar, type FilterConfig } from '@/components/common/FilterBar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { FreezeUserDialog } from '@/components/users/FreezeUserDialog';
 import { BanUserDialog } from '@/components/users/BanUserDialog';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { usersApi, type User } from '@/lib/api/users.api';
 import { queryKeys } from '@/lib/queryKeys';
-import { RiMoreLine, RiEyeLine, RiLockLine, RiBankLine, RiChatOffLine, RiKeyLine } from '@remixicon/react';
+import { RiEyeLine } from '@remixicon/react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -173,57 +167,16 @@ export function UsersPage() {
     },
     {
       id: 'actions',
+      header: 'Actions',
       cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
-              <RiMoreLine className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => navigate(`/users/${row.original.id}`)}>
-              <RiEyeLine className="mr-2 h-4 w-4" />
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                setSelectedUser(row.original);
-                setFreezeDialogOpen(true);
-              }}
-            >
-              <RiLockLine className="mr-2 h-4 w-4" />
-              Freeze Account
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="text-destructive"
-              onClick={() => {
-                setSelectedUser(row.original);
-                setBanDialogOpen(true);
-              }}
-            >
-              <RiBankLine className="mr-2 h-4 w-4" />
-              Ban User
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                setSelectedUser(row.original);
-                setDisableChatDialogOpen(true);
-              }}
-            >
-              <RiChatOffLine className="mr-2 h-4 w-4" />
-              Disable Chat
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                setSelectedUser(row.original);
-                setResetPasswordDialogOpen(true);
-              }}
-            >
-              <RiKeyLine className="mr-2 h-4 w-4" />
-              Reset Password
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate(`/users/${row.original.id}`)}
+        >
+          <RiEyeLine className="h-4 w-4 mr-2" />
+          View Details
+        </Button>
       ),
     },
   ];

@@ -50,7 +50,7 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar>
+    <Sidebar collapsible="icon">
       <SidebarHeader className="border-b p-4">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground" role="img" aria-label="StreamIt Admin Logo">
@@ -78,7 +78,7 @@ export function AppSidebar() {
                       <Collapsible key={item.href} defaultOpen={isActive(item.href)}>
                         <SidebarMenuItem>
                           <CollapsibleTrigger asChild>
-                            <SidebarMenuButton aria-label={`${item.label} menu`}>
+                            <SidebarMenuButton tooltip={item.label} aria-label={`${item.label} menu`}>
                               <Icon className="h-4 w-4" aria-hidden="true" />
                               <span>{item.label}</span>
                               <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:rotate-90" aria-hidden="true" />
@@ -108,7 +108,7 @@ export function AppSidebar() {
 
                   return (
                     <SidebarMenuItem key={item.href}>
-                      <SidebarMenuButton asChild isActive={isActive(item.href)}>
+                      <SidebarMenuButton asChild isActive={isActive(item.href)} tooltip={item.label}>
                         <Link to={item.href} aria-label={item.label}>
                           <Icon className="h-4 w-4" aria-hidden="true" />
                           <span>{item.label}</span>
@@ -129,16 +129,16 @@ export function AppSidebar() {
             <Avatar className="h-8 w-8">
               <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                 {user?.name
-                  .split(' ')
+                  ?.split(' ')
                   .map((n) => n[0])
                   .join('')
-                  .toUpperCase()}
+                  .toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-1 flex-col overflow-hidden">
-              <span className="truncate font-medium">{user?.name}</span>
+              <span className="truncate font-medium">{user?.name || 'User'}</span>
               <span className="truncate text-xs text-muted-foreground capitalize">
-                {user?.role.replace(/_/g, ' ')}
+                {user?.role?.replace(/_/g, ' ') || 'Admin'}
               </span>
             </div>
           </div>

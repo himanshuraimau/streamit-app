@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { useAdminAuthStore } from '@/stores/adminAuthStore';
 import { Loader2 } from 'lucide-react';
 
 const loginSchema = z.object({
@@ -20,7 +21,15 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export function LoginPage() {
   const navigate = useNavigate();
   const { signIn } = useAdminAuth();
+  const { isAuthenticated } = useAdminAuthStore();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const {
     register,
@@ -32,12 +41,9 @@ export function LoginPage() {
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
-    const success = await signIn(data);
+    await signIn(data);
     setIsLoading(false);
-
-    if (success) {
-      navigate('/dashboard');
-    }
+    // Navigation will happen automatically via useEffect when isAuthenticated changes
   };
 
   return (

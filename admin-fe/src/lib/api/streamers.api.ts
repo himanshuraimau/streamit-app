@@ -88,7 +88,7 @@ export const streamersApi = {
 
   listLiveStreams: async (): Promise<LiveStream[]> => {
     const response = await adminClient.get('/api/admin/streamers/live');
-    return response.data;
+    return response.data.data; // Backend returns { data: streams, count }
   },
 
   killStream: async (id: string, data: KillStreamData): Promise<void> => {

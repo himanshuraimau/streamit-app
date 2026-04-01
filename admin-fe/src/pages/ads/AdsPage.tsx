@@ -33,7 +33,7 @@ export function AdsPage() {
       adsApi.list({
         page,
         pageSize: 20,
-        status: filters.status as 'active' | 'inactive' | undefined,
+        status: filters.status ? (filters.status as 'active' | 'inactive') : undefined,
         targetRegion: filters.targetRegion || undefined,
         category: filters.category || undefined,
       }),

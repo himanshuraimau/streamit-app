@@ -38,11 +38,21 @@ const PageLoader = () => (
 
 export function App() {
   const { initSession } = useAdminAuth();
-  const { isLoading } = useAdminAuthStore();
+  const { isLoading, isAuthenticated, sessionInitialized } = useAdminAuthStore();
 
   useEffect(() => {
-    initSession();
-  }, [initSession]);
+    // Only check session once, and only if not already initialized
+    if (!sessionInitialized) {
+      initSession();
+    } else if (!isAuthenticated) {
+      // If session was initialized but user is not authenticated, set loading to false
+      useAdminAuthStore.setState({ isLoading: false });
+    } else {
+      // Already authenticated from storage
+      useAdminAuthStore.setState({ isLoading: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   if (isLoading) {
     return (

@@ -56,16 +56,25 @@ export const settingsApi = {
 
   listAdmins: async (): Promise<AdminUser[]> => {
     const response = await adminClient.get('/api/admin/settings/admins');
-    return response.data;
+    return response.data.data || response.data;
   },
 
   createAdmin: async (data: CreateAdminData): Promise<AdminUser> => {
-    const response = await adminClient.post('/api/admin/settings/admins', data);
+    // Transform role to uppercase for backend
+    const transformedData = {
+      ...data,
+      role: data.role.toUpperCase() as any,
+    };
+    const response = await adminClient.post('/api/admin/settings/admins', transformedData);
     return response.data;
   },
 
   updateAdminRole: async (id: string, data: UpdateAdminRoleData): Promise<void> => {
-    await adminClient.patch(`/api/admin/settings/admins/${id}/role`, data);
+    // Transform role to uppercase for backend
+    const transformedData = {
+      role: data.role.toUpperCase() as any,
+    };
+    await adminClient.patch(`/api/admin/settings/admins/${id}/role`, transformedData);
   },
 
   deleteAdmin: async (id: string): Promise<void> => {

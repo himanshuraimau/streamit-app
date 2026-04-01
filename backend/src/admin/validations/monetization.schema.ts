@@ -25,13 +25,13 @@ export const rejectWithdrawalSchema = z.object({
  * Schema for filtering coin ledger
  */
 export const ledgerFiltersSchema = z.object({
-  userId: z.string().cuid().optional(),
-  dateFrom: z.string().datetime().optional(),
-  dateTo: z.string().datetime().optional(),
-  status: z.enum(['PENDING', 'COMPLETED', 'FAILED', 'REFUNDED']).optional(),
+  userId: z.preprocess((val) => val === '' ? undefined : val, z.string().cuid().optional()),
+  dateFrom: z.preprocess((val) => val === '' ? undefined : val, z.string().datetime().optional()),
+  dateTo: z.preprocess((val) => val === '' ? undefined : val, z.string().datetime().optional()),
+  status: z.preprocess((val) => val === '' ? undefined : val, z.enum(['PENDING', 'COMPLETED', 'FAILED', 'REFUNDED']).optional()),
   amountMin: z.coerce.number().int().positive().optional(),
   amountMax: z.coerce.number().int().positive().optional(),
-  paymentGateway: z.string().optional(),
+  paymentGateway: z.preprocess((val) => val === '' ? undefined : val, z.string().optional()),
   page: z.coerce.number().int().positive().default(1),
   pageSize: z.coerce.number().int().positive().max(100).default(20),
 });
@@ -40,10 +40,10 @@ export const ledgerFiltersSchema = z.object({
  * Schema for filtering withdrawals
  */
 export const withdrawalFiltersSchema = z.object({
-  status: z.enum(['PENDING', 'UNDER_REVIEW', 'ON_HOLD', 'APPROVED', 'REJECTED', 'PAID']).optional(),
-  userId: z.string().cuid().optional(),
-  dateFrom: z.string().datetime().optional(),
-  dateTo: z.string().datetime().optional(),
+  status: z.preprocess((val) => val === '' ? undefined : val, z.enum(['PENDING', 'UNDER_REVIEW', 'ON_HOLD', 'APPROVED', 'REJECTED', 'PAID']).optional()),
+  userId: z.preprocess((val) => val === '' ? undefined : val, z.string().cuid().optional()),
+  dateFrom: z.preprocess((val) => val === '' ? undefined : val, z.string().datetime().optional()),
+  dateTo: z.preprocess((val) => val === '' ? undefined : val, z.string().datetime().optional()),
   amountMin: z.coerce.number().int().positive().optional(),
   amountMax: z.coerce.number().int().positive().optional(),
   page: z.coerce.number().int().positive().default(1),

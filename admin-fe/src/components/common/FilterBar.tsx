@@ -75,8 +75,8 @@ export function FilterBar({
         {filters.map((filter) => (
           <Select
             key={filter.key}
-            value={activeFilters[filter.key] || ''}
-            onValueChange={(value) => onFilterChange?.(filter.key, value || null)}
+            value={activeFilters[filter.key] || 'all'}
+            onValueChange={(value) => onFilterChange?.(filter.key, value === 'all' ? null : value)}
           >
             <SelectTrigger 
               className="w-full sm:w-[180px]"
@@ -85,7 +85,7 @@ export function FilterBar({
               <SelectValue placeholder={filter.label} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All {filter.label}</SelectItem>
+              <SelectItem value="all">All {filter.label}</SelectItem>
               {filter.options.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
