@@ -10,19 +10,16 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { monetizationApi } from '@/lib/api/monetization.api';
+import { formatCoins, formatCurrencyAmount } from '@/lib/monetization';
 import { toast } from 'sonner';
 
 interface Withdrawal {
   id: string;
-  creatorName: string;
+  userName: string;
   amountCoins: number;
-  amountCurrency: number;
-  currency: string;
-  bankDetails: {
-    accountName: string;
-    accountNumber: string;
-    bankName: string;
-  };
+  grossAmountPaise: number;
+  netAmountPaise: number;
+  platformFeePaise: number;
 }
 
 interface ApproveWithdrawalDialogProps {
@@ -64,27 +61,27 @@ export function ApproveWithdrawalDialog({
               <div className="rounded-lg border p-4 space-y-2">
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Creator:</span>
-                  <span className="text-sm">{withdrawal.creatorName}</span>
+                  <span className="text-sm">{withdrawal.userName}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Amount (Coins):</span>
-                  <span className="text-sm">
-                    {withdrawal.amountCoins.toLocaleString()}
-                  </span>
+                  <span className="text-sm">{formatCoins(withdrawal.amountCoins)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm font-medium">Amount (Currency):</span>
+                  <span className="text-sm font-medium">Gross:</span>
+                  <span className="text-sm">{formatCurrencyAmount(withdrawal.grossAmountPaise)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium">Platform Fee:</span>
                   <span className="text-sm">
-                    {withdrawal.currency} {withdrawal.amountCurrency.toFixed(2)}
+                    {formatCurrencyAmount(withdrawal.platformFeePaise)}
                   </span>
                 </div>
-                <div className="border-t pt-2 mt-2">
-                  <div className="text-sm font-medium mb-1">Bank Details:</div>
-                  <div className="text-sm space-y-1">
-                    <div>Account: {withdrawal.bankDetails.accountName}</div>
-                    <div>Bank: {withdrawal.bankDetails.bankName}</div>
-                    <div>Number: {withdrawal.bankDetails.accountNumber}</div>
-                  </div>
+                <div className="flex justify-between border-t pt-2 mt-2">
+                  <span className="text-sm font-medium">Net Payout:</span>
+                  <span className="text-sm">
+                    {formatCurrencyAmount(withdrawal.netAmountPaise)}
+                  </span>
                 </div>
               </div>
             </div>

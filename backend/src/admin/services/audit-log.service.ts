@@ -23,7 +23,10 @@ export type AuditAction =
   | 'role_change'
   | 'settings_update'
   | 'geo_block_create'
-  | 'report_resolve';
+  | 'report_resolve'
+  | 'discount_code_create'
+  | 'discount_code_update'
+  | 'discount_code_delete';
 
 /**
  * Target types for audit log entries
@@ -35,7 +38,8 @@ export type TargetType =
   | 'short'
   | 'report'
   | 'withdrawal'
-  | 'application';
+  | 'application'
+  | 'discount_code';
 
 /**
  * Filters for querying audit logs

@@ -18,6 +18,19 @@ import {
  */
 export class MonetizationController {
   /**
+   * GET /api/admin/monetization/overview
+   */
+  static async getOverview(_req: Request, res: Response) {
+    try {
+      const result = await MonetizationService.getOverview();
+      res.json(result);
+    } catch (error) {
+      console.error('Error getting monetization overview:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  /**
    * Get coin purchase ledger with filtering and pagination
    * GET /api/admin/monetization/ledger
    *
@@ -53,7 +66,7 @@ export class MonetizationController {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           error: 'Validation failed',
-          details: error.errors,
+          details: error.issues,
         });
       }
       console.error('Error getting coin ledger:', error);
@@ -96,7 +109,7 @@ export class MonetizationController {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           error: 'Validation failed',
-          details: error.errors,
+          details: error.issues,
         });
       }
       console.error('Error getting withdrawals:', error);
@@ -132,7 +145,7 @@ export class MonetizationController {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           error: 'Validation failed',
-          details: error.errors,
+          details: error.issues,
         });
       }
       if (error instanceof Error) {
@@ -178,7 +191,7 @@ export class MonetizationController {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           error: 'Validation failed',
-          details: error.errors,
+          details: error.issues,
         });
       }
       console.error('Error rejecting withdrawal:', error);
@@ -219,7 +232,7 @@ export class MonetizationController {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           error: 'Validation failed',
-          details: error.errors,
+          details: error.issues,
         });
       }
       console.error('Error getting gift transactions:', error);
@@ -253,7 +266,7 @@ export class MonetizationController {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           error: 'Validation failed',
-          details: error.errors,
+          details: error.issues,
         });
       }
       console.error('Error getting wallet details:', error);

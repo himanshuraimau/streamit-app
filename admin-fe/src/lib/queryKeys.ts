@@ -41,6 +41,7 @@ export const queryKeys = {
   monetization: {
     all: ['monetization'] as const,
     _def: ['monetization'] as const,
+    overview: () => [...queryKeys.monetization.all, 'overview'] as const,
     ledger: (params: Record<string, unknown>) => [...queryKeys.monetization.all, 'ledger', params] as const,
     withdrawals: {
       _def: ['monetization', 'withdrawals'] as const,
@@ -49,6 +50,12 @@ export const queryKeys = {
     },
     gifts: (params: Record<string, unknown>) => [...queryKeys.monetization.all, 'gifts', params] as const,
     wallet: (userId: string) => [...queryKeys.monetization.all, 'wallet', userId] as const,
+    discounts: {
+      all: ['monetization', 'discounts'] as const,
+      list: (params: Record<string, unknown>) =>
+        ['monetization', 'discounts', params] as const,
+      detail: (id: string) => ['monetization', 'discounts', id] as const,
+    },
   },
 
   // Advertisements

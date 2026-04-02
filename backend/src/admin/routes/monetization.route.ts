@@ -1,5 +1,8 @@
 import { Router } from 'express';
+import { UserRole } from '@prisma/client';
 import { MonetizationController } from '../controllers/monetization.controller';
+import { DiscountCodesController } from '../controllers/discount-codes.controller';
+import { requirePermission } from '../middleware/permissions.middleware';
 
 /**
  * Monetization routes
@@ -8,6 +11,8 @@ import { MonetizationController } from '../controllers/monetization.controller';
  * Requirements: 17.4
  */
 const router = Router();
+
+router.get('/overview', MonetizationController.getOverview);
 
 /**
  * GET /api/admin/monetization/ledger
@@ -55,7 +60,11 @@ router.get('/withdrawals', MonetizationController.getWithdrawals);
  * Path parameters:
  * - id: Withdrawal request ID
  */
-router.patch('/withdrawals/:id/approve', MonetizationController.approveWithdrawal);
+router.patch(
+  '/withdrawals/:id/approve',
+  requirePermission([UserRole.SUPER_ADMIN, UserRole.FINANCE_ADMIN]),
+  MonetizationController.approveWithdrawal
+);
 
 /**
  * PATCH /api/admin/monetization/withdrawals/:id/reject
@@ -67,7 +76,11 @@ router.patch('/withdrawals/:id/approve', MonetizationController.approveWithdrawa
  * Body:
  * - reason: Rejection reason (required, 10-500 characters)
  */
-router.patch('/withdrawals/:id/reject', MonetizationController.rejectWithdrawal);
+router.patch(
+  '/withdrawals/:id/reject',
+  requirePermission([UserRole.SUPER_ADMIN, UserRole.FINANCE_ADMIN]),
+  MonetizationController.rejectWithdrawal
+);
 
 /**
  * GET /api/admin/monetization/gifts
@@ -95,5 +108,23 @@ router.get('/gifts', MonetizationController.getGiftTransactions);
  * - Recent transactions (last 20)
  */
 router.get('/wallets/:userId', MonetizationController.getWalletDetails);
+
+router.get('/discount-codes', DiscountCodesController.listDiscountCodes);
+router.get('/discount-codes/:id', DiscountCodesController.getDiscountCodeById);
+router.post(
+  '/discount-codes',
+  requirePermission([UserRole.SUPER_ADMIN, UserRole.FINANCE_ADMIN]),
+  DiscountCodesController.createDiscountCode
+);
+router.patch(
+  '/discount-codes/:id',
+  requirePermission([UserRole.SUPER_ADMIN, UserRole.FINANCE_ADMIN]),
+  DiscountCodesController.updateDiscountCode
+);
+router.delete(
+  '/discount-codes/:id',
+  requirePermission([UserRole.SUPER_ADMIN, UserRole.FINANCE_ADMIN]),
+  DiscountCodesController.deleteDiscountCode
+);
 
 export default router;

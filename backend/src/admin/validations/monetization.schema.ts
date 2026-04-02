@@ -63,8 +63,8 @@ export const withdrawalFiltersSchema = z.object({
  * Schema for filtering gift transactions
  */
 export const giftFiltersSchema = z.object({
-  dateFrom: z.string().datetime().optional(),
-  dateTo: z.string().datetime().optional(),
+  dateFrom: z.preprocess((val) => (val === '' ? undefined : val), z.string().datetime().optional()),
+  dateTo: z.preprocess((val) => (val === '' ? undefined : val), z.string().datetime().optional()),
   amountMin: z.coerce.number().int().positive().optional(),
   amountMax: z.coerce.number().int().positive().optional(),
   page: z.coerce.number().int().positive().default(1),

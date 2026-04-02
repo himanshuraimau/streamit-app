@@ -18,9 +18,12 @@ const LiveMonitorPage = lazy(() => import('@/pages/streamers/LiveMonitorPage'));
 const ModerationQueuePage = lazy(() => import('@/pages/moderation/ModerationQueuePage'));
 const ReportsPage = lazy(() => import('@/pages/reports/ReportsPage'));
 const ReportDetailPage = lazy(() => import('@/pages/reports/ReportDetailPage'));
+const MonetizationOverviewPage = lazy(() => import('@/pages/monetization/MonetizationOverviewPage'));
 const LedgerPage = lazy(() => import('@/pages/monetization/LedgerPage'));
 const WithdrawalsPage = lazy(() => import('@/pages/monetization/WithdrawalsPage'));
 const GiftsPage = lazy(() => import('@/pages/monetization/GiftsPage'));
+const DiscountCodesPage = lazy(() => import('@/pages/monetization/DiscountCodesPage'));
+const DiscountCodeEditorPage = lazy(() => import('@/pages/monetization/DiscountCodeEditorPage'));
 const AdsPage = lazy(() => import('@/pages/ads/AdsPage'));
 const AdEditorPage = lazy(() => import('@/pages/ads/AdEditorPage'));
 const AnalyticsPage = lazy(() => import('@/pages/analytics/AnalyticsPage'));
@@ -183,6 +186,14 @@ export function App() {
 
             {/* Monetization */}
             <Route
+              path="monetization"
+              element={
+                <PermissionRoute allowedRoles={['super_admin', 'finance_admin', 'compliance_officer']}>
+                  <MonetizationOverviewPage />
+                </PermissionRoute>
+              }
+            />
+            <Route
               path="monetization/ledger"
               element={
                 <PermissionRoute allowedRoles={['super_admin', 'finance_admin', 'compliance_officer']}>
@@ -203,6 +214,30 @@ export function App() {
               element={
                 <PermissionRoute allowedRoles={['super_admin', 'finance_admin', 'compliance_officer']}>
                   <GiftsPage />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="monetization/discounts"
+              element={
+                <PermissionRoute allowedRoles={['super_admin', 'finance_admin']}>
+                  <DiscountCodesPage />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="monetization/discounts/new"
+              element={
+                <PermissionRoute allowedRoles={['super_admin', 'finance_admin']}>
+                  <DiscountCodeEditorPage />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="monetization/discounts/:id/edit"
+              element={
+                <PermissionRoute allowedRoles={['super_admin', 'finance_admin']}>
+                  <DiscountCodeEditorPage />
                 </PermissionRoute>
               }
             />

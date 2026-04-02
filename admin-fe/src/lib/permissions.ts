@@ -58,9 +58,13 @@ export const ROUTE_PERMISSIONS: Record<string, AdminRole[]> = {
   '/reports/:id': ['super_admin', 'moderator', 'support_admin', 'compliance_officer'],
 
   // Monetization
+  '/monetization': ['super_admin', 'finance_admin', 'compliance_officer'],
   '/monetization/ledger': ['super_admin', 'finance_admin', 'compliance_officer'],
   '/monetization/withdrawals': ['super_admin', 'finance_admin', 'compliance_officer'],
   '/monetization/gifts': ['super_admin', 'finance_admin', 'compliance_officer'],
+  '/monetization/discounts': ['super_admin', 'finance_admin'],
+  '/monetization/discounts/new': ['super_admin', 'finance_admin'],
+  '/monetization/discounts/:id/edit': ['super_admin', 'finance_admin'],
 
   // Advertisements
   '/ads': ['super_admin', 'finance_admin'],
@@ -176,10 +180,16 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     label: 'Monetization',
-    href: '/monetization/ledger',
+    href: '/monetization',
     icon: Wallet,
     allowedRoles: ['super_admin', 'finance_admin', 'compliance_officer'],
     children: [
+      {
+        label: 'Overview',
+        href: '/monetization',
+        icon: Wallet,
+        allowedRoles: ['super_admin', 'finance_admin', 'compliance_officer'],
+      },
       {
         label: 'Coin Ledger',
         href: '/monetization/ledger',
@@ -190,13 +200,19 @@ export const NAV_ITEMS: NavItem[] = [
         label: 'Withdrawals',
         href: '/monetization/withdrawals',
         icon: ArrowDownToLine,
-        allowedRoles: ['super_admin', 'finance_admin'],
+        allowedRoles: ['super_admin', 'finance_admin', 'compliance_officer'],
       },
       {
         label: 'Gift Transactions',
         href: '/monetization/gifts',
         icon: Gift,
         allowedRoles: ['super_admin', 'finance_admin', 'compliance_officer'],
+      },
+      {
+        label: 'Discount Codes',
+        href: '/monetization/discounts',
+        icon: FileText,
+        allowedRoles: ['super_admin', 'finance_admin'],
       },
     ],
   },

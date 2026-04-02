@@ -1,142 +1,225 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/common/DataTable';
-import { FilterBar } from '@/components/common/FilterBar';
-import { monetizationApi } from '@/lib/api/monetization.api';
-import type { GiftParams } from '@/lib/api/monetization.api';
+import { StatCard } from '@/components/common/StatCard';
+import { GiftDetailSheet } from '@/components/monetization/GiftDetailSheet';
+import { WalletDetailSheet } from '@/components/monetization/WalletDetailSheet';
+import { monetizationApi, type GiftEntry } from '@/lib/api/monetization.api';
 import { queryKeys } from '@/lib/queryKeys';
+import { formatCoins, formatDateTime, toEndOfDayIso, toStartOfDayIso } from '@/lib/monetization';
 
-interface GiftTransaction {
-  id: string;
-  senderId: string;
-  senderName: string;
-  receiverId: string;
-  receiverName: string;
-  giftName: string;
-  coinAmount: number;
-  quantity: number;
-  streamId?: string;
-  streamTitle?: string;
-  createdAt: string;
+interface GiftFilters {
+  dateFrom: string;
+  dateTo: string;
+  amountMin: string;
+  amountMax: string;
 }
 
+const defaultFilters: GiftFilters = {
+  dateFrom: '',
+  dateTo: '',
+  amountMin: '',
+  amountMax: '',
+};
+
 export function GiftsPage() {
-  const [params, setParams] = useState<GiftParams>({
-    page: 1,
-    pageSize: 20,
-  });
+  const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState(defaultFilters);
+  const [selectedGift, setSelectedGift] = useState<GiftEntry | null>(null);
+  const [walletUserId, setWalletUserId] = useState<string | null>(null);
+  const [walletOpen, setWalletOpen] = useState(false);
+
+  const params = useMemo(
+    () => ({
+      page,
+      pageSize: 20,
+      dateFrom: toStartOfDayIso(filters.dateFrom),
+      dateTo: toEndOfDayIso(filters.dateTo),
+      amountMin: filters.amountMin ? Number(filters.amountMin) : undefined,
+      amountMax: filters.amountMax ? Number(filters.amountMax) : undefined,
+    }),
+    [filters, page]
+  );
 
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.monetization.gifts(params),
     queryFn: () => monetizationApi.getGifts(params),
   });
 
-  const columns: ColumnDef<GiftTransaction>[] = [
+  const openWallet = (userId: string) => {
+    setWalletUserId(userId);
+    setWalletOpen(true);
+  };
+
+  const columns: ColumnDef<GiftEntry>[] = [
     {
       accessorKey: 'senderName',
       header: 'Sender',
+      cell: ({ row }) => (
+        <button className="font-medium hover:underline" onClick={() => openWallet(row.original.senderId)}>
+          {row.original.senderName}
+        </button>
+      ),
     },
     {
       accessorKey: 'receiverName',
       header: 'Receiver',
+      cell: ({ row }) => (
+        <button className="font-medium hover:underline" onClick={() => openWallet(row.original.receiverId)}>
+          {row.original.receiverName}
+        </button>
+      ),
     },
     {
       accessorKey: 'giftName',
       header: 'Gift',
+      cell: ({ row }) => (
+        <div>
+          <div className="font-medium">{row.original.giftName}</div>
+          <div className="text-xs text-muted-foreground">Qty {row.original.quantity}</div>
+        </div>
+      ),
     },
     {
       accessorKey: 'coinAmount',
-      header: 'Coin Amount',
-      cell: ({ row }) => {
-        const amount = row.original.coinAmount;
-        const quantity = row.original.quantity;
-        const total = amount * quantity;
-        return (
-          <div>
-            <div>{total.toLocaleString()} coins</div>
-            {quantity > 1 && (
-              <div className="text-xs text-muted-foreground">
-                {amount.toLocaleString()} × {quantity}
-              </div>
-            )}
-          </div>
-        );
-      },
+      header: 'Coins',
+      cell: ({ row }) => formatCoins(row.original.coinAmount),
     },
     {
       accessorKey: 'streamTitle',
       header: 'Stream Context',
-      cell: ({ row }) => {
-        const title = row.original.streamTitle;
-        return title ? (
-          <div className="max-w-[200px] truncate">{title}</div>
+      cell: ({ row }) => row.original.streamTitle || 'Direct / no stream',
+    },
+    {
+      accessorKey: 'message',
+      header: 'Message',
+      cell: ({ row }) =>
+        row.original.message ? (
+          <div className="max-w-[220px] truncate">{row.original.message}</div>
         ) : (
-          <span className="text-muted-foreground">-</span>
-        );
-      },
+          <span className="text-muted-foreground">—</span>
+        ),
     },
     {
       accessorKey: 'createdAt',
-      header: 'Timestamp',
-      cell: ({ row }) => new Date(row.original.createdAt).toLocaleString(),
+      header: 'Created',
+      cell: ({ row }) => formatDateTime(row.original.createdAt),
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => (
+        <Button variant="ghost" size="sm" onClick={() => setSelectedGift(row.original)}>
+          View
+        </Button>
+      ),
     },
   ];
 
-  const handleFilterChange = (key: string, value: any) => {
-    setParams((prev) => ({ ...prev, [key]: value, page: 1 }));
-  };
-
-  const handleSearchChange = (_value: string) => {
-    // Search functionality can be extended if needed
-    setParams((prev) => ({ ...prev, page: 1 }));
-  };
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Gift Transactions</h1>
         <p className="text-muted-foreground">
-          View all virtual gift transactions on the platform
+          Review gift activity, sender and receiver wallets, and stream context.
         </p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label="Transactions"
+          value={data?.summary.totalRecords || 0}
+          description={`${data?.summary.uniqueSenders || 0} unique senders`}
+        />
+        <StatCard
+          label="Coins Gifted"
+          value={formatCoins(data?.summary.totalCoins || 0)}
+          description={`${data?.summary.totalQuantity || 0} gift units`}
+        />
+        <StatCard
+          label="Unique Receivers"
+          value={data?.summary.uniqueReceivers || 0}
+          description="Users who received gifts"
+        />
+        <StatCard
+          label="Avg Coins / Txn"
+          value={
+            data?.summary.totalRecords
+              ? formatCoins(Math.round(data.summary.totalCoins / data.summary.totalRecords))
+              : 0
+          }
+          description="Based on current filters"
+        />
       </div>
 
       <DataTable
         columns={columns}
-        data={data?.data?.data || []}
+        data={data?.data || []}
         isLoading={isLoading}
-        pagination={{
-          currentPage: params.page!,
-          pageSize: params.pageSize!,
-          totalPages: data?.data?.pagination?.totalPages || 0,
-          hasNextPage: data?.data?.pagination?.hasNextPage || false,
-          hasPreviousPage: data?.data?.pagination?.hasPreviousPage || false,
-        }}
-        onPaginationChange={(newPage) => {
-          setParams((prev) => ({
-            ...prev,
-            page: newPage,
-          }));
-        }}
+        pagination={data?.pagination}
+        onPaginationChange={setPage}
         toolbar={
-          <FilterBar
-            searchPlaceholder="Filter gifts..."
-            filters={[
-              {
-                key: 'minAmount',
-                label: 'Min Amount',
-                options: [],
-              },
-              {
-                key: 'maxAmount',
-                label: 'Max Amount',
-                options: [],
-              },
-            ]}
-            onSearchChange={handleSearchChange}
-            onFilterChange={handleFilterChange}
-          />
+          <div className="grid gap-3 md:grid-cols-4">
+            <Input
+              type="date"
+              value={filters.dateFrom}
+              onChange={(event) => {
+                setPage(1);
+                setFilters((prev) => ({ ...prev, dateFrom: event.target.value }));
+              }}
+            />
+            <Input
+              type="date"
+              value={filters.dateTo}
+              onChange={(event) => {
+                setPage(1);
+                setFilters((prev) => ({ ...prev, dateTo: event.target.value }));
+              }}
+            />
+            <Input
+              type="number"
+              placeholder="Min coins"
+              value={filters.amountMin}
+              onChange={(event) => {
+                setPage(1);
+                setFilters((prev) => ({ ...prev, amountMin: event.target.value }));
+              }}
+            />
+            <Input
+              type="number"
+              placeholder="Max coins"
+              value={filters.amountMax}
+              onChange={(event) => {
+                setPage(1);
+                setFilters((prev) => ({ ...prev, amountMax: event.target.value }));
+              }}
+            />
+          </div>
         }
+        emptyState={{
+          title: 'No gift transactions found',
+          description: 'Try widening the date or coin filters.',
+        }}
+      />
+
+      <GiftDetailSheet
+        gift={selectedGift}
+        open={!!selectedGift}
+        onOpenChange={(open) => {
+          if (!open) setSelectedGift(null);
+        }}
+        onOpenWallet={openWallet}
+      />
+
+      <WalletDetailSheet
+        userId={walletUserId}
+        open={walletOpen}
+        onOpenChange={(open) => {
+          setWalletOpen(open);
+          if (!open) setWalletUserId(null);
+        }}
       />
     </div>
   );

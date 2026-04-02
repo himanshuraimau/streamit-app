@@ -21,6 +21,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { monetizationApi } from '@/lib/api/monetization.api';
+import { formatCoins, formatCurrencyAmount } from '@/lib/monetization';
 import { toast } from 'sonner';
 
 const rejectSchema = z.object({
@@ -31,10 +32,9 @@ type RejectFormData = z.infer<typeof rejectSchema>;
 
 interface Withdrawal {
   id: string;
-  creatorName: string;
+  userName: string;
   amountCoins: number;
-  amountCurrency: number;
-  currency: string;
+  netAmountPaise: number;
 }
 
 interface RejectWithdrawalDialogProps {
@@ -82,22 +82,18 @@ export function RejectWithdrawalDialog({
           <DialogTitle>Reject Withdrawal Request</DialogTitle>
           <DialogDescription>
             Provide a reason for rejecting this withdrawal request from{' '}
-            {withdrawal.creatorName}.
+            {withdrawal.userName}.
           </DialogDescription>
         </DialogHeader>
 
         <div className="rounded-lg border p-4 space-y-2 my-4">
           <div className="flex justify-between">
             <span className="text-sm font-medium">Amount (Coins):</span>
-            <span className="text-sm">
-              {withdrawal.amountCoins.toLocaleString()}
-            </span>
+            <span className="text-sm">{formatCoins(withdrawal.amountCoins)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm font-medium">Amount (Currency):</span>
-            <span className="text-sm">
-              {withdrawal.currency} {withdrawal.amountCurrency.toFixed(2)}
-            </span>
+            <span className="text-sm font-medium">Net Payout:</span>
+            <span className="text-sm">{formatCurrencyAmount(withdrawal.netAmountPaise)}</span>
           </div>
         </div>
 
