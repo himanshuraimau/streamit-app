@@ -394,7 +394,7 @@ async function main() {
     },
   });
 
-  await prisma.discountCode.upsert({
+  const welcomeDiscountCode = await prisma.discountCode.upsert({
     where: { code: 'WELCOME10' },
     update: {
       discountType: DiscountType.PERCENTAGE,
@@ -410,7 +410,6 @@ async function main() {
       description: '10% bonus coin reward for seed testing',
     },
     create: {
-      id: 'seed-discount-welcome',
       code: 'WELCOME10',
       discountType: DiscountType.PERCENTAGE,
       discountValue: 10,
@@ -442,7 +441,6 @@ async function main() {
       description: 'Fixed-value code for package testing',
     },
     create: {
-      id: 'seed-discount-boost',
       code: 'BOOST50',
       discountType: DiscountType.FIXED,
       discountValue: 5000,
@@ -1334,7 +1332,7 @@ async function main() {
       paymentGateway: 'dodo',
       transactionId: 'seed-txn-001',
       status: PurchaseStatus.COMPLETED,
-      discountCodeId: 'seed-discount-welcome',
+      discountCodeId: welcomeDiscountCode.id,
       discountBonusCoins: 50,
       createdAt: daysAgo(4),
     },
@@ -1351,7 +1349,7 @@ async function main() {
       orderId: 'seed-order-001',
       transactionId: 'seed-txn-001',
       status: PurchaseStatus.COMPLETED,
-      discountCodeId: 'seed-discount-welcome',
+      discountCodeId: welcomeDiscountCode.id,
       discountBonusCoins: 50,
       createdAt: daysAgo(4),
     },
@@ -1430,13 +1428,13 @@ async function main() {
   await prisma.discountRedemption.upsert({
     where: { purchaseId: 'seed-purchase-001' },
     update: {
-      discountCodeId: 'seed-discount-welcome',
+      discountCodeId: welcomeDiscountCode.id,
       userId: viewerOne.id,
       bonusCoinsAwarded: 50,
     },
     create: {
       id: 'seed-redemption-001',
-      discountCodeId: 'seed-discount-welcome',
+      discountCodeId: welcomeDiscountCode.id,
       userId: viewerOne.id,
       purchaseId: 'seed-purchase-001',
       bonusCoinsAwarded: 50,
