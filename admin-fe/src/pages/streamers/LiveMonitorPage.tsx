@@ -16,13 +16,33 @@ export function LiveMonitorPage() {
     staleTime: 1000 * 10, // 10 seconds for live data
   });
 
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
+  const formatDuration = (seconds?: number | null) => {
+    const safeSeconds =
+      typeof seconds === 'number' && Number.isFinite(seconds) && seconds > 0 ? seconds : 0;
+    const hours = Math.floor(safeSeconds / 3600);
+    const minutes = Math.floor((safeSeconds % 3600) / 60);
     if (hours > 0) {
       return `${hours}h ${minutes}m`;
     }
     return `${minutes}m`;
+  };
+
+  const formatViewerCount = (count?: number) => {
+    const safeCount = typeof count === 'number' && Number.isFinite(count) ? count : 0;
+    return safeCount.toLocaleString();
+  };
+
+  const formatStartedAt = (startedAt?: string | null) => {
+    if (!startedAt) {
+      return 'Start time unavailable';
+    }
+
+    const startedAtDate = new Date(startedAt);
+    if (Number.isNaN(startedAtDate.getTime())) {
+      return 'Start time unavailable';
+    }
+
+    return `Started ${formatDistanceToNow(startedAtDate, { addSuffix: true })}`;
   };
 
   if (isLoading) {
@@ -114,7 +134,7 @@ export function LiveMonitorPage() {
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <RiEyeLine className="h-4 w-4" />
-                    <span>{stream.viewerCount.toLocaleString()}</span>
+                    <span>{formatViewerCount(stream.viewerCount)}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <RiTimeLine className="h-4 w-4" />
@@ -129,9 +149,7 @@ export function LiveMonitorPage() {
                 )}
 
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span>
-                    Started {formatDistanceToNow(new Date(stream.startedAt), { addSuffix: true })}
-                  </span>
+                  <span>{formatStartedAt(stream.startedAt)}</span>
                 </div>
               </CardContent>
 

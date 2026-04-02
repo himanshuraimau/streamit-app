@@ -150,11 +150,13 @@ export function DashboardPage() {
                   <div key={stream.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{stream.title}</p>
-                      <p className="text-sm text-muted-foreground truncate">{stream.userName}</p>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {stream.streamerName || stream.userName || 'Unknown streamer'}
+                      </p>
                     </div>
                     <div className="flex items-center gap-2 ml-4">
                       <Eye className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">{stream.currentViewers || 0}</span>
+                      <span className="text-sm font-medium">{stream.viewerCount || stream.currentViewers || 0}</span>
                     </div>
                   </div>
                 ))}

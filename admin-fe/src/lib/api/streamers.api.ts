@@ -46,8 +46,73 @@ export interface LiveStream {
   thumbnailUrl?: string;
   isLive: boolean;
   isChatEnabled: boolean;
-  startedAt: string;
+  startedAt?: string | null;
 }
+
+interface BackendLiveStreamItem {
+  id: string;
+  title: string;
+  description: string | null;
+  thumbnail: string | null;
+  category: string | null;
+  userId: string;
+  userName: string;
+  isLive: boolean;
+  isChatEnabled: boolean;
+  startedAt: string | null;
+  stats:
+    | {
+        peakViewers: number;
+        totalViewers: number;
+        totalLikes: number;
+        totalGifts: number;
+      }
+    | null;
+}
+
+interface BackendLiveStreamsResponse {
+  data?: BackendLiveStreamItem[];
+  count?: number;
+}
+
+const toFiniteNumber = (value: unknown): number => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  return 0;
+};
+
+const normalizeLiveStream = (stream: BackendLiveStreamItem): LiveStream => {
+  const startedAt = stream.startedAt ? new Date(stream.startedAt) : null;
+  const startedAtMs = startedAt ? startedAt.getTime() : Number.NaN;
+
+  const duration = Number.isFinite(startedAtMs)
+    ? Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000))
+    : 0;
+
+  const viewerCount = toFiniteNumber(stream.stats?.totalViewers ?? stream.stats?.peakViewers ?? 0);
+
+  return {
+    id: stream.id,
+    streamerId: stream.userId,
+    streamerName: stream.userName || 'Unknown streamer',
+    title: stream.title || 'Untitled stream',
+    description: stream.description ?? undefined,
+    viewerCount,
+    duration,
+    category: stream.category ?? undefined,
+    thumbnailUrl: stream.thumbnail ?? undefined,
+    isLive: Boolean(stream.isLive),
+    isChatEnabled: Boolean(stream.isChatEnabled),
+    startedAt: stream.startedAt,
+  };
+};
 
 export interface RejectApplicationData {
   reason: string;
@@ -87,8 +152,9 @@ export const streamersApi = {
   },
 
   listLiveStreams: async (): Promise<LiveStream[]> => {
-    const response = await adminClient.get('/api/admin/streamers/live');
-    return response.data.data; // Backend returns { data: streams, count }
+    const response = await adminClient.get<BackendLiveStreamsResponse>('/api/admin/streamers/live');
+    const streams = Array.isArray(response.data?.data) ? response.data.data : [];
+    return streams.map(normalizeLiveStream);
   },
 
   killStream: async (id: string, data: KillStreamData): Promise<void> => {
