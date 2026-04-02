@@ -25,6 +25,8 @@ export function useAdminAuth() {
     // Prevent multiple simultaneous session checks
     if (isCheckingSession) {
       console.log('[Auth] Already checking session, skipping');
+      // Fail-safe: never leave the app in a permanent loading state.
+      useAdminAuthStore.setState({ isLoading: false });
       return;
     }
 
@@ -32,7 +34,9 @@ export function useAdminAuth() {
       isCheckingSession = true;
       console.log('[Auth] Starting session check');
       useAdminAuthStore.setState({ isLoading: true });
-      const response = await adminClient.get<SessionResponse>('/api/admin/auth/session');
+      const response = await adminClient.get<SessionResponse>('/api/admin/auth/session', {
+        timeout: 10000,
+      });
       console.log('[Auth] Session check successful');
       useAdminAuthStore.getState().setUser(response.data.user);
     } catch (error) {
@@ -40,7 +44,7 @@ export function useAdminAuth() {
       // Session doesn't exist or is invalid
       useAdminAuthStore.getState().setUser(null);
     } finally {
-      useAdminAuthStore.setState({ isLoading: false });
+      useAdminAuthStore.setState({ isLoading: false, sessionInitialized: true });
       isCheckingSession = false;
       console.log('[Auth] Session check complete');
     }

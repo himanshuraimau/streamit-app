@@ -45,29 +45,31 @@ const PageLoader = () => (
 
 export function App() {
   const { initSession } = useAdminAuth();
-  const { isLoading, isAuthenticated, sessionInitialized } = useAdminAuthStore();
+  const { sessionInitialized } = useAdminAuthStore();
 
   useEffect(() => {
-    // Only check session once, and only if not already initialized
     if (!sessionInitialized) {
-      initSession();
-    } else if (!isAuthenticated) {
-      // If session was initialized but user is not authenticated, set loading to false
-      useAdminAuthStore.setState({ isLoading: false });
+      void initSession();
     } else {
-      // Already authenticated from storage
+      // Ensure persisted sessions don't keep the app in a loading gate.
       useAdminAuthStore.setState({ isLoading: false });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+    const bootstrapTimeout = window.setTimeout(() => {
+      const state = useAdminAuthStore.getState();
+      if (state.isLoading) {
+        console.warn('[Auth] Session bootstrap timed out, showing login screen');
+        useAdminAuthStore.setState({
+          isLoading: false,
+          sessionInitialized: true,
+          isAuthenticated: false,
+          user: null,
+        });
+      }
+    }, 12000);
+
+    return () => window.clearTimeout(bootstrapTimeout);
+  }, [initSession, sessionInitialized]);
 
   return (
     <BrowserRouter>

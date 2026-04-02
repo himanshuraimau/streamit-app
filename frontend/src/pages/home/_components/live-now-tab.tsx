@@ -9,29 +9,50 @@ export function LiveNowTab() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchLiveStreams = async () => {
+    let isMounted = true;
+
+    const fetchLiveStreams = async (showLoadingState = false) => {
       try {
-        setLoading(true);
-        setError(null);
+        if (showLoadingState && isMounted) {
+          setLoading(true);
+        }
+
         const response = await viewerApi.getLiveStreams();
 
-        if (response.success && response.data) {
-          setStreams(response.data);
+        if (!isMounted) {
+          return;
+        }
+
+        if (response.success) {
+          setStreams(response.data ?? []);
+          setError(null);
         } else {
           setError(response.error || 'Failed to load live streams');
         }
       } catch (err) {
+        if (!isMounted) {
+          return;
+        }
+
         console.error('Error fetching live streams:', err);
         setError('Failed to load live streams');
       } finally {
-        setLoading(false);
+        if (showLoadingState && isMounted) {
+          setLoading(false);
+        }
       }
     };
 
-    fetchLiveStreams();
+    void fetchLiveStreams(true);
 
-    const interval = setInterval(fetchLiveStreams, 30000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      void fetchLiveStreams();
+    }, 30000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   if (loading) {

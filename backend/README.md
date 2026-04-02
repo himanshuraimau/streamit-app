@@ -140,12 +140,14 @@ BETTER_AUTH_URL="http://localhost:3000"
 ```env
 FRONTEND_URL="http://localhost:5173"
 ADMIN_FRONTEND_URL="http://localhost:5174"
+ALLOWED_ORIGINS="https://frontend-preview.vercel.app,https://admin-preview.vercel.app"
 ```
 
 **Production Configuration:**
 - `ADMIN_FRONTEND_URL` is required for admin panel CORS configuration
 - In production, set to your admin panel domain (e.g., `https://admin.streamit.com`)
-- The backend automatically includes this URL in CORS allowed origins
+- `ALLOWED_ORIGINS` can be used for additional origins (comma-separated), such as preview URLs
+- The backend automatically includes these URLs in both CORS and Better Auth trusted origins
 - Secure cookies are automatically enabled in production (`NODE_ENV=production`)
 - Rate limiting is stricter in production:
   - Admin routes: 500 requests per 15 minutes (vs 1000 in development)

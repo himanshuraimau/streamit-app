@@ -5,7 +5,7 @@ import swaggerUi from 'swagger-ui-express';
 import { prisma } from './lib/db';
 import { auth } from './lib/auth';
 import { toNodeHandler, fromNodeHeaders } from 'better-auth/node';
-import { ALLOWED_ORIGINS } from './lib/config';
+import { isAllowedOrigin } from './lib/config';
 import { swaggerSpec } from './lib/swagger';
 import { logger } from './lib/logger';
 import authRoutes from './routes/auth.route';
@@ -26,19 +26,16 @@ import { adminRateLimiter, authRateLimiter } from './admin/middleware/rate-limit
 const app = express();
 const PORT = process.env['PORT'] ?? 3000;
 
-// CORS configuration - MUST be before Better Auth handler
-const allowedOrigins = ALLOWED_ORIGINS;
-
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.indexOf(origin) !== -1) {
-        callback(null, origin); // Return the specific origin, not true
+      if (isAllowedOrigin(origin)) {
+        callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        callback(null, false);
       }
     },
     credentials: true, // Allow cookies to be sent

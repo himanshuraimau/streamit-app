@@ -59,6 +59,9 @@ function App() {
       <Route path="/auth/verify-email" element={<VerifyEmail />} />
       <Route path="/auth/forgot-password" element={<ForgotPassword />} />
       <Route path="/auth/reset-password" element={<ResetPassword />} />
+      <Route path="/signup" element={<Navigate to="/auth/signup" replace />} />
+      <Route path="/signin" element={<Navigate to="/auth/signin" replace />} />
+      <Route path="/login" element={<Navigate to="/auth/signin" replace />} />
 
       {/* Creator routes */}
       <Route path="/creator-application" element={<CreatorApplication />} />
