@@ -202,11 +202,7 @@ class Logger {
    * Log an API error with full context
    * Includes error details, stack trace, and request context
    */
-  apiError(
-    message: string,
-    error: Error,
-    context?: LogContext
-  ): void {
+  apiError(message: string, error: Error, context?: LogContext): void {
     this.error(message, context, error);
   }
 }

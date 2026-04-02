@@ -5,14 +5,14 @@ import { ComplianceService } from '../services/compliance.service';
 /**
  * Controller for compliance and legal operations
  * Handles HTTP requests for audit logs, geo-blocking, data exports, and takedowns
- * 
+ *
  * Requirements: 17.2
  */
 export class ComplianceController {
   /**
    * Get audit log with filtering and pagination
    * GET /api/admin/compliance/audit-log
-   * 
+   *
    * Query parameters:
    * - page: number (default: 1)
    * - pageSize: number (default: 20, max: 100)
@@ -21,7 +21,7 @@ export class ComplianceController {
    * - targetType: string (optional)
    * - dateFrom: date (optional)
    * - dateTo: date (optional)
-   * 
+   *
    * Requirements: 11.1, 11.2
    */
   static async getAuditLog(req: Request, res: Response) {
@@ -70,19 +70,22 @@ export class ComplianceController {
   /**
    * Create a geo-block to restrict content access by region
    * POST /api/admin/compliance/geo-block
-   * 
+   *
    * Body:
    * - region: string (required, 2-letter ISO country code)
    * - contentId: string (optional)
    * - reason: string (optional)
-   * 
+   *
    * Requirements: 11.3, 11.4, 11.5
    */
   static async createGeoBlock(req: Request, res: Response) {
     try {
       // Validate request body
       const schema = z.object({
-        region: z.string().length(2).regex(/^[A-Z]{2}$/, 'Must be a 2-letter ISO country code'),
+        region: z
+          .string()
+          .length(2)
+          .regex(/^[A-Z]{2}$/, 'Must be a 2-letter ISO country code'),
         contentId: z.string().optional(),
         reason: z.string().optional(),
       });
@@ -147,12 +150,12 @@ export class ComplianceController {
   /**
    * Export all user data for GDPR compliance
    * GET /api/admin/compliance/export
-   * 
+   *
    * Query parameters:
    * - userId: string (required)
-   * 
+   *
    * Returns JSON data export
-   * 
+   *
    * Requirements: 11.6, 11.7, 11.8
    */
   static async exportUserData(req: Request, res: Response) {
@@ -200,9 +203,9 @@ export class ComplianceController {
   /**
    * Get all content that has been taken down for legal reasons
    * GET /api/admin/compliance/takedowns
-   * 
+   *
    * Returns list of content with legal removal reasons
-   * 
+   *
    * Requirements: 11.9
    */
   static async getTakedowns(req: Request, res: Response) {

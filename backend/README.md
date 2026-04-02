@@ -43,8 +43,10 @@ backend/
 ├── prisma/
 │   ├── migrations/          # Database migration files
 │   ├── schema.prisma        # Prisma schema definition
-│   ├── seed-payment.ts      # Payment data seeding
-│   └── seed-discount.ts     # Discount code seeding
+│   ├── seed-comprehensive.ts # Lean test seed
+│   └── seed-helpers.ts      # Better Auth-compatible seed helpers
+├── scripts/
+│   └── verify-seed.ts       # Seed verification summary
 ├── src/
 │   ├── controllers/         # Request handlers
 │   │   ├── auth.controller.ts
@@ -186,9 +188,8 @@ bun run db:generate
 # Run database migrations
 bun run db:migrate
 
-# Seed initial data (coin packages and gifts)
+# Seed lean backend test data
 bun run db:seed
-bun run db:seed-discount
 ```
 
 ### 4. Start Development Server
@@ -224,8 +225,10 @@ bun run db:migrate       # Run migrations (development)
 bun run db:migrate:deploy # Run migrations (production)
 bun run db:push          # Push schema changes without migration
 bun run db:studio        # Open Prisma Studio (database GUI)
-bun run db:seed          # Seed payment data
-bun run db:seed-discount # Seed discount codes
+bun run db:seed          # Seed lean backend test data
+bun run db:reset-seed    # Clear all data and reseed
+bun run db:clear-seed    # Clear all data only
+bun run db:verify-seed   # Print seed summary
 ```
 
 ### Authentication

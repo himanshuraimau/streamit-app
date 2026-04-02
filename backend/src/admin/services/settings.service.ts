@@ -60,15 +60,15 @@ export interface CreateAdminInput {
 /**
  * Service for managing platform settings and admin users
  * Handles system configuration and admin role management
- * 
+ *
  * Requirements: 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7, 12.8, 12.9, 12.10
  */
 export class SettingsService {
   /**
    * Get all system settings organized by category
-   * 
+   *
    * @returns Settings grouped by category
-   * 
+   *
    * Requirements: 12.1, 12.2
    */
   static async getSettings(): Promise<SettingsByCategory> {
@@ -110,11 +110,11 @@ export class SettingsService {
   /**
    * Update system settings
    * Validates setting values and updates records
-   * 
+   *
    * @param updates - Array of setting updates
    * @param adminId - ID of admin performing the action
    * @returns Updated settings
-   * 
+   *
    * Requirements: 12.3, 12.4, 12.5
    */
   static async updateSettings(
@@ -147,17 +147,11 @@ export class SettingsService {
         updatedSettings.push(setting);
 
         // Create audit log entry
-        await AuditLogService.createLog(
-          adminId,
-          'settings_update',
-          'system_setting',
-          setting.id,
-          {
-            key: update.key,
-            oldValue: null, // Could fetch old value if needed
-            newValue: update.value,
-          }
-        );
+        await AuditLogService.createLog(adminId, 'settings_update', 'system_setting', setting.id, {
+          key: update.key,
+          oldValue: null, // Could fetch old value if needed
+          newValue: update.value,
+        });
       }
 
       return updatedSettings;
@@ -167,10 +161,10 @@ export class SettingsService {
   /**
    * Validate setting value based on key and type
    * Throws error if validation fails
-   * 
+   *
    * @param key - Setting key
    * @param value - Setting value
-   * 
+   *
    * Requirements: 12.4, 12.5
    */
   private static validateSettingValue(key: string, value: string): void {
@@ -216,9 +210,9 @@ export class SettingsService {
 
   /**
    * List all admin users
-   * 
+   *
    * @returns Array of admin users
-   * 
+   *
    * Requirements: 12.7
    */
   static async listAdmins(): Promise<AdminUserItem[]> {
@@ -241,7 +235,7 @@ export class SettingsService {
     });
 
     // Transform role format from SUPER_ADMIN to super_admin for frontend
-    return admins.map(admin => ({
+    return admins.map((admin) => ({
       ...admin,
       role: admin.role.toLowerCase() as any,
     }));
@@ -249,17 +243,14 @@ export class SettingsService {
 
   /**
    * Create a new admin user
-   * 
+   *
    * @param data - Admin user data
    * @param adminId - ID of admin performing the action
    * @returns Created admin user
-   * 
+   *
    * Requirements: 12.8
    */
-  static async createAdmin(
-    data: CreateAdminInput,
-    adminId: string
-  ): Promise<AdminUserItem> {
+  static async createAdmin(data: CreateAdminInput, adminId: string): Promise<AdminUserItem> {
     // Validate role is an admin role
     const adminRoles: UserRole[] = [
       'SUPER_ADMIN',
@@ -314,16 +305,10 @@ export class SettingsService {
       });
 
       // Create audit log entry
-      await AuditLogService.createLog(
-        adminId,
-        'admin_create',
-        'user',
-        user.id,
-        {
-          email: data.email,
-          role: data.role,
-        }
-      );
+      await AuditLogService.createLog(adminId, 'admin_create', 'user', user.id, {
+        email: data.email,
+        role: data.role,
+      });
 
       return user;
     });
@@ -331,12 +316,12 @@ export class SettingsService {
 
   /**
    * Update admin user role
-   * 
+   *
    * @param id - User ID
    * @param role - New role
    * @param adminId - ID of admin performing the action
    * @returns Updated admin user
-   * 
+   *
    * Requirements: 12.9
    */
   static async updateAdminRole(
@@ -383,16 +368,10 @@ export class SettingsService {
       });
 
       // Create audit log entry
-      await AuditLogService.createLog(
-        adminId,
-        'role_change',
-        'user',
-        id,
-        {
-          oldRole: oldUser.role,
-          newRole: role,
-        }
-      );
+      await AuditLogService.createLog(adminId, 'role_change', 'user', id, {
+        oldRole: oldUser.role,
+        newRole: role,
+      });
 
       return user;
     });
@@ -400,17 +379,14 @@ export class SettingsService {
 
   /**
    * Delete admin user (remove admin role or delete account)
-   * 
+   *
    * @param id - User ID
    * @param adminId - ID of admin performing the action
    * @returns Deleted user info
-   * 
+   *
    * Requirements: 12.10
    */
-  static async deleteAdmin(
-    id: string,
-    adminId: string
-  ): Promise<{ id: string; email: string }> {
+  static async deleteAdmin(id: string, adminId: string): Promise<{ id: string; email: string }> {
     // Prevent self-deletion
     if (id === adminId) {
       throw new Error('Cannot delete your own admin account');
@@ -442,17 +418,11 @@ export class SettingsService {
       });
 
       // Create audit log entry
-      await AuditLogService.createLog(
-        adminId,
-        'admin_delete',
-        'user',
-        id,
-        {
-          email: user.email,
-          oldRole: user.role,
-          action: 'role_removed',
-        }
-      );
+      await AuditLogService.createLog(adminId, 'admin_delete', 'user', id, {
+        email: user.email,
+        oldRole: user.role,
+        action: 'role_removed',
+      });
 
       return {
         id: user.id,

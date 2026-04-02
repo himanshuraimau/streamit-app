@@ -16,11 +16,13 @@ This document describes the rate limiting implementation for the admin panel, wh
 ### Rate Limits
 
 #### General Admin Routes
+
 - **Limit:** 1000 requests per 15 minutes
 - **Applies to:** All `/api/admin/*` routes except auth routes
 - **Purpose:** Prevent abuse of admin endpoints
 
 #### Auth Routes
+
 - **Limit:** 5 attempts per 15 minutes
 - **Applies to:** `/api/admin/auth/*` routes
 - **Purpose:** Prevent brute force attacks on authentication
@@ -29,6 +31,7 @@ This document describes the rate limiting implementation for the admin panel, wh
 ### Special Cases
 
 #### Super Admin in Development
+
 - Super admins are exempt from rate limiting in development mode
 - This allows for easier testing and development
 - Production environments enforce rate limits for all users
@@ -39,20 +42,21 @@ This document describes the rate limiting implementation for the admin panel, wh
 
 ```typescript
 // General admin rate limiter
-windowMs: 15 * 60 * 1000  // 15 minutes
-max: 1000                  // 1000 requests per window
-standardHeaders: true      // Include RateLimit-* headers
-legacyHeaders: false       // Disable X-RateLimit-* headers
+windowMs: 15 * 60 * 1000; // 15 minutes
+max: 1000; // 1000 requests per window
+standardHeaders: true; // Include RateLimit-* headers
+legacyHeaders: false; // Disable X-RateLimit-* headers
 
 // Auth rate limiter
-windowMs: 15 * 60 * 1000  // 15 minutes
-max: 5                     // 5 attempts per window
-skipSuccessfulRequests: true  // Don't count successful auth
+windowMs: 15 * 60 * 1000; // 15 minutes
+max: 5; // 5 attempts per window
+skipSuccessfulRequests: true; // Don't count successful auth
 ```
 
 ### Response Headers
 
 Rate limit information is included in response headers:
+
 - `RateLimit-Limit` - Maximum requests allowed in window
 - `RateLimit-Remaining` - Requests remaining in current window
 - `RateLimit-Reset` - Unix timestamp when the window resets
@@ -77,16 +81,20 @@ When rate limit is exceeded, the API returns:
 Rate limiting is applied in `backend/src/index.ts`:
 
 ```typescript
-app.use('/api/admin', (req, res, next) => {
-  if (req.path.startsWith('/auth')) {
-    // Apply stricter rate limiting for auth routes
-    return authRateLimiter(req, res, () => next());
-  }
-  // Apply general rate limiting for all other admin routes
-  return adminRateLimiter(req, res, () => {
-    return adminAuthMiddleware(req, res, next);
-  });
-}, adminRouter);
+app.use(
+  '/api/admin',
+  (req, res, next) => {
+    if (req.path.startsWith('/auth')) {
+      // Apply stricter rate limiting for auth routes
+      return authRateLimiter(req, res, () => next());
+    }
+    // Apply general rate limiting for all other admin routes
+    return adminRateLimiter(req, res, () => {
+      return adminAuthMiddleware(req, res, next);
+    });
+  },
+  adminRouter
+);
 ```
 
 ### Middleware Order

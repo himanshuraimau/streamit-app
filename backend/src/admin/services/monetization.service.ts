@@ -124,17 +124,17 @@ export interface WalletDetails {
 /**
  * Service for managing monetization and wallet operations
  * Handles coin ledger, withdrawals, gifts, and wallet management
- * 
+ *
  * Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 8.9, 8.10, 8.11, 8.12, 29.1, 29.2
  */
 export class MonetizationService {
   /**
    * Get coin purchase ledger with filtering and pagination
-   * 
+   *
    * @param filters - Filter criteria for ledger
    * @param pagination - Pagination parameters
    * @returns Paginated list of coin purchases
-   * 
+   *
    * Requirements: 8.1, 8.2, 8.3, 8.4
    */
   static async getCoinLedger(
@@ -244,11 +244,11 @@ export class MonetizationService {
 
   /**
    * Get withdrawal requests with filtering and pagination
-   * 
+   *
    * @param filters - Filter criteria for withdrawals
    * @param pagination - Pagination parameters
    * @returns Paginated list of withdrawal requests
-   * 
+   *
    * Requirements: 8.5, 8.6, 8.7
    */
   static async getWithdrawals(
@@ -356,11 +356,11 @@ export class MonetizationService {
    * Approve a withdrawal request with transaction atomicity
    * Updates withdrawal status, deducts coins from wallet, creates audit log
    * All operations are atomic - either all succeed or all fail
-   * 
+   *
    * @param id - Withdrawal request ID
    * @param adminId - ID of admin approving the withdrawal
    * @returns Updated withdrawal request
-   * 
+   *
    * Requirements: 8.8, 29.2, 29.11, 29.12, 29.15
    */
   static async approveWithdrawal(id: string, adminId: string) {
@@ -417,17 +417,11 @@ export class MonetizationService {
       });
 
       // 4. Create audit log entry
-      await AuditLogService.createLog(
-        adminId,
-        'withdrawal_approve',
-        'withdrawal',
-        id,
-        {
-          userId: withdrawal.userId,
-          amountCoins: withdrawal.amountCoins,
-          netAmountPaise: withdrawal.netAmountPaise,
-        }
-      );
+      await AuditLogService.createLog(adminId, 'withdrawal_approve', 'withdrawal', id, {
+        userId: withdrawal.userId,
+        amountCoins: withdrawal.amountCoins,
+        netAmountPaise: withdrawal.netAmountPaise,
+      });
 
       return updatedWithdrawal;
     });
@@ -435,12 +429,12 @@ export class MonetizationService {
 
   /**
    * Reject a withdrawal request
-   * 
+   *
    * @param id - Withdrawal request ID
    * @param reason - Reason for rejection
    * @param adminId - ID of admin rejecting the withdrawal
    * @returns Updated withdrawal request
-   * 
+   *
    * Requirements: 8.9
    */
   static async rejectWithdrawal(id: string, reason: string, adminId: string) {
@@ -459,16 +453,10 @@ export class MonetizationService {
       });
 
       // Create audit log entry
-      await AuditLogService.createLog(
-        adminId,
-        'withdrawal_reject',
-        'withdrawal',
-        id,
-        {
-          userId: updatedWithdrawal.userId,
-          reason,
-        }
-      );
+      await AuditLogService.createLog(adminId, 'withdrawal_reject', 'withdrawal', id, {
+        userId: updatedWithdrawal.userId,
+        reason,
+      });
 
       return updatedWithdrawal;
     });
@@ -476,11 +464,11 @@ export class MonetizationService {
 
   /**
    * Get gift transactions with filtering and pagination
-   * 
+   *
    * @param filters - Filter criteria for gifts
    * @param pagination - Pagination parameters
    * @returns Paginated list of gift transactions
-   * 
+   *
    * Requirements: 8.10, 8.11
    */
   static async getGiftTransactions(
@@ -582,10 +570,10 @@ export class MonetizationService {
 
   /**
    * Get wallet details for a specific user
-   * 
+   *
    * @param userId - User ID
    * @returns Wallet details with recent transactions
-   * 
+   *
    * Requirements: 8.12
    */
   static async getWalletDetails(userId: string): Promise<WalletDetails | null> {

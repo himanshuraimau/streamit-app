@@ -3,11 +3,11 @@ import monetizationRouter from './monetization.route';
 
 /**
  * Integration tests for monetization router
- * 
+ *
  * These tests verify that:
  * 1. Monetization routes are properly registered
  * 2. Routes are accessible through the router
- * 
+ *
  * Requirements: 17.4
  */
 

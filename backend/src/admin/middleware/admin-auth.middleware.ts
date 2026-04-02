@@ -31,16 +31,16 @@ const ADMIN_ROLES: UserRole[] = [
 
 /**
  * Middleware to verify admin session and role
- * 
+ *
  * This middleware:
  * 1. Verifies the session using Better Auth
  * 2. Checks that the user has an admin role
  * 3. Attaches the admin user to the request object
- * 
+ *
  * Returns:
  * - 401 if no valid session
  * - 403 if user is not an admin
- * 
+ *
  * Requirements: 1.1, 1.2, 2.1, 17.7, 17.10, 22.1, 22.2
  */
 export const adminAuthMiddleware = async (req: Request, res: Response, next: NextFunction) => {
@@ -52,11 +52,7 @@ export const adminAuthMiddleware = async (req: Request, res: Response, next: Nex
 
     // Step 2: Return 401 if no session
     if (!session) {
-      logger.authFailure(
-        'unknown',
-        req.ip || 'unknown',
-        'No session found'
-      );
+      logger.authFailure('unknown', req.ip || 'unknown', 'No session found');
       return res.status(401).json({
         error: 'Unauthorized',
         message: 'You must be signed in to access admin resources',
@@ -76,11 +72,7 @@ export const adminAuthMiddleware = async (req: Request, res: Response, next: Nex
     });
 
     if (!user) {
-      logger.authFailure(
-        session.user.email,
-        req.ip || 'unknown',
-        'User not found in database'
-      );
+      logger.authFailure(session.user.email, req.ip || 'unknown', 'User not found in database');
       return res.status(401).json({
         error: 'Unauthorized',
         message: 'User not found',
@@ -89,12 +81,7 @@ export const adminAuthMiddleware = async (req: Request, res: Response, next: Nex
 
     // Step 4: Check if user has an admin role
     if (!ADMIN_ROLES.includes(user.role)) {
-      logger.authzFailure(
-        user.id,
-        req.path,
-        'User does not have admin role',
-        req.ip || 'unknown'
-      );
+      logger.authzFailure(user.id, req.path, 'User does not have admin role', req.ip || 'unknown');
       return res.status(403).json({
         error: 'Forbidden',
         message: 'You do not have permission to access admin resources',

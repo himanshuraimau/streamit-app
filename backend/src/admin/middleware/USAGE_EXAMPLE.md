@@ -42,7 +42,7 @@ export class UserController {
   static async list(req: Request, res: Response) {
     // Access the authenticated admin user
     const adminUser = req.adminUser;
-    
+
     if (!adminUser) {
       // This should never happen if middleware is applied correctly
       return res.status(401).json({ error: 'Unauthorized' });
@@ -76,7 +76,11 @@ router.use(adminAuthMiddleware);
 
 // Apply permission middleware to specific route groups
 router.use('/users', requirePermission([UserRole.SUPER_ADMIN, UserRole.ADMIN]), userRoutes);
-router.use('/finance', requirePermission([UserRole.SUPER_ADMIN, UserRole.FINANCE_ADMIN]), financeRoutes);
+router.use(
+  '/finance',
+  requirePermission([UserRole.SUPER_ADMIN, UserRole.FINANCE_ADMIN]),
+  financeRoutes
+);
 
 export default router;
 ```
@@ -127,11 +131,7 @@ router.use(
 );
 
 // Ads
-router.use(
-  '/ads',
-  requirePermission([UserRole.SUPER_ADMIN, UserRole.FINANCE_ADMIN]),
-  adsRoutes
-);
+router.use('/ads', requirePermission([UserRole.SUPER_ADMIN, UserRole.FINANCE_ADMIN]), adsRoutes);
 
 // Analytics
 router.use(
@@ -214,9 +214,7 @@ import app from './app';
 
 describe('Admin API Integration', () => {
   it('should reject unauthenticated requests', async () => {
-    const response = await request(app)
-      .get('/api/admin/users')
-      .expect(401);
+    const response = await request(app).get('/api/admin/users').expect(401);
 
     expect(response.body.error).toBe('Unauthorized');
   });

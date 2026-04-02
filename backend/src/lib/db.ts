@@ -7,9 +7,7 @@ const globalForPrisma = globalThis as unknown as {
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    log: process.env.NODE_ENV === 'production' 
-      ? ['error', 'warn'] 
-      : ['query', 'error', 'warn'],
+    log: process.env.NODE_ENV === 'production' ? ['error', 'warn'] : ['query', 'error', 'warn'],
     // Connection pool is configured via DATABASE_URL query parameters:
     // - connection_limit: Max connections in pool (default: 10)
     // - pool_timeout: Max wait time for connection in seconds (default: 10)

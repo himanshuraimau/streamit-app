@@ -117,18 +117,22 @@ app.use('/api/discount', discountRoutes);
 
 // Mount admin routes
 // Auth routes and health check are public, all other admin routes require authentication
-app.use('/api/admin', (req, res, next) => {
-  // Skip authentication for auth routes and health check
-  if (req.path.startsWith('/auth') || req.path.startsWith('/health')) {
-    // Apply stricter rate limiting for auth routes
-    return authRateLimiter(req, res, () => next());
-  }
-  // Apply general rate limiting for all other admin routes
-  return adminRateLimiter(req, res, () => {
-    // Apply authentication middleware after rate limiting
-    return adminAuthMiddleware(req, res, next);
-  });
-}, adminRouter);
+app.use(
+  '/api/admin',
+  (req, res, next) => {
+    // Skip authentication for auth routes and health check
+    if (req.path.startsWith('/auth') || req.path.startsWith('/health')) {
+      // Apply stricter rate limiting for auth routes
+      return authRateLimiter(req, res, () => next());
+    }
+    // Apply general rate limiting for all other admin routes
+    return adminRateLimiter(req, res, () => {
+      // Apply authentication middleware after rate limiting
+      return adminAuthMiddleware(req, res, next);
+    });
+  },
+  adminRouter
+);
 
 // API Documentation (Swagger UI)
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

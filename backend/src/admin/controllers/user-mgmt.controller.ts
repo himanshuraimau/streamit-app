@@ -12,14 +12,14 @@ import {
 /**
  * Controller for user management operations
  * Handles HTTP requests for user listing, viewing, and admin actions
- * 
+ *
  * Requirements: 17.2, 17.11, 17.12, 17.13
  */
 export class UserMgmtController {
   /**
    * List users with filtering, search, and pagination
    * GET /api/admin/users
-   * 
+   *
    * Query parameters:
    * - page: number (default: 1)
    * - pageSize: number (default: 20, max: 100)
@@ -32,7 +32,7 @@ export class UserMgmtController {
    * - createdTo: date (optional)
    * - sortBy: 'createdAt' | 'lastLoginAt' | 'username' (default: 'createdAt')
    * - sortOrder: 'asc' | 'desc' (default: 'desc')
-   * 
+   *
    * Requirements: 4.1, 4.2, 4.3
    */
   static async listUsers(req: Request, res: Response) {
@@ -82,9 +82,9 @@ export class UserMgmtController {
   /**
    * Get user details by ID
    * GET /api/admin/users/:id
-   * 
+   *
    * Returns complete user details including wallet and ban history
-   * 
+   *
    * Requirements: 4.4
    */
   static async getUserById(req: Request, res: Response) {
@@ -122,12 +122,12 @@ export class UserMgmtController {
   /**
    * Freeze user account (temporary suspension)
    * PATCH /api/admin/users/:id/freeze
-   * 
+   *
    * Body:
    * - reason: string (required, min 10 chars)
    * - expiresAt: date (optional, null = permanent)
    * - adminNotes: string (optional)
-   * 
+   *
    * Requirements: 4.5, 4.6
    */
   static async freezeUser(req: Request, res: Response) {
@@ -186,11 +186,11 @@ export class UserMgmtController {
   /**
    * Ban user account (permanent suspension)
    * PATCH /api/admin/users/:id/ban
-   * 
+   *
    * Body:
    * - reason: string (required, min 10 chars)
    * - adminNotes: string (optional)
-   * 
+   *
    * Requirements: 4.7
    */
   static async banUser(req: Request, res: Response) {
@@ -211,12 +211,7 @@ export class UserMgmtController {
       const adminId = req.adminUser!.id;
 
       // Call service
-      const user = await UserMgmtService.banUser(
-        id,
-        data.reason,
-        adminId,
-        data.adminNotes
-      );
+      const user = await UserMgmtService.banUser(id, data.reason, adminId, data.adminNotes);
 
       // Return response
       res.json({
@@ -247,11 +242,11 @@ export class UserMgmtController {
   /**
    * Disable chat for user (24-hour restriction)
    * PATCH /api/admin/users/:id/chat-disable
-   * 
+   *
    * Body:
    * - reason: string (required, min 10 chars)
    * - duration: number (optional, default 24 hours)
-   * 
+   *
    * Requirements: 4.8
    */
   static async disableChat(req: Request, res: Response) {
@@ -272,12 +267,7 @@ export class UserMgmtController {
       const adminId = req.adminUser!.id;
 
       // Call service
-      const user = await UserMgmtService.disableChat(
-        id,
-        data.duration,
-        data.reason,
-        adminId
-      );
+      const user = await UserMgmtService.disableChat(id, data.duration, data.reason, adminId);
 
       // Return response
       res.json({
@@ -307,10 +297,10 @@ export class UserMgmtController {
   /**
    * Reset user password (admin-initiated)
    * POST /api/admin/users/:id/reset-password
-   * 
+   *
    * Body:
    * - sendEmail: boolean (optional, default true)
-   * 
+   *
    * Requirements: 4.9
    */
   static async resetPassword(req: Request, res: Response) {
@@ -362,7 +352,7 @@ export class UserMgmtController {
   /**
    * Unfreeze user account
    * PATCH /api/admin/users/:id/unfreeze
-   * 
+   *
    * Removes suspension from user account
    */
   static async unfreezeUser(req: Request, res: Response) {

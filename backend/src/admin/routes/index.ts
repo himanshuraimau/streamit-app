@@ -5,15 +5,15 @@ import { UserRole } from '@prisma/client';
 
 /**
  * Main admin router that registers all admin module routes
- * 
+ *
  * This router:
  * 1. Imports all module-specific routers
  * 2. Applies requirePermission middleware to each route group
  * 3. Exports the configured adminRouter for registration in main app
- * 
+ *
  * Note: adminAuthMiddleware is applied at the app level in index.ts
  * before this router is mounted, so all routes here are already authenticated.
- * 
+ *
  * Requirements: 17.6, 17.8
  */
 

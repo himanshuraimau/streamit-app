@@ -3,16 +3,18 @@ import { z } from 'zod';
 /**
  * Validation schema for updating system settings
  * Supports multiple setting updates in a single request
- * 
+ *
  * Requirements: 17.5, 12.4, 12.5
  */
 export const updateSettingsSchema = z.object({
-  updates: z.array(
-    z.object({
-      key: z.string().min(1, 'Setting key is required'),
-      value: z.string(), // Value is always stored as string, validation happens in service
-    })
-  ).min(1, 'At least one setting update is required'),
+  updates: z
+    .array(
+      z.object({
+        key: z.string().min(1, 'Setting key is required'),
+        value: z.string(), // Value is always stored as string, validation happens in service
+      })
+    )
+    .min(1, 'At least one setting update is required'),
 });
 
 export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;
@@ -20,13 +22,19 @@ export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;
 /**
  * Validation schema for creating an admin user
  * Requires name, email, password, and role
- * 
+ *
  * Requirements: 17.5, 12.8
  */
 export const createAdminSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must not exceed 100 characters'),
+  name: z
+    .string()
+    .min(2, 'Name must be at least 2 characters')
+    .max(100, 'Name must not exceed 100 characters'),
   email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters').max(100, 'Password must not exceed 100 characters'),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(100, 'Password must not exceed 100 characters'),
   role: z.enum(['SUPER_ADMIN', 'MODERATOR', 'ADMIN', 'FINANCE_ADMIN', 'COMPLIANCE_OFFICER'], {
     errorMap: () => ({ message: 'Invalid admin role' }),
   }),
@@ -37,7 +45,7 @@ export type CreateAdminInput = z.infer<typeof createAdminSchema>;
 /**
  * Validation schema for updating admin role
  * Only allows valid admin roles
- * 
+ *
  * Requirements: 17.5, 12.9
  */
 export const updateAdminRoleSchema = z.object({
@@ -51,7 +59,7 @@ export type UpdateAdminRoleInput = z.infer<typeof updateAdminRoleSchema>;
 /**
  * Helper function to validate setting value based on type
  * Used for runtime validation of specific setting types
- * 
+ *
  * Requirements: 12.4, 12.5
  */
 export function validateSettingType(key: string, value: string): boolean {
@@ -90,7 +98,7 @@ export function validateSettingType(key: string, value: string): boolean {
 /**
  * Validation schema for specific setting constraints
  * Defines min/max values and enum options for known settings
- * 
+ *
  * Requirements: 12.4, 12.5
  */
 export const settingConstraints: Record<string, z.ZodType> = {
@@ -107,7 +115,7 @@ export const settingConstraints: Record<string, z.ZodType> = {
 /**
  * Validate a single setting update
  * Checks both type and constraint validation
- * 
+ *
  * @param key - Setting key
  * @param value - Setting value
  * @returns Validation result

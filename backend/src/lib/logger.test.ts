@@ -81,14 +81,9 @@ describe('Logger', () => {
 
   describe('adminAction', () => {
     it('should log admin actions with full context', () => {
-      logger.adminAction(
-        'user_ban',
-        'admin123',
-        'admin@example.com',
-        'user',
-        'user456',
-        { reason: 'Violation' }
-      );
+      logger.adminAction('user_ban', 'admin123', 'admin@example.com', 'user', 'user456', {
+        reason: 'Violation',
+      });
 
       expect(consoleInfoSpy).toHaveBeenCalledTimes(1);
       const loggedData = JSON.parse(consoleInfoSpy.mock.calls[0][0]);
@@ -122,7 +117,12 @@ describe('Logger', () => {
 
   describe('authzFailure', () => {
     it('should log authorization failures', () => {
-      logger.authzFailure('admin123', '/api/admin/settings', 'Insufficient permissions', '127.0.0.1');
+      logger.authzFailure(
+        'admin123',
+        '/api/admin/settings',
+        'Insufficient permissions',
+        '127.0.0.1'
+      );
 
       expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
       const loggedData = JSON.parse(consoleWarnSpy.mock.calls[0][0]);

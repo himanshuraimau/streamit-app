@@ -11,14 +11,14 @@ import {
 /**
  * Controller for content moderation operations
  * Handles HTTP requests for moderation queue, content review, and moderation actions
- * 
+ *
  * Requirements: 17.2
  */
 export class ContentModController {
   /**
    * Get moderation queue with filtering and pagination
    * GET /api/admin/moderation/queue
-   * 
+   *
    * Query parameters:
    * - page: number (default: 1)
    * - pageSize: number (default: 20, max: 100)
@@ -29,7 +29,7 @@ export class ContentModController {
    * - dateTo: date (optional)
    * - sortBy: 'flagCount' | 'createdAt' | 'updatedAt' (default: 'flagCount')
    * - sortOrder: 'asc' | 'desc' (default: 'desc')
-   * 
+   *
    * Requirements: 6.1, 6.2, 6.3
    */
   static async getModerationQueue(req: Request, res: Response) {
@@ -77,12 +77,12 @@ export class ContentModController {
   /**
    * Get content details by ID
    * GET /api/admin/moderation/:contentId
-   * 
+   *
    * Query parameters:
    * - type: 'post' | 'short' | 'comment' (required)
-   * 
+   *
    * Returns complete content details with flags and reports
-   * 
+   *
    * Requirements: 6.4
    */
   static async getContentById(req: Request, res: Response) {
@@ -131,15 +131,15 @@ export class ContentModController {
   /**
    * Perform moderation action on content
    * PATCH /api/admin/moderation/:contentId/action
-   * 
+   *
    * Query parameters:
    * - type: 'post' | 'short' | 'comment' (required)
-   * 
+   *
    * Body:
    * - action: 'dismiss' | 'warn' | 'remove' | 'strike' | 'ban' (required)
    * - message: string (optional, required for 'warn')
    * - reason: string (optional, required for 'remove')
-   * 
+   *
    * Requirements: 6.5, 6.6, 6.7, 6.8, 6.9
    */
   static async moderationAction(req: Request, res: Response) {
@@ -253,14 +253,14 @@ export class ContentModController {
   /**
    * Get shorts with filtering and pagination
    * GET /api/admin/moderation/shorts
-   * 
+   *
    * Query parameters:
    * - page: number (default: 1)
    * - pageSize: number (default: 20, max: 100)
    * - flaggedOnly: boolean (default: false)
    * - sortBy: 'createdAt' | 'viewsCount' | 'likesCount' | 'flagCount' (default: 'createdAt')
    * - sortOrder: 'asc' | 'desc' (default: 'desc')
-   * 
+   *
    * Requirements: 6.10
    */
   static async getShorts(req: Request, res: Response) {
@@ -304,14 +304,14 @@ export class ContentModController {
   /**
    * Get posts with filtering and pagination
    * GET /api/admin/moderation/posts
-   * 
+   *
    * Query parameters:
    * - page: number (default: 1)
    * - pageSize: number (default: 20, max: 100)
    * - flaggedOnly: boolean (default: false)
    * - sortBy: 'createdAt' | 'likesCount' | 'commentsCount' | 'flagCount' (default: 'createdAt')
    * - sortOrder: 'asc' | 'desc' (default: 'desc')
-   * 
+   *
    * Requirements: 6.11
    */
   static async getPosts(req: Request, res: Response) {

@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { AnalyticsService } from '../services/analytics.service';
 import { z } from 'zod';
 
@@ -54,10 +54,7 @@ export class AnalyticsController {
     try {
       const params = topStreamersSchema.parse(req.query);
 
-      const streamers = await AnalyticsService.getTopStreamers(
-        params.dateRange,
-        params.limit
-      );
+      const streamers = await AnalyticsService.getTopStreamers(params.dateRange, params.limit);
 
       res.json({
         success: true,

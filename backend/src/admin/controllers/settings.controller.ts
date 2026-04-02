@@ -10,16 +10,16 @@ import {
 /**
  * Controller for platform settings and admin user management
  * Handles HTTP requests for system configuration and admin roles
- * 
+ *
  * Requirements: 17.2
  */
 export class SettingsController {
   /**
    * Get all system settings organized by category
    * GET /api/admin/settings
-   * 
+   *
    * Returns settings grouped by: general, moderation, monetization, streaming, compliance
-   * 
+   *
    * Requirements: 12.1, 12.2
    */
   static async getSettings(req: Request, res: Response) {
@@ -41,10 +41,10 @@ export class SettingsController {
   /**
    * Update system settings
    * PATCH /api/admin/settings
-   * 
+   *
    * Body:
    * - updates: Array<{ key: string, value: string }>
-   * 
+   *
    * Requirements: 12.3, 12.4, 12.5
    */
   static async updateSettings(req: Request, res: Response) {
@@ -56,10 +56,7 @@ export class SettingsController {
       const adminId = req.adminUser!.id;
 
       // Call service
-      const updatedSettings = await SettingsService.updateSettings(
-        data.updates,
-        adminId
-      );
+      const updatedSettings = await SettingsService.updateSettings(data.updates, adminId);
 
       // Return response
       res.json({
@@ -94,9 +91,9 @@ export class SettingsController {
   /**
    * List all admin users
    * GET /api/admin/settings/admins
-   * 
+   *
    * Returns all users with admin roles
-   * 
+   *
    * Requirements: 12.7
    */
   static async listAdmins(req: Request, res: Response) {
@@ -120,13 +117,13 @@ export class SettingsController {
   /**
    * Create a new admin user
    * POST /api/admin/settings/admins
-   * 
+   *
    * Body:
    * - name: string (required)
    * - email: string (required, valid email)
    * - password: string (required, min 8 chars)
    * - role: AdminRole (required)
-   * 
+   *
    * Requirements: 12.8
    */
   static async createAdmin(req: Request, res: Response) {
@@ -173,10 +170,10 @@ export class SettingsController {
   /**
    * Update admin user role
    * PATCH /api/admin/settings/admins/:id/role
-   * 
+   *
    * Body:
    * - role: AdminRole (required)
-   * 
+   *
    * Requirements: 12.9
    */
   static async updateAdminRole(req: Request, res: Response) {
@@ -197,11 +194,7 @@ export class SettingsController {
       const adminId = req.adminUser!.id;
 
       // Call service
-      const admin = await SettingsService.updateAdminRole(
-        id,
-        data.role,
-        adminId
-      );
+      const admin = await SettingsService.updateAdminRole(id, data.role, adminId);
 
       // Return response
       res.json({
@@ -218,7 +211,10 @@ export class SettingsController {
       }
 
       // Handle validation errors from service
-      if (error instanceof Error && error.message.includes('Invalid') || error instanceof Error && error.message.includes('not found')) {
+      if (
+        (error instanceof Error && error.message.includes('Invalid')) ||
+        (error instanceof Error && error.message.includes('not found'))
+      ) {
         return res.status(400).json({
           error: 'Validation failed',
           message: error.message,
@@ -236,9 +232,9 @@ export class SettingsController {
   /**
    * Delete admin user (remove admin role)
    * DELETE /api/admin/settings/admins/:id
-   * 
+   *
    * Removes admin role from user account
-   * 
+   *
    * Requirements: 12.10
    */
   static async deleteAdmin(req: Request, res: Response) {
@@ -266,7 +262,10 @@ export class SettingsController {
       });
     } catch (error) {
       // Handle validation errors from service
-      if (error instanceof Error && (error.message.includes('Cannot delete') || error.message.includes('not found'))) {
+      if (
+        error instanceof Error &&
+        (error.message.includes('Cannot delete') || error.message.includes('not found'))
+      ) {
         return res.status(400).json({
           error: 'Validation failed',
           message: error.message,

@@ -87,17 +87,17 @@ export interface AdPerformance {
 /**
  * Service for managing advertisement campaigns
  * Handles ad creation, updates, deletion, and performance tracking
- * 
+ *
  * Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8
  */
 export class AdsService {
   /**
    * List ad campaigns with filtering and pagination
-   * 
+   *
    * @param filters - Filter criteria for ads
    * @param pagination - Pagination parameters
    * @returns Paginated list of ad campaigns
-   * 
+   *
    * Requirements: 9.1, 9.2, 9.3
    */
   static async listAds(
@@ -195,11 +195,11 @@ export class AdsService {
 
   /**
    * Create a new ad campaign
-   * 
+   *
    * @param data - Ad campaign data
    * @param adminId - ID of admin creating the ad
    * @returns Created ad campaign
-   * 
+   *
    * Requirements: 9.4
    */
   static async createAd(data: CreateAdData, adminId: string) {
@@ -221,17 +221,11 @@ export class AdsService {
       });
 
       // Create audit log entry
-      await AuditLogService.createLog(
-        adminId,
-        'ad_create',
-        'ad',
-        ad.id,
-        {
-          title: ad.title,
-          targetRegion: ad.targetRegion,
-          cpm: ad.cpm,
-        }
-      );
+      await AuditLogService.createLog(adminId, 'ad_create', 'ad', ad.id, {
+        title: ad.title,
+        targetRegion: ad.targetRegion,
+        cpm: ad.cpm,
+      });
 
       return ad;
     });
@@ -239,12 +233,12 @@ export class AdsService {
 
   /**
    * Update an existing ad campaign
-   * 
+   *
    * @param id - Ad campaign ID
    * @param data - Updated ad campaign data
    * @param adminId - ID of admin updating the ad
    * @returns Updated ad campaign
-   * 
+   *
    * Requirements: 9.5, 9.6
    */
   static async updateAd(id: string, data: UpdateAdData, adminId: string) {
@@ -275,16 +269,10 @@ export class AdsService {
       });
 
       // Create audit log entry
-      await AuditLogService.createLog(
-        adminId,
-        'ad_update',
-        'ad',
-        ad.id,
-        {
-          title: ad.title,
-          changes: data,
-        }
-      );
+      await AuditLogService.createLog(adminId, 'ad_update', 'ad', ad.id, {
+        title: ad.title,
+        changes: data,
+      });
 
       return ad;
     });
@@ -292,11 +280,11 @@ export class AdsService {
 
   /**
    * Delete an ad campaign (soft delete by setting isActive to false)
-   * 
+   *
    * @param id - Ad campaign ID
    * @param adminId - ID of admin deleting the ad
    * @returns Updated ad campaign
-   * 
+   *
    * Requirements: 9.7
    */
   static async deleteAd(id: string, adminId: string) {
@@ -320,15 +308,9 @@ export class AdsService {
       });
 
       // Create audit log entry
-      await AuditLogService.createLog(
-        adminId,
-        'ad_delete',
-        'ad',
-        ad.id,
-        {
-          title: ad.title,
-        }
-      );
+      await AuditLogService.createLog(adminId, 'ad_delete', 'ad', ad.id, {
+        title: ad.title,
+      });
 
       return ad;
     });
@@ -336,15 +318,15 @@ export class AdsService {
 
   /**
    * Get performance metrics for an ad campaign
-   * 
+   *
    * Note: This is a placeholder implementation. In a real system, you would:
    * 1. Create an AdStats table to track impressions and clicks
    * 2. Integrate with ad serving system to collect metrics
    * 3. Calculate CTR, total spend, and average CPM from actual data
-   * 
+   *
    * @param id - Ad campaign ID
    * @returns Ad performance metrics
-   * 
+   *
    * Requirements: 9.8
    */
   static async getAdPerformance(id: string): Promise<AdPerformance | null> {
@@ -378,11 +360,11 @@ export class AdsService {
 
   /**
    * Generate presigned URL for ad creative upload
-   * 
+   *
    * @param fileName - Original file name
    * @param mimeType - MIME type of the file
    * @returns Presigned upload URL and final file URL
-   * 
+   *
    * Requirements: 9.4, 9.12
    */
   static async generateUploadUrl(

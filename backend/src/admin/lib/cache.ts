@@ -18,7 +18,7 @@ class Cache {
    */
   get<T>(key: string): T | undefined {
     const entry = this.store.get(key);
-    
+
     if (!entry) {
       return undefined;
     }
@@ -39,7 +39,7 @@ class Cache {
    * @param ttlSeconds Time to live in seconds
    */
   set<T>(key: string, data: T, ttlSeconds: number): void {
-    const expiresAt = Date.now() + (ttlSeconds * 1000);
+    const expiresAt = Date.now() + ttlSeconds * 1000;
     this.store.set(key, { data, expiresAt });
   }
 
@@ -75,6 +75,9 @@ class Cache {
 export const cache = new Cache();
 
 // Clear expired entries every 5 minutes
-setInterval(() => {
-  cache.clearExpired();
-}, 5 * 60 * 1000);
+setInterval(
+  () => {
+    cache.clearExpired();
+  },
+  5 * 60 * 1000
+);

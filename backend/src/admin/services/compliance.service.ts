@@ -113,19 +113,19 @@ export interface TakedownContent {
 /**
  * Service for compliance and legal operations
  * Handles audit logs, geo-blocking, data exports, and takedowns
- * 
+ *
  * Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6, 11.7, 11.8, 11.9
  */
 export class ComplianceService {
   /**
    * Get audit log with filtering and pagination
-   * 
+   *
    * @param filters - Filter criteria for the query
    * @param pagination - Pagination parameters
    * @returns Paginated list of audit log entries
-   * 
+   *
    * Requirements: 11.1, 11.2
-   * 
+   *
    * @example
    * const logs = await ComplianceService.getAuditLog(
    *   { action: 'user_ban', dateFrom: new Date('2024-01-01') },
@@ -142,15 +142,15 @@ export class ComplianceService {
 
   /**
    * Create a geo-block to restrict content access by region
-   * 
+   *
    * @param region - ISO country code
    * @param contentId - Optional specific content ID to block
    * @param reason - Legal reason for the block
    * @param adminId - ID of the admin creating the block
    * @returns The created geo-block record
-   * 
+   *
    * Requirements: 11.3, 11.4, 11.5
-   * 
+   *
    * @example
    * await ComplianceService.createGeoBlock(
    *   'CN',
@@ -210,20 +210,17 @@ export class ComplianceService {
 
   /**
    * Export all user data for GDPR compliance
-   * 
+   *
    * @param userId - ID of the user to export data for
    * @param adminId - ID of the admin requesting the export
    * @returns Complete user data export in JSON format
-   * 
+   *
    * Requirements: 11.6, 11.7
-   * 
+   *
    * @example
    * const userData = await ComplianceService.exportUserData('user123', 'admin456');
    */
-  static async exportUserData(
-    userId: string,
-    adminId: string
-  ): Promise<UserDataExport> {
+  static async exportUserData(userId: string, adminId: string): Promise<UserDataExport> {
     // Fetch user profile
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -383,10 +380,7 @@ export class ComplianceService {
       (sum, gift) => sum + gift.coinAmount * gift.quantity,
       0
     );
-    const totalSpent = giftsSent.reduce(
-      (sum, gift) => sum + gift.coinAmount * gift.quantity,
-      0
-    );
+    const totalSpent = giftsSent.reduce((sum, gift) => sum + gift.coinAmount * gift.quantity, 0);
 
     // Create audit log entry
     await AuditLogService.createLog(
@@ -432,11 +426,11 @@ export class ComplianceService {
 
   /**
    * Get all content that has been taken down for legal reasons
-   * 
+   *
    * @returns List of content with legal removal reasons
-   * 
+   *
    * Requirements: 11.9
-   * 
+   *
    * @example
    * const takedowns = await ComplianceService.getTakedowns();
    */

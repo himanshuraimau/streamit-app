@@ -13,14 +13,14 @@ import {
 /**
  * Controller for monetization and wallet management
  * Handles coin ledger, withdrawals, gifts, and wallet operations
- * 
+ *
  * Requirements: 17.2
  */
 export class MonetizationController {
   /**
    * Get coin purchase ledger with filtering and pagination
    * GET /api/admin/monetization/ledger
-   * 
+   *
    * Requirements: 8.1, 8.2, 8.3, 8.4
    */
   static async getCoinLedger(req: Request, res: Response) {
@@ -64,7 +64,7 @@ export class MonetizationController {
   /**
    * Get withdrawal requests with filtering and pagination
    * GET /api/admin/monetization/withdrawals
-   * 
+   *
    * Requirements: 8.5, 8.6, 8.7
    */
   static async getWithdrawals(req: Request, res: Response) {
@@ -107,7 +107,7 @@ export class MonetizationController {
   /**
    * Approve a withdrawal request
    * PATCH /api/admin/monetization/withdrawals/:id/approve
-   * 
+   *
    * Requirements: 8.8, 29.2, 29.11, 29.12, 29.15
    */
   static async approveWithdrawal(req: Request, res: Response) {
@@ -137,16 +137,10 @@ export class MonetizationController {
       }
       if (error instanceof Error) {
         // Handle business logic errors
-        if (
-          error.message.includes('not found') ||
-          error.message.includes('does not have')
-        ) {
+        if (error.message.includes('not found') || error.message.includes('does not have')) {
           return res.status(404).json({ error: error.message });
         }
-        if (
-          error.message.includes('Cannot approve') ||
-          error.message.includes('Insufficient')
-        ) {
+        if (error.message.includes('Cannot approve') || error.message.includes('Insufficient')) {
           return res.status(400).json({ error: error.message });
         }
       }
@@ -158,7 +152,7 @@ export class MonetizationController {
   /**
    * Reject a withdrawal request
    * PATCH /api/admin/monetization/withdrawals/:id/reject
-   * 
+   *
    * Requirements: 8.9
    */
   static async rejectWithdrawal(req: Request, res: Response) {
@@ -173,11 +167,7 @@ export class MonetizationController {
       const adminId = (req as any).adminUser.id;
 
       // Call service
-      const result = await MonetizationService.rejectWithdrawal(
-        params.id,
-        params.reason,
-        adminId
-      );
+      const result = await MonetizationService.rejectWithdrawal(params.id, params.reason, adminId);
 
       // Return response
       res.json({
@@ -199,7 +189,7 @@ export class MonetizationController {
   /**
    * Get gift transactions with filtering and pagination
    * GET /api/admin/monetization/gifts
-   * 
+   *
    * Requirements: 8.10, 8.11
    */
   static async getGiftTransactions(req: Request, res: Response) {
@@ -240,7 +230,7 @@ export class MonetizationController {
   /**
    * Get wallet details for a specific user
    * GET /api/admin/monetization/wallets/:userId
-   * 
+   *
    * Requirements: 8.12
    */
   static async getWalletDetails(req: Request, res: Response) {

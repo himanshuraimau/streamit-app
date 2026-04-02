@@ -24,17 +24,10 @@ describe('Logger Integration', () => {
 
   it('should log admin actions with all required context', () => {
     // Simulate an admin action
-    logger.adminAction(
-      'user_ban',
-      'admin-123',
-      'admin@example.com',
-      'user',
-      'user-456',
-      {
-        reason: 'Terms violation',
-        duration: 'permanent',
-      }
-    );
+    logger.adminAction('user_ban', 'admin-123', 'admin@example.com', 'user', 'user-456', {
+      reason: 'Terms violation',
+      duration: 'permanent',
+    });
 
     expect(consoleInfoSpy).toHaveBeenCalledTimes(1);
     const logEntry = JSON.parse(consoleInfoSpy.mock.calls[0][0]);

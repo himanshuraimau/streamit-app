@@ -2,20 +2,14 @@ import { z } from 'zod';
 
 /**
  * Validation schemas for content moderation operations
- * 
+ *
  * Requirements: 17.5
  */
 
 /**
  * Moderation action types
  */
-export const moderationActionEnum = z.enum([
-  'dismiss',
-  'warn',
-  'remove',
-  'strike',
-  'ban',
-]);
+export const moderationActionEnum = z.enum(['dismiss', 'warn', 'remove', 'strike', 'ban']);
 
 /**
  * Schema for moderation action request

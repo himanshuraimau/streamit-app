@@ -13,14 +13,14 @@ import {
 /**
  * Controller for streamer management operations
  * Handles HTTP requests for creator applications and live stream control
- * 
+ *
  * Requirements: 17.2, 17.11, 17.12, 17.13
  */
 export class StreamerMgmtController {
   /**
    * List creator applications with filtering and pagination
    * GET /api/admin/streamers/applications
-   * 
+   *
    * Query parameters:
    * - page: number (default: 1)
    * - pageSize: number (default: 20, max: 100)
@@ -29,7 +29,7 @@ export class StreamerMgmtController {
    * - submittedTo: date (optional)
    * - sortBy: 'submittedAt' | 'reviewedAt' (default: 'submittedAt')
    * - sortOrder: 'asc' | 'desc' (default: 'desc')
-   * 
+   *
    * Requirements: 5.1
    */
   static async listApplications(req: Request, res: Response) {
@@ -75,9 +75,9 @@ export class StreamerMgmtController {
   /**
    * Get application details by ID
    * GET /api/admin/streamers/applications/:id
-   * 
+   *
    * Returns complete application details including documents
-   * 
+   *
    * Requirements: 5.2
    */
   static async getApplicationById(req: Request, res: Response) {
@@ -115,9 +115,9 @@ export class StreamerMgmtController {
   /**
    * Approve a creator application
    * PATCH /api/admin/streamers/applications/:id/approve
-   * 
+   *
    * Updates application status to APPROVED and upgrades user role to CREATOR
-   * 
+   *
    * Requirements: 5.3
    */
   static async approveApplication(req: Request, res: Response) {
@@ -176,10 +176,10 @@ export class StreamerMgmtController {
   /**
    * Reject a creator application
    * PATCH /api/admin/streamers/applications/:id/reject
-   * 
+   *
    * Body:
    * - reason: string (required, min 10 chars)
-   * 
+   *
    * Requirements: 5.4
    */
   static async rejectApplication(req: Request, res: Response) {
@@ -200,11 +200,7 @@ export class StreamerMgmtController {
       const adminId = req.adminUser!.id;
 
       // Call service
-      const application = await StreamerMgmtService.rejectApplication(
-        id,
-        data.reason,
-        adminId
-      );
+      const application = await StreamerMgmtService.rejectApplication(id, data.reason, adminId);
 
       // Return response
       res.json({
@@ -243,9 +239,9 @@ export class StreamerMgmtController {
   /**
    * List all currently active live streams
    * GET /api/admin/streamers/live
-   * 
+   *
    * Returns all streams with isLive=true
-   * 
+   *
    * Requirements: 5.5, 5.6
    */
   static async listLiveStreams(_req: Request, res: Response) {
@@ -270,10 +266,10 @@ export class StreamerMgmtController {
   /**
    * Kill a live stream
    * POST /api/admin/streamers/:id/kill-stream
-   * 
+   *
    * Body:
    * - reason: string (required, min 10 chars)
-   * 
+   *
    * Requirements: 5.7
    */
   static async killStream(req: Request, res: Response) {
@@ -331,7 +327,7 @@ export class StreamerMgmtController {
   /**
    * Mute a streamer's audio
    * POST /api/admin/streamers/:id/mute
-   * 
+   *
    * Requirements: 5.8
    */
   static async muteStreamer(req: Request, res: Response) {
@@ -385,7 +381,7 @@ export class StreamerMgmtController {
   /**
    * Disable chat for a stream
    * POST /api/admin/streamers/:id/disable-chat
-   * 
+   *
    * Requirements: 5.9
    */
   static async disableStreamChat(req: Request, res: Response) {
@@ -433,10 +429,10 @@ export class StreamerMgmtController {
   /**
    * Send a warning to a streamer
    * POST /api/admin/streamers/:id/warn
-   * 
+   *
    * Body:
    * - message: string (required, min 10 chars)
-   * 
+   *
    * Requirements: 5.10
    */
   static async warnStreamer(req: Request, res: Response) {
@@ -490,12 +486,12 @@ export class StreamerMgmtController {
   /**
    * Suspend a streamer account
    * PATCH /api/admin/streamers/:id/suspend
-   * 
+   *
    * Body:
    * - reason: string (required, min 10 chars)
    * - expiresAt: date (optional)
    * - adminNotes: string (optional)
-   * 
+   *
    * Requirements: 5.11
    */
   static async suspendStreamer(req: Request, res: Response) {

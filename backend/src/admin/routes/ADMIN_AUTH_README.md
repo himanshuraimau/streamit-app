@@ -11,6 +11,7 @@ The admin authentication routes provide endpoints for admin users to sign in, si
 Sign in an admin user with email and password.
 
 **Request Body:**
+
 ```json
 {
   "email": "admin@example.com",
@@ -19,6 +20,7 @@ Sign in an admin user with email and password.
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -36,6 +38,7 @@ Sign in an admin user with email and password.
 ```
 
 **Error Responses:**
+
 - 400: Missing email or password
 - 401: Invalid credentials
 - 403: User is not an admin (checked by adminAuthMiddleware on subsequent requests)
@@ -46,6 +49,7 @@ Sign in an admin user with email and password.
 Sign out the current admin user.
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -54,6 +58,7 @@ Sign out the current admin user.
 ```
 
 **Error Response:**
+
 - 500: Internal server error
 
 ### GET /api/admin/auth/session
@@ -61,6 +66,7 @@ Sign out the current admin user.
 Get the current admin session information.
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -78,6 +84,7 @@ Get the current admin session information.
 ```
 
 **Error Responses:**
+
 - 401: No active session
 - 500: Internal server error
 

@@ -83,18 +83,18 @@ export interface ContentDetails {
 /**
  * Service for content moderation operations
  * Handles flagged content review, moderation actions, and content filtering
- * 
+ *
  * Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9
  */
 export class ContentModService {
   /**
    * Get moderation queue with filtering and pagination
    * Returns flagged content awaiting review
-   * 
+   *
    * @param filters - Filter criteria
    * @param pagination - Pagination parameters
    * @returns Paginated list of flagged content
-   * 
+   *
    * Requirements: 6.1, 6.2, 6.3
    */
   static async getModerationQueue(
@@ -106,10 +106,7 @@ export class ContentModService {
 
     // Build where clause for posts/shorts
     const postWhere: Prisma.PostWhereInput = {
-      OR: [
-        { isFlagged: true },
-        { flagCount: { gt: 0 } },
-      ],
+      OR: [{ isFlagged: true }, { flagCount: { gt: 0 } }],
     };
 
     // Apply content type filter
@@ -216,11 +213,11 @@ export class ContentModService {
 
   /**
    * Get content details by ID and type
-   * 
+   *
    * @param id - Content ID
    * @param type - Content type (post, short, comment)
    * @returns Complete content details or null if not found
-   * 
+   *
    * Requirements: 6.4
    */
   static async getContentById(
@@ -370,12 +367,12 @@ export class ContentModService {
   /**
    * Dismiss flags on content
    * Clears flags without taking action
-   * 
+   *
    * @param contentId - Content ID
    * @param contentType - Content type
    * @param adminId - Admin performing the action
    * @returns Updated content
-   * 
+   *
    * Requirements: 6.5
    */
   static async dismissFlags(
@@ -421,13 +418,13 @@ export class ContentModService {
   /**
    * Warn content author
    * Sends warning notification to author
-   * 
+   *
    * @param contentId - Content ID
    * @param contentType - Content type
    * @param message - Warning message
    * @param adminId - Admin performing the action
    * @returns Warning record
-   * 
+   *
    * Requirements: 6.6
    */
   static async warnAuthor(
@@ -484,13 +481,13 @@ export class ContentModService {
   /**
    * Remove content
    * Hides content from public view
-   * 
+   *
    * @param contentId - Content ID
    * @param contentType - Content type
    * @param reason - Removal reason
    * @param adminId - Admin performing the action
    * @returns Updated content
-   * 
+   *
    * Requirements: 6.7
    */
   static async removeContent(
@@ -545,12 +542,12 @@ export class ContentModService {
   /**
    * Strike content author
    * Increments author's strike count
-   * 
+   *
    * @param contentId - Content ID
    * @param contentType - Content type
    * @param adminId - Admin performing the action
    * @returns Strike record
-   * 
+   *
    * Requirements: 6.8
    */
   static async strikeAuthor(
@@ -628,12 +625,12 @@ export class ContentModService {
   /**
    * Ban content author
    * Permanently suspends author account and hides all their content
-   * 
+   *
    * @param contentId - Content ID
    * @param contentType - Content type
    * @param adminId - Admin performing the action
    * @returns Ban record
-   * 
+   *
    * Requirements: 6.9
    */
   static async banAuthor(
@@ -696,17 +693,11 @@ export class ContentModService {
       });
 
       // Create audit log for ban
-      await AuditLogService.createLog(
-        adminId,
-        'user_ban',
-        'user',
-        authorId,
-        {
-          reason: 'Banned due to content violations',
-          triggeredByContent: contentId,
-          contentType,
-        }
-      );
+      await AuditLogService.createLog(adminId, 'user_ban', 'user', authorId, {
+        reason: 'Banned due to content violations',
+        triggeredByContent: contentId,
+        contentType,
+      });
 
       return {
         authorId,
@@ -718,11 +709,11 @@ export class ContentModService {
 
   /**
    * Get shorts with filtering and pagination
-   * 
+   *
    * @param filters - Filter parameters
    * @param pagination - Pagination parameters
    * @returns Paginated list of shorts
-   * 
+   *
    * Requirements: 6.10
    */
   static async getShorts(
@@ -738,10 +729,7 @@ export class ContentModService {
     };
 
     if (filters.flaggedOnly) {
-      where.OR = [
-        { isFlagged: true },
-        { flagCount: { gt: 0 } },
-      ];
+      where.OR = [{ isFlagged: true }, { flagCount: { gt: 0 } }];
     }
 
     const sortBy = filters.sortBy || 'createdAt';
@@ -820,11 +808,11 @@ export class ContentModService {
 
   /**
    * Get posts with filtering and pagination
-   * 
+   *
    * @param filters - Filter parameters
    * @param pagination - Pagination parameters
    * @returns Paginated list of posts
-   * 
+   *
    * Requirements: 6.11
    */
   static async getPosts(
@@ -839,10 +827,7 @@ export class ContentModService {
     };
 
     if (filters.flaggedOnly) {
-      where.OR = [
-        { isFlagged: true },
-        { flagCount: { gt: 0 } },
-      ];
+      where.OR = [{ isFlagged: true }, { flagCount: { gt: 0 } }];
     }
 
     const sortBy = filters.sortBy || 'createdAt';

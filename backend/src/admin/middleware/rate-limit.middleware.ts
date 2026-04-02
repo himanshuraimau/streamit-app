@@ -3,12 +3,12 @@ import type { Request, Response } from 'express';
 
 /**
  * Rate limiting middleware for admin routes
- * 
+ *
  * This middleware implements rate limiting to protect admin endpoints from abuse:
  * - General admin routes: 1000 requests per 15 minutes
  * - Auth routes: 5 attempts per 15 minutes (stricter for brute force protection)
  * - Super admins in development: Skip rate limiting
- * 
+ *
  * Requirements: 22.8
  */
 

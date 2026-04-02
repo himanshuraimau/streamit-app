@@ -9,6 +9,7 @@ The admin routes have been successfully registered in the main Express applicati
 ### Changes Made
 
 1. **Imported admin modules** in `backend/src/index.ts`:
+
    ```typescript
    import { adminRouter } from './admin/routes';
    import { adminAuthMiddleware } from './admin/middleware/admin-auth.middleware';

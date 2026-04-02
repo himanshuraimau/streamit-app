@@ -33,11 +33,7 @@ const router = Router();
 router.get('/super-only', requirePermission([UserRole.SUPER_ADMIN]), handler);
 
 // Multiple roles
-router.get(
-  '/finance',
-  requirePermission([UserRole.SUPER_ADMIN, UserRole.FINANCE_ADMIN]),
-  handler
-);
+router.get('/finance', requirePermission([UserRole.SUPER_ADMIN, UserRole.FINANCE_ADMIN]), handler);
 ```
 
 ### Route Group Protection
@@ -89,6 +85,7 @@ The system supports five admin roles:
 Based on the admin panel design, here's the recommended permission configuration for each module:
 
 ### User Management
+
 **Allowed Roles**: `SUPER_ADMIN`, `ADMIN` (support_admin), `COMPLIANCE_OFFICER`
 
 ```typescript
@@ -100,6 +97,7 @@ router.use(
 ```
 
 ### Streamer Management
+
 **Allowed Roles**: `SUPER_ADMIN`, `MODERATOR`, `ADMIN` (support_admin)
 
 ```typescript
@@ -111,6 +109,7 @@ router.use(
 ```
 
 ### Content Moderation
+
 **Allowed Roles**: `SUPER_ADMIN`, `MODERATOR`
 
 ```typescript
@@ -122,6 +121,7 @@ router.use(
 ```
 
 ### Reports
+
 **Allowed Roles**: `SUPER_ADMIN`, `MODERATOR`, `ADMIN` (support_admin), `COMPLIANCE_OFFICER`
 
 ```typescript
@@ -138,6 +138,7 @@ router.use(
 ```
 
 ### Monetization
+
 **Allowed Roles**: `SUPER_ADMIN`, `FINANCE_ADMIN`, `COMPLIANCE_OFFICER`
 
 ```typescript
@@ -149,17 +150,15 @@ router.use(
 ```
 
 ### Ads
+
 **Allowed Roles**: `SUPER_ADMIN`, `FINANCE_ADMIN`
 
 ```typescript
-router.use(
-  '/ads',
-  requirePermission([UserRole.SUPER_ADMIN, UserRole.FINANCE_ADMIN]),
-  adsRoutes
-);
+router.use('/ads', requirePermission([UserRole.SUPER_ADMIN, UserRole.FINANCE_ADMIN]), adsRoutes);
 ```
 
 ### Analytics
+
 **Allowed Roles**: `SUPER_ADMIN`, `MODERATOR`, `FINANCE_ADMIN`, `COMPLIANCE_OFFICER`
 
 ```typescript
@@ -176,6 +175,7 @@ router.use(
 ```
 
 ### Compliance
+
 **Allowed Roles**: `SUPER_ADMIN`, `COMPLIANCE_OFFICER`
 
 ```typescript
@@ -187,6 +187,7 @@ router.use(
 ```
 
 ### Settings
+
 **Allowed Roles**: `SUPER_ADMIN` only
 
 ```typescript
@@ -196,6 +197,7 @@ router.use('/settings', requirePermission([UserRole.SUPER_ADMIN]), settingsRoute
 ## Error Responses
 
 ### 401 Unauthorized
+
 Returned when `req.adminUser` is not set (auth middleware not applied or session invalid):
 
 ```json
@@ -206,6 +208,7 @@ Returned when `req.adminUser` is not set (auth middleware not applied or session
 ```
 
 ### 403 Forbidden
+
 Returned when the admin's role is not in the allowed roles list:
 
 ```json
@@ -325,14 +328,17 @@ describe('Permission middleware integration', () => {
 ## Troubleshooting
 
 ### Issue: Getting 401 instead of 403
+
 **Cause**: `adminAuthMiddleware` is not applied before `requirePermission`
 **Solution**: Ensure auth middleware runs first in the middleware chain
 
 ### Issue: All roles are denied
+
 **Cause**: Empty allowed roles array or incorrect role values
 **Solution**: Verify the allowed roles array contains valid `UserRole` enum values
 
 ### Issue: Permission checks not working
+
 **Cause**: Middleware order is incorrect
 **Solution**: Apply middlewares in this order: auth → permission → route handler
 

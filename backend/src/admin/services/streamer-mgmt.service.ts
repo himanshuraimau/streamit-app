@@ -101,7 +101,7 @@ export interface LiveStreamItem {
 /**
  * Service for managing streamers and creator applications
  * Handles application review, live stream monitoring, and stream control
- * 
+ *
  * Requirements: 5.1-5.11
  */
 export class StreamerMgmtService {
@@ -122,11 +122,11 @@ export class StreamerMgmtService {
 
   /**
    * List creator applications with filtering and pagination
-   * 
+   *
    * @param filters - Filter criteria
    * @param pagination - Pagination parameters
    * @returns Paginated list of applications
-   * 
+   *
    * Requirements: 5.1
    */
   static async listApplications(
@@ -213,10 +213,10 @@ export class StreamerMgmtService {
 
   /**
    * Get complete application details by ID
-   * 
+   *
    * @param id - Application ID
    * @returns Complete application details or null if not found
-   * 
+   *
    * Requirements: 5.2
    */
   static async getApplicationById(id: string): Promise<ApplicationDetails | null> {
@@ -282,11 +282,11 @@ export class StreamerMgmtService {
   /**
    * Approve a creator application
    * Updates application status, upgrades user role to CREATOR, and creates audit log
-   * 
+   *
    * @param id - Application ID
    * @param adminId - ID of admin performing the action
    * @returns Updated application
-   * 
+   *
    * Requirements: 5.3
    */
   static async approveApplication(id: string, adminId: string) {
@@ -334,12 +334,12 @@ export class StreamerMgmtService {
   /**
    * Reject a creator application
    * Updates application status with rejection reason and creates audit log
-   * 
+   *
    * @param id - Application ID
    * @param reason - Reason for rejection
    * @param adminId - ID of admin performing the action
    * @returns Updated application
-   * 
+   *
    * Requirements: 5.4
    */
   static async rejectApplication(id: string, reason: string, adminId: string) {
@@ -380,9 +380,9 @@ export class StreamerMgmtService {
 
   /**
    * List all currently active live streams
-   * 
+   *
    * @returns List of live streams with streamer and stats
-   * 
+   *
    * Requirements: 5.5, 5.6
    */
   static async listLiveStreams(): Promise<LiveStreamItem[]> {
@@ -429,12 +429,12 @@ export class StreamerMgmtService {
   /**
    * Kill a live stream
    * Terminates the LiveKit room and updates stream status
-   * 
+   *
    * @param streamId - Stream ID
    * @param reason - Reason for termination
    * @param adminId - ID of admin performing the action
    * @returns Updated stream
-   * 
+   *
    * Requirements: 5.7
    */
   static async killStream(streamId: string, reason: string, adminId: string) {
@@ -481,11 +481,11 @@ export class StreamerMgmtService {
   /**
    * Mute a streamer's audio
    * Disables audio in the LiveKit room
-   * 
+   *
    * @param streamId - Stream ID
    * @param adminId - ID of admin performing the action
    * @returns Success status
-   * 
+   *
    * Requirements: 5.8
    */
   static async muteStreamer(streamId: string, adminId: string) {
@@ -508,20 +508,13 @@ export class StreamerMgmtService {
       const roomService = this.getLiveKitClient();
       // Get participants in the room
       const participants = await roomService.listParticipants(streamId);
-      
+
       // Find the streamer participant (should be the host)
-      const streamerParticipant = participants.find(
-        (p) => p.identity === stream.userId
-      );
+      const streamerParticipant = participants.find((p) => p.identity === stream.userId);
 
       if (streamerParticipant) {
         // Mute the streamer's audio track
-        await roomService.mutePublishedTrack(
-          streamId,
-          streamerParticipant.identity,
-          'audio',
-          true
-        );
+        await roomService.mutePublishedTrack(streamId, streamerParticipant.identity, 'audio', true);
       }
     } catch (error) {
       console.error('Error muting streamer in LiveKit:', error);
@@ -539,11 +532,11 @@ export class StreamerMgmtService {
   /**
    * Disable chat for a stream
    * Updates stream chat settings
-   * 
+   *
    * @param streamId - Stream ID
    * @param adminId - ID of admin performing the action
    * @returns Updated stream
-   * 
+   *
    * Requirements: 5.9
    */
   static async disableStreamChat(streamId: string, adminId: string) {
@@ -579,12 +572,12 @@ export class StreamerMgmtService {
   /**
    * Send a warning to a streamer
    * Creates a notification and audit log entry
-   * 
+   *
    * @param streamId - Stream ID
    * @param message - Warning message
    * @param adminId - ID of admin performing the action
    * @returns Success status
-   * 
+   *
    * Requirements: 5.10
    */
   static async warnStreamer(streamId: string, message: string, adminId: string) {
@@ -614,14 +607,14 @@ export class StreamerMgmtService {
   /**
    * Suspend a streamer account
    * Freezes the user account and terminates any active stream
-   * 
+   *
    * @param userId - User ID
    * @param reason - Reason for suspension
    * @param adminId - ID of admin performing the action
    * @param expiresAt - Optional expiration date
    * @param adminNotes - Optional admin notes
    * @returns Updated user
-   * 
+   *
    * Requirements: 5.11
    */
   static async suspendStreamer(

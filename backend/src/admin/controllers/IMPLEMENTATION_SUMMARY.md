@@ -36,6 +36,7 @@
 ### Better Auth Integration
 
 The implementation uses Better Auth's existing functionality:
+
 - `auth.api.signInEmail()` for authentication
 - `auth.api.signOut()` for session termination
 - `auth.api.getSession()` for session retrieval
@@ -43,18 +44,24 @@ The implementation uses Better Auth's existing functionality:
 ### Middleware Handling
 
 The auth routes are excluded from adminAuthMiddleware by checking the path:
+
 ```typescript
-app.use('/api/admin', (req, res, next) => {
-  if (req.path.startsWith('/auth')) {
-    return next(); // Skip auth for /auth routes
-  }
-  return adminAuthMiddleware(req, res, next);
-}, adminRouter);
+app.use(
+  '/api/admin',
+  (req, res, next) => {
+    if (req.path.startsWith('/auth')) {
+      return next(); // Skip auth for /auth routes
+    }
+    return adminAuthMiddleware(req, res, next);
+  },
+  adminRouter
+);
 ```
 
 ### Error Handling
 
 All controller methods include try-catch blocks with:
+
 - Appropriate HTTP status codes (400, 401, 500)
 - Consistent error response format
 - Console logging for debugging
@@ -69,6 +76,7 @@ All controller methods include try-catch blocks with:
 ## Testing
 
 The implementation was verified by:
+
 1. TypeScript compilation (no diagnostics)
 2. Build process (successful)
 3. Manual testing instructions provided in README
@@ -76,6 +84,7 @@ The implementation was verified by:
 ## Next Steps
 
 The auth routes are now ready for:
+
 1. Frontend integration
 2. Integration testing with actual admin users
 3. Property-based testing (as defined in tasks 1.1-1.4)

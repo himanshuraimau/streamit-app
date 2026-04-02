@@ -7,14 +7,14 @@ import { listReportsSchema, resolveReportSchema } from '../validations/reports.s
 /**
  * Controller for reports and complaints management
  * Handles HTTP requests for report listing, viewing, and resolution
- * 
+ *
  * Requirements: 17.2
  */
 export class ReportsController {
   /**
    * List reports with filtering, sorting, and pagination
    * GET /api/admin/reports
-   * 
+   *
    * Query parameters:
    * - page: number (default: 1)
    * - pageSize: number (default: 20, max: 100)
@@ -26,7 +26,7 @@ export class ReportsController {
    * - dateTo: date (optional)
    * - sortBy: 'createdAt' | 'priority' | 'reportCount' (default: 'createdAt')
    * - sortOrder: 'asc' | 'desc' (default: 'desc')
-   * 
+   *
    * Requirements: 7.1, 7.2, 7.3
    */
   static async listReports(req: Request, res: Response) {
@@ -75,13 +75,13 @@ export class ReportsController {
   /**
    * Get report details by ID
    * GET /api/admin/reports/:id
-   * 
+   *
    * Returns complete report details including:
    * - Reporter information and history
    * - Reported user information and history
    * - Reported content preview
    * - Resolution details
-   * 
+   *
    * Requirements: 7.4, 7.5, 7.6
    */
   static async getReportById(req: Request, res: Response) {
@@ -119,11 +119,11 @@ export class ReportsController {
   /**
    * Resolve a report with action and admin notes
    * PATCH /api/admin/reports/:id/resolve
-   * 
+   *
    * Body:
    * - action: 'dismiss' | 'warning_sent' | 'content_removed' | 'user_suspended' | 'user_banned'
    * - notes: string (required, min 10 chars)
-   * 
+   *
    * Requirements: 7.7, 7.8
    */
   static async resolveReport(req: Request, res: Response) {
@@ -144,12 +144,7 @@ export class ReportsController {
       const adminId = req.adminUser!.id;
 
       // Call service
-      const report = await ReportsService.resolveReport(
-        id,
-        data.action,
-        data.notes,
-        adminId
-      );
+      const report = await ReportsService.resolveReport(id, data.action, data.notes, adminId);
 
       // Return response
       res.json({
@@ -182,14 +177,14 @@ export class ReportsController {
   /**
    * Get audit log for report resolutions
    * GET /api/admin/reports/audit-log
-   * 
+   *
    * Query parameters:
    * - page: number (default: 1)
    * - pageSize: number (default: 20, max: 100)
    * - adminId: string (optional)
    * - dateFrom: date (optional)
    * - dateTo: date (optional)
-   * 
+   *
    * Requirements: 7.9
    */
   static async getAuditLog(req: Request, res: Response) {

@@ -5,22 +5,22 @@ import { prisma } from '../../lib/db';
 
 /**
  * Admin Authentication Controller
- * 
+ *
  * Handles admin authentication endpoints:
  * - POST /api/admin/auth/sign-in: Authenticate admin user
  * - POST /api/admin/auth/sign-out: Sign out admin user
  * - GET /api/admin/auth/session: Get current admin session
- * 
+ *
  * Requirements: 1.1, 1.4, 1.5, 1.6
  */
 export class AdminAuthController {
   /**
    * Sign in admin user
    * POST /api/admin/auth/sign-in
-   * 
+   *
    * This endpoint uses Better Auth's built-in sign-in functionality.
    * The actual authentication is handled by Better Auth at /api/auth/sign-in/email
-   * 
+   *
    * Requirements: 1.1, 1.4
    */
   static async signIn(req: Request, res: Response) {
@@ -61,7 +61,7 @@ export class AdminAuthController {
       }
 
       // Parse response body
-      const data = await signInResponse.json() as any;
+      const data = (await signInResponse.json()) as any;
 
       // Check if user data exists
       if (!data.user) {
@@ -101,7 +101,7 @@ export class AdminAuthController {
   /**
    * Sign out admin user
    * POST /api/admin/auth/sign-out
-   * 
+   *
    * Requirements: 1.6
    */
   static async signOut(req: Request, res: Response) {
@@ -127,7 +127,7 @@ export class AdminAuthController {
   /**
    * Get current admin session
    * GET /api/admin/auth/session
-   * 
+   *
    * Requirements: 1.5
    */
   static async getSession(req: Request, res: Response) {
@@ -151,10 +151,12 @@ export class AdminAuthController {
       });
 
       // Transform role to lowercase with underscores for frontend
-      const transformedUser = session.user ? {
-        ...session.user,
-        role: dbUser?.role.toLowerCase() || 'user',
-      } : null;
+      const transformedUser = session.user
+        ? {
+            ...session.user,
+            role: dbUser?.role.toLowerCase() || 'user',
+          }
+        : null;
 
       // Return session data with user info
       res.json({

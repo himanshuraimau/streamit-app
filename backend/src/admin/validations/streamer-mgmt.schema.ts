@@ -3,7 +3,7 @@ import { ApplicationStatus } from '@prisma/client';
 
 /**
  * Validation schemas for streamer management operations
- * 
+ *
  * Requirements: 17.5, 17.12
  */
 

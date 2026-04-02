@@ -92,14 +92,14 @@ export interface AuditLogEntry {
 export class AuditLogService {
   /**
    * Create a new audit log entry
-   * 
+   *
    * @param adminId - ID of the admin performing the action
    * @param action - Type of action being performed
    * @param targetType - Type of entity being acted upon
    * @param targetId - ID of the entity being acted upon
    * @param metadata - Additional context about the action (optional)
    * @returns The created audit log entry
-   * 
+   *
    * @example
    * await AuditLogService.createLog(
    *   'admin123',
@@ -123,14 +123,7 @@ export class AuditLogService {
     });
 
     // Log the admin action
-    logger.adminAction(
-      action,
-      adminId,
-      admin?.email || 'unknown',
-      targetType,
-      targetId,
-      metadata
-    );
+    logger.adminAction(action, adminId, admin?.email || 'unknown', targetType, targetId, metadata);
 
     return await prisma.adminAuditLog.create({
       data: {
@@ -145,11 +138,11 @@ export class AuditLogService {
 
   /**
    * Query audit logs with filtering and pagination
-   * 
+   *
    * @param filters - Filter criteria for the query
    * @param pagination - Pagination parameters
    * @returns Paginated list of audit log entries with admin details
-   * 
+   *
    * @example
    * const logs = await AuditLogService.getLogs(
    *   { action: 'user_ban', dateFrom: new Date('2024-01-01') },

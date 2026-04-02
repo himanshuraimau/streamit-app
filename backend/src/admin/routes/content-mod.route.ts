@@ -3,10 +3,10 @@ import { ContentModController } from '../controllers/content-mod.controller';
 
 /**
  * Content moderation routes
- * 
+ *
  * All routes are protected by adminAuthMiddleware (applied at router level)
  * and requirePermission middleware (applied in main admin router)
- * 
+ *
  * Requirements: 17.4
  */
 

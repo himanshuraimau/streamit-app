@@ -19,9 +19,7 @@ export class ApplicationService {
     }
 
     const reviewedAt = application.reviewedAt ?? application.updatedAt;
-    const reapplyAvailableAt = new Date(
-      reviewedAt.getTime() + REAPPLY_COOLDOWN_DAYS * DAY_IN_MS
-    );
+    const reapplyAvailableAt = new Date(reviewedAt.getTime() + REAPPLY_COOLDOWN_DAYS * DAY_IN_MS);
     const cooldownMsRemaining = reapplyAvailableAt.getTime() - Date.now();
 
     return {

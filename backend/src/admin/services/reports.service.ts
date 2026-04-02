@@ -85,14 +85,17 @@ export interface ReportDetails {
 /**
  * Service for managing user reports and complaints
  * Handles report listing, viewing, and resolution
- * 
+ *
  * Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8
  */
 export class ReportsService {
   /**
    * Calculate priority based on report reason and count
    */
-  private static calculatePriority(reason: ReportReason, reportCount: number): 'high' | 'medium' | 'low' {
+  private static calculatePriority(
+    reason: ReportReason,
+    reportCount: number
+  ): 'high' | 'medium' | 'low' {
     // High priority reasons
     if (['HATE_SPEECH', 'VIOLENCE', 'SELF_HARM', 'NUDITY'].includes(reason)) {
       return 'high';
@@ -118,11 +121,11 @@ export class ReportsService {
 
   /**
    * List reports with filtering, sorting, and pagination
-   * 
+   *
    * @param filters - Filter criteria for reports
    * @param pagination - Pagination parameters
    * @returns Paginated list of reports
-   * 
+   *
    * Requirements: 7.1, 7.2, 7.3
    */
   static async listReports(
@@ -255,10 +258,10 @@ export class ReportsService {
   /**
    * Get complete report details by ID
    * Includes reporter and reported user history
-   * 
+   *
    * @param id - Report ID
    * @returns Complete report details or null if not found
-   * 
+   *
    * Requirements: 7.4, 7.5, 7.6
    */
   static async getReportById(id: string): Promise<ReportDetails | null> {
@@ -385,13 +388,13 @@ export class ReportsService {
 
   /**
    * Resolve a report with action and admin notes
-   * 
+   *
    * @param id - Report ID
    * @param action - Resolution action taken
    * @param notes - Admin notes on resolution
    * @param adminId - ID of admin performing the action
    * @returns Updated report
-   * 
+   *
    * Requirements: 7.7, 7.8
    */
   static async resolveReport(
@@ -414,18 +417,12 @@ export class ReportsService {
       });
 
       // Create audit log entry
-      await AuditLogService.createLog(
-        adminId,
-        'report_resolve',
-        'report',
-        id,
-        {
-          action,
-          notes,
-          reportedUserId: report.reportedUserId,
-          reason: report.reason,
-        }
-      );
+      await AuditLogService.createLog(adminId, 'report_resolve', 'report', id, {
+        action,
+        notes,
+        reportedUserId: report.reportedUserId,
+        reason: report.reason,
+      });
 
       return report;
     });

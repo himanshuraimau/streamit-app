@@ -12,14 +12,14 @@ import {
 /**
  * Controller for advertisement management
  * Handles ad campaign creation, updates, deletion, and performance tracking
- * 
+ *
  * Requirements: 17.2
  */
 export class AdsController {
   /**
    * List ad campaigns with filtering and pagination
    * GET /api/admin/ads
-   * 
+   *
    * Requirements: 9.1, 9.2, 9.3
    */
   static async listAds(req: Request, res: Response) {
@@ -63,7 +63,7 @@ export class AdsController {
   /**
    * Create a new ad campaign
    * POST /api/admin/ads
-   * 
+   *
    * Requirements: 9.4
    */
   static async createAd(req: Request, res: Response) {
@@ -97,7 +97,7 @@ export class AdsController {
   /**
    * Update an existing ad campaign
    * PATCH /api/admin/ads/:id
-   * 
+   *
    * Requirements: 9.5, 9.6
    */
   static async updateAd(req: Request, res: Response) {
@@ -140,7 +140,7 @@ export class AdsController {
   /**
    * Delete an ad campaign (soft delete)
    * DELETE /api/admin/ads/:id
-   * 
+   *
    * Requirements: 9.7
    */
   static async deleteAd(req: Request, res: Response) {
@@ -179,7 +179,7 @@ export class AdsController {
   /**
    * Get performance metrics for an ad campaign
    * GET /api/admin/ads/:id/performance
-   * 
+   *
    * Requirements: 9.8
    */
   static async getAdPerformance(req: Request, res: Response) {
@@ -213,7 +213,7 @@ export class AdsController {
   /**
    * Generate presigned URL for ad creative upload
    * POST /api/admin/ads/upload-url
-   * 
+   *
    * Requirements: 9.4, 9.12
    */
   static async generateUploadUrl(req: Request, res: Response) {

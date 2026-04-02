@@ -79,17 +79,17 @@ export interface UserDetails {
 /**
  * Service for managing user accounts
  * Handles user listing, viewing, freezing, banning, and other admin actions
- * 
+ *
  * Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9
  */
 export class UserMgmtService {
   /**
    * List users with filtering, search, and pagination
-   * 
+   *
    * @param filters - Filter criteria for users
    * @param pagination - Pagination parameters
    * @returns Paginated list of users
-   * 
+   *
    * Requirements: 4.1, 4.2, 4.3
    */
   static async listUsers(
@@ -190,10 +190,10 @@ export class UserMgmtService {
   /**
    * Get complete user details by ID
    * Includes wallet balance and ban history
-   * 
+   *
    * @param id - User ID
    * @returns Complete user details or null if not found
-   * 
+   *
    * Requirements: 4.4
    */
   static async getUserById(id: string): Promise<UserDetails | null> {
@@ -268,13 +268,13 @@ export class UserMgmtService {
 
   /**
    * Freeze a user account (temporary suspension)
-   * 
+   *
    * @param id - User ID
    * @param reason - Reason for suspension
    * @param expiresAt - Optional expiration date (null = permanent)
    * @param adminId - ID of admin performing the action
    * @returns Updated user
-   * 
+   *
    * Requirements: 4.5, 4.6
    */
   static async freezeUser(
@@ -300,17 +300,11 @@ export class UserMgmtService {
       });
 
       // Create audit log entry
-      await AuditLogService.createLog(
-        adminId,
-        'user_freeze',
-        'user',
-        id,
-        {
-          reason,
-          expiresAt: expiresAt?.toISOString() || null,
-          adminNotes,
-        }
-      );
+      await AuditLogService.createLog(adminId, 'user_freeze', 'user', id, {
+        reason,
+        expiresAt: expiresAt?.toISOString() || null,
+        adminNotes,
+      });
 
       return user;
     });
@@ -318,20 +312,15 @@ export class UserMgmtService {
 
   /**
    * Ban a user account (permanent suspension)
-   * 
+   *
    * @param id - User ID
    * @param reason - Reason for ban
    * @param adminId - ID of admin performing the action
    * @returns Updated user
-   * 
+   *
    * Requirements: 4.7
    */
-  static async banUser(
-    id: string,
-    reason: string,
-    adminId: string,
-    adminNotes?: string
-  ) {
+  static async banUser(id: string, reason: string, adminId: string, adminNotes?: string) {
     // Use transaction to ensure atomicity
     return await prisma.$transaction(async (tx) => {
       // Update user suspension status (permanent = no expiration)
@@ -348,17 +337,11 @@ export class UserMgmtService {
       });
 
       // Create audit log entry
-      await AuditLogService.createLog(
-        adminId,
-        'user_ban',
-        'user',
-        id,
-        {
-          reason,
-          permanent: true,
-          adminNotes,
-        }
-      );
+      await AuditLogService.createLog(adminId, 'user_ban', 'user', id, {
+        reason,
+        permanent: true,
+        adminNotes,
+      });
 
       return user;
     });
@@ -368,20 +351,15 @@ export class UserMgmtService {
    * Disable chat for a user (24-hour restriction)
    * Note: This is a placeholder implementation. The actual chat system
    * would need to check this flag when users attempt to send messages.
-   * 
+   *
    * @param id - User ID
    * @param duration - Duration in hours
    * @param adminId - ID of admin performing the action
    * @returns Updated user with admin notes
-   * 
+   *
    * Requirements: 4.8
    */
-  static async disableChat(
-    id: string,
-    duration: number,
-    reason: string,
-    adminId: string
-  ) {
+  static async disableChat(id: string, duration: number, reason: string, adminId: string) {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + duration);
 
@@ -402,17 +380,11 @@ export class UserMgmtService {
       });
 
       // Create audit log entry
-      await AuditLogService.createLog(
-        adminId,
-        'user_chat_disable',
-        'user',
-        id,
-        {
-          reason,
-          duration,
-          expiresAt: expiresAt.toISOString(),
-        }
-      );
+      await AuditLogService.createLog(adminId, 'user_chat_disable', 'user', id, {
+        reason,
+        duration,
+        expiresAt: expiresAt.toISOString(),
+      });
 
       return user;
     });
@@ -421,11 +393,11 @@ export class UserMgmtService {
   /**
    * Reset user password (admin-initiated)
    * Generates a password reset token and optionally sends email
-   * 
+   *
    * @param id - User ID
    * @param adminId - ID of admin performing the action
    * @returns Password reset token
-   * 
+   *
    * Requirements: 4.9
    */
   static async resetPassword(id: string, adminId: string) {
@@ -447,15 +419,9 @@ export class UserMgmtService {
       });
 
       // Create audit log entry
-      await AuditLogService.createLog(
-        adminId,
-        'user_password_reset',
-        'user',
-        id,
-        {
-          tokenGenerated: true,
-        }
-      );
+      await AuditLogService.createLog(adminId, 'user_password_reset', 'user', id, {
+        tokenGenerated: true,
+      });
 
       return {
         token,
@@ -466,7 +432,7 @@ export class UserMgmtService {
 
   /**
    * Unfreeze a user account
-   * 
+   *
    * @param id - User ID
    * @param adminId - ID of admin performing the action
    * @returns Updated user
@@ -487,13 +453,7 @@ export class UserMgmtService {
       });
 
       // Create audit log entry
-      await AuditLogService.createLog(
-        adminId,
-        'user_unfreeze',
-        'user',
-        id,
-        {}
-      );
+      await AuditLogService.createLog(adminId, 'user_unfreeze', 'user', id, {});
 
       return user;
     });

@@ -116,10 +116,7 @@ export class AnalyticsService {
       },
     });
 
-    const totalConcurrentViewers = liveStreams.reduce(
-      (sum, stat) => sum + stat.totalViewers,
-      0
-    );
+    const totalConcurrentViewers = liveStreams.reduce((sum, stat) => sum + stat.totalViewers, 0);
 
     // Calculate total revenue from gift transactions in date range
     const giftRevenue = await prisma.giftTransaction.aggregate({
@@ -159,8 +156,7 @@ export class AnalyticsService {
       },
     });
 
-    const conversionRate =
-      totalViewers > 0 ? (viewersWhoSentGifts / totalViewers) * 100 : 0;
+    const conversionRate = totalViewers > 0 ? (viewersWhoSentGifts / totalViewers) * 100 : 0;
 
     const result = {
       dau,
@@ -180,10 +176,7 @@ export class AnalyticsService {
    * Get top streamers ranked by revenue
    * Cached for 10 minutes
    */
-  static async getTopStreamers(
-    dateRange: string,
-    limit: number = 10
-  ): Promise<TopStreamer[]> {
+  static async getTopStreamers(dateRange: string, limit: number = 10): Promise<TopStreamer[]> {
     const cacheKey = `analytics:topStreamers:${dateRange}:${limit}`;
     const cached = cache.get<TopStreamer[]>(cacheKey);
     if (cached) {
@@ -243,18 +236,14 @@ export class AnalyticsService {
         0
       );
 
-      const giftCount = streamer.giftsReceived.reduce(
-        (sum, gift) => sum + gift.quantity,
-        0
-      );
+      const giftCount = streamer.giftsReceived.reduce((sum, gift) => sum + gift.quantity, 0);
 
       // Calculate stream hours
       let streamHours = 0;
       if (streamer.stream?.stats) {
         const { startedAt, endedAt } = streamer.stream.stats;
         if (startedAt && endedAt) {
-          streamHours =
-            (endedAt.getTime() - startedAt.getTime()) / (1000 * 60 * 60);
+          streamHours = (endedAt.getTime() - startedAt.getTime()) / (1000 * 60 * 60);
         }
       }
 
@@ -337,8 +326,7 @@ export class AnalyticsService {
         authorName: short.author.name,
         views: short.viewsCount,
         likes: short.likesCount,
-        engagement:
-          short.likesCount + short.commentsCount + short.sharesCount,
+        engagement: short.likesCount + short.commentsCount + short.sharesCount,
       }));
 
       // Cache for 10 minutes (600 seconds)
@@ -369,11 +357,7 @@ export class AnalyticsService {
             },
           },
         },
-        orderBy: [
-          { likesCount: 'desc' },
-          { commentsCount: 'desc' },
-          { viewsCount: 'desc' },
-        ],
+        orderBy: [{ likesCount: 'desc' }, { commentsCount: 'desc' }, { viewsCount: 'desc' }],
         take: limit,
       });
 
@@ -383,8 +367,7 @@ export class AnalyticsService {
         authorName: post.author.name,
         views: post.viewsCount,
         likes: post.likesCount,
-        engagement:
-          post.likesCount + post.commentsCount + post.sharesCount,
+        engagement: post.likesCount + post.commentsCount + post.sharesCount,
       }));
 
       // Cache for 10 minutes (600 seconds)
@@ -432,8 +415,7 @@ export class AnalyticsService {
         authorName: stream.user.name,
         views: stream.stats?.totalViewers || 0,
         likes: stream.stats?.totalLikes || 0,
-        engagement:
-          (stream.stats?.totalLikes || 0) + (stream.stats?.totalGifts || 0),
+        engagement: (stream.stats?.totalLikes || 0) + (stream.stats?.totalGifts || 0),
       }));
 
       // Cache for 10 minutes (600 seconds)
@@ -446,9 +428,7 @@ export class AnalyticsService {
    * Get conversion funnel metrics
    * Cached for 10 minutes
    */
-  static async getConversionFunnel(
-    dateRange: string
-  ): Promise<ConversionFunnel> {
+  static async getConversionFunnel(dateRange: string): Promise<ConversionFunnel> {
     const cacheKey = `analytics:conversionFunnel:${dateRange}`;
     const cached = cache.get<ConversionFunnel>(cacheKey);
     if (cached) {
@@ -500,8 +480,7 @@ export class AnalyticsService {
     const averageGiftValue = giftStats._avg.coinAmount || 0;
 
     // Calculate conversion percentage
-    const conversionPercentage =
-      totalViewers > 0 ? (viewersWhoSentGifts / totalViewers) * 100 : 0;
+    const conversionPercentage = totalViewers > 0 ? (viewersWhoSentGifts / totalViewers) * 100 : 0;
 
     const result = {
       totalViewers,

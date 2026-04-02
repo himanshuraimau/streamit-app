@@ -1,20 +1,20 @@
 import type { Request, Response, NextFunction } from 'express';
-import { UserRole } from '@prisma/client';
+import type { UserRole } from '@prisma/client';
 import { logger } from '../../lib/logger';
 
 /**
  * Factory function that creates middleware to enforce role-based access control
- * 
+ *
  * This middleware:
  * 1. Accepts an array of allowed admin roles
  * 2. Checks if req.adminUser.role is in the allowed roles list
  * 3. Returns 403 if the role is not allowed
- * 
+ *
  * Usage:
  * router.use('/users', requirePermission([UserRole.SUPER_ADMIN, UserRole.ADMIN]), userRoutes);
- * 
+ *
  * Requirements: 2.4, 17.8
- * 
+ *
  * @param allowedRoles - Array of UserRole values that are permitted to access the route
  * @returns Express middleware function
  */

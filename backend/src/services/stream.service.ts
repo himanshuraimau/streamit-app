@@ -426,7 +426,7 @@ export class StreamService {
       }
 
       const viewerCount = stream.isLive
-        ? (await this.getViewerCounts([userId])).get(userId) ?? 0
+        ? ((await this.getViewerCounts([userId])).get(userId) ?? 0)
         : 0;
 
       return {
