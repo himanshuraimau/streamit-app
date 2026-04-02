@@ -46,6 +46,7 @@ export const ROUTE_PERMISSIONS: Record<string, AdminRole[]> = {
 
   // Streamer Management
   '/streamers/applications': ['super_admin', 'moderator', 'support_admin'],
+  '/streamers/applications/:id': ['super_admin', 'moderator', 'support_admin'],
   '/streamers/live': ['super_admin', 'moderator'],
 
   // Content Moderation

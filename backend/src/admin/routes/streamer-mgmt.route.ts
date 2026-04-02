@@ -1,5 +1,7 @@
 import { Router } from 'express';
+import { UserRole } from '@prisma/client';
 import { StreamerMgmtController } from '../controllers/streamer-mgmt.controller';
+import { requirePermission } from '../middleware/permissions.middleware';
 
 /**
  * Streamer management routes
@@ -49,7 +51,11 @@ router.get('/applications/:id', StreamerMgmtController.getApplicationById);
  *
  * Allowed roles: super_admin, moderator
  */
-router.patch('/applications/:id/approve', StreamerMgmtController.approveApplication);
+router.patch(
+	'/applications/:id/approve',
+	requirePermission([UserRole.SUPER_ADMIN, UserRole.MODERATOR]),
+	StreamerMgmtController.approveApplication
+);
 
 /**
  * PATCH /api/admin/streamers/applications/:id/reject
@@ -60,7 +66,31 @@ router.patch('/applications/:id/approve', StreamerMgmtController.approveApplicat
  *
  * Allowed roles: super_admin, moderator
  */
-router.patch('/applications/:id/reject', StreamerMgmtController.rejectApplication);
+router.patch(
+	'/applications/:id/reject',
+	requirePermission([UserRole.SUPER_ADMIN, UserRole.MODERATOR]),
+	StreamerMgmtController.rejectApplication
+);
+
+/**
+ * POST /api/admin/streamers/applications/:id/notes
+ * Add internal review notes for a creator application
+ */
+router.post(
+	'/applications/:id/notes',
+	requirePermission([UserRole.SUPER_ADMIN, UserRole.MODERATOR, UserRole.ADMIN]),
+	StreamerMgmtController.addApplicationNote
+);
+
+/**
+ * POST /api/admin/streamers/applications/:id/send-email
+ * Send a manual communication email to the creator application owner
+ */
+router.post(
+	'/applications/:id/send-email',
+	requirePermission([UserRole.SUPER_ADMIN, UserRole.MODERATOR, UserRole.ADMIN]),
+	StreamerMgmtController.sendApplicationEmail
+);
 
 /**
  * GET /api/admin/streamers/live

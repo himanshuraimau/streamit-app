@@ -1,28 +1,30 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { type ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/common/DataTable';
 import { FilterBar, type FilterConfig } from '@/components/common/FilterBar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ApplicationDetailSheet } from '@/components/streamers/ApplicationDetailSheet';
 import { streamersApi, type CreatorApplication } from '@/lib/api/streamers.api';
 import { queryKeys } from '@/lib/queryKeys';
 import { RiEyeLine, RiCheckLine, RiCloseLine } from '@remixicon/react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useAdminAuthStore } from '@/stores/adminAuthStore';
 
 export function ApplicationsPage() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { user } = useAdminAuthStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
   const [filters, setFilters] = useState<Record<string, string>>({
     status: searchParams.get('status') || '',
+    search: searchParams.get('search') || '',
   });
 
-  const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const canReview = user?.role === 'super_admin' || user?.role === 'moderator';
 
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.streamers.applications({ page, ...filters }),
@@ -30,6 +32,7 @@ export function ApplicationsPage() {
       streamersApi.listApplications({
         page,
         pageSize: 20,
+        search: filters.search || undefined,
         status: filters.status || undefined,
       }),
   });
@@ -39,7 +42,6 @@ export function ApplicationsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.streamers.all });
       toast.success('Application approved successfully');
-      setSheetOpen(false);
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.error || 'Failed to approve application');
@@ -53,6 +55,15 @@ export function ApplicationsPage() {
     }));
     setPage(1);
     updateUrlParams({ [key]: value || '', page: '1' });
+  };
+
+  const handleSearchChange = (value: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      search: value,
+    }));
+    setPage(1);
+    updateUrlParams({ search: value, page: '1' });
   };
 
   const handlePaginationChange = (newPage: number) => {
@@ -72,9 +83,8 @@ export function ApplicationsPage() {
     setSearchParams(newParams);
   };
 
-  const handleViewApplication = (id: string) => {
-    setSelectedApplicationId(id);
-    setSheetOpen(true);
+  const handleOpenApplication = (id: string) => {
+    navigate(`/streamers/applications/${id}`);
   };
 
   const filterConfigs: FilterConfig[] = [
@@ -98,26 +108,42 @@ export function ApplicationsPage() {
         return 'destructive';
       case 'UNDER_REVIEW':
         return 'secondary';
+      case 'DRAFT':
+        return 'secondary';
       default:
         return 'outline';
     }
   };
 
+  const formatSubmissionDate = (submittedAt: string | null) => {
+    if (!submittedAt) {
+      return 'Not submitted';
+    }
+
+    const submittedDate = new Date(submittedAt);
+    if (Number.isNaN(submittedDate.getTime())) {
+      return 'Invalid date';
+    }
+
+    return format(submittedDate, 'MMM d, yyyy HH:mm');
+  };
+
   const columns: ColumnDef<CreatorApplication>[] = [
     {
-      accessorKey: 'applicantName',
+      accessorKey: 'userName',
       header: 'Applicant',
       cell: ({ row }) => (
         <div>
-          <div className="font-medium">{row.original.applicantName}</div>
-          <div className="text-sm text-muted-foreground">{row.original.email}</div>
+          <div className="font-medium">{row.original.userName}</div>
+          <div className="text-sm text-muted-foreground">{row.original.userEmail}</div>
+          <div className="text-xs text-muted-foreground">@{row.original.userUsername}</div>
         </div>
       ),
     },
     {
       accessorKey: 'submittedAt',
       header: 'Submission Date',
-      cell: ({ row }) => format(new Date(row.original.submittedAt), 'MMM d, yyyy HH:mm'),
+      cell: ({ row }) => formatSubmissionDate(row.original.submittedAt),
     },
     {
       accessorKey: 'status',
@@ -136,12 +162,12 @@ export function ApplicationsPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => handleViewApplication(row.original.id)}
+            onClick={() => handleOpenApplication(row.original.id)}
           >
             <RiEyeLine className="mr-2 h-4 w-4" />
-            View
+            View Details
           </Button>
-          {row.original.status === 'PENDING' && (
+          {canReview && row.original.status === 'PENDING' && (
             <>
               <Button
                 variant="ghost"
@@ -154,10 +180,10 @@ export function ApplicationsPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => handleViewApplication(row.original.id)}
+                onClick={() => handleOpenApplication(row.original.id)}
               >
                 <RiCloseLine className="mr-2 h-4 w-4" />
-                Reject
+                Review
               </Button>
             </>
           )}
@@ -183,17 +209,11 @@ export function ApplicationsPage() {
           <FilterBar
             searchPlaceholder="Search applications..."
             filters={filterConfigs}
-            onSearchChange={() => {}}
+            onSearchChange={handleSearchChange}
             onFilterChange={handleFilterChange}
-            activeFilters={filters}
+            activeFilters={{ status: filters.status }}
           />
         }
-      />
-
-      <ApplicationDetailSheet
-        applicationId={selectedApplicationId}
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
       />
     </div>
   );

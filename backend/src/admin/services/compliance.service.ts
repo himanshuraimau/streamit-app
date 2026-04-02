@@ -10,6 +10,7 @@ export interface AuditLogFilters {
   adminId?: string;
   action?: string;
   targetType?: string;
+  targetId?: string;
   dateFrom?: Date;
   dateTo?: Date;
 }

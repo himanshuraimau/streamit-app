@@ -7,6 +7,9 @@ export interface AuditLogParams {
   adminId?: string;
   action?: string;
   targetType?: string;
+  targetId?: string;
+  dateFrom?: string;
+  dateTo?: string;
   startDate?: string;
   endDate?: string;
   sortBy?: string;
@@ -42,7 +45,15 @@ export interface Takedown {
 
 export const complianceApi = {
   getAuditLog: async (params: AuditLogParams): Promise<PaginatedResponse<AuditLogEntry>> => {
-    const response = await adminClient.get('/api/admin/compliance/audit-log', { params });
+    const requestParams = {
+      ...params,
+      dateFrom: params.dateFrom || params.startDate,
+      dateTo: params.dateTo || params.endDate,
+    };
+
+    const response = await adminClient.get('/api/admin/compliance/audit-log', {
+      params: requestParams,
+    });
     return response.data;
   },
 

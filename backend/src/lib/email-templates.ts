@@ -245,3 +245,107 @@ export const getWelcomeEmailTemplate = (userName: string): string => {
 </html>
   `;
 };
+
+type ApplicationDecisionStatus = 'APPROVED' | 'REJECTED';
+
+export const getApplicationDecisionEmailTemplate = (
+  userName: string,
+  status: ApplicationDecisionStatus,
+  rejectionReason?: string
+): string => {
+  const isApproved = status === 'APPROVED';
+  const title = isApproved
+    ? 'Your creator application was approved'
+    : 'Your creator application was reviewed';
+  const heading = isApproved ? 'Congratulations!' : 'Application update';
+  const body = isApproved
+    ? 'Your creator application has been approved. You can now access creator tools and start streaming on VoltStream.'
+    : 'Your creator application was reviewed and is not approved at the moment.';
+
+  const reasonBlock =
+    !isApproved && rejectionReason
+      ? `<p style="font-size:14px;color:#e0e0e0;line-height:22px;margin:16px 0 0 0;"><strong>Reviewer note:</strong> ${rejectionReason}</p>`
+      : '';
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${title}</title>
+  </head>
+  <body style="margin:0;padding:0;background:#0a0a0a;font-family:Arial,sans-serif;color:#ffffff;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#151516;border-radius:14px;overflow:hidden;">
+            <tr>
+              <td style="background:linear-gradient(90deg,#8338ec,#ff006e);padding:24px;text-align:center;">
+                <div style="font-size:28px;font-weight:700;">VoltStream</div>
+                <div style="font-size:12px;opacity:0.9;margin-top:4px;">CREATOR REVIEW</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:28px;">
+                <h1 style="margin:0 0 12px 0;font-size:28px;line-height:1.2;">${heading}</h1>
+                <p style="font-size:15px;line-height:24px;margin:0 0 12px 0;">Hi ${userName || 'Creator'},</p>
+                <p style="font-size:15px;line-height:24px;margin:0;">${body}</p>
+                ${reasonBlock}
+                <div style="margin-top:24px;">
+                  <a href="${process.env.FRONTEND_URL || 'https://voltstream.space'}" style="display:inline-block;padding:12px 20px;background:#ffffff;color:#000000;text-decoration:none;border-radius:8px;font-weight:600;">Open VoltStream</a>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+  `;
+};
+
+export const getApplicationCustomEmailTemplate = (
+  userName: string,
+  subject: string,
+  message: string,
+  reviewerName?: string
+): string => {
+  const safeMessage = message.replace(/\n/g, '<br />');
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${subject}</title>
+  </head>
+  <body style="margin:0;padding:0;background:#0a0a0a;font-family:Arial,sans-serif;color:#ffffff;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#151516;border-radius:14px;overflow:hidden;">
+            <tr>
+              <td style="background:linear-gradient(90deg,#8338ec,#ff006e);padding:24px;text-align:center;">
+                <div style="font-size:28px;font-weight:700;">VoltStream</div>
+                <div style="font-size:12px;opacity:0.9;margin-top:4px;">CREATOR APPLICATION SUPPORT</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:28px;">
+                <h1 style="margin:0 0 12px 0;font-size:24px;line-height:1.25;">${subject}</h1>
+                <p style="font-size:15px;line-height:24px;margin:0 0 12px 0;">Hi ${userName || 'Creator'},</p>
+                <p style="font-size:15px;line-height:24px;margin:0;">${safeMessage}</p>
+                <p style="font-size:13px;line-height:20px;margin:24px 0 0 0;color:#a0a0a0;">Sent by: ${reviewerName || 'VoltStream review team'}</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+  `;
+};

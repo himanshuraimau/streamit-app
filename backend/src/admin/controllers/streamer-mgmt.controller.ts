@@ -5,6 +5,8 @@ import {
   listApplicationsSchema,
   approveApplicationSchema,
   rejectApplicationSchema,
+  addApplicationNoteSchema,
+  sendApplicationEmailSchema,
   killStreamSchema,
   warnStreamerSchema,
   suspendStreamerSchema,
@@ -44,6 +46,7 @@ export class StreamerMgmtController {
       };
 
       const filters = {
+        search: params.search,
         status: params.status,
         submittedFrom: params.submittedFrom,
         submittedTo: params.submittedTo,
@@ -140,6 +143,14 @@ export class StreamerMgmtController {
       // Call service
       const application = await StreamerMgmtService.approveApplication(id, adminId);
 
+      let emailSent = true;
+      try {
+        await StreamerMgmtService.sendApplicationDecisionEmail(id, 'APPROVED');
+      } catch (emailError) {
+        emailSent = false;
+        console.error('Application approval email failed:', emailError);
+      }
+
       // Return response
       res.json({
         success: true,
@@ -148,6 +159,7 @@ export class StreamerMgmtController {
           id: application.id,
           status: application.status,
           reviewedAt: application.reviewedAt,
+          emailSent,
         },
       });
     } catch (error) {
@@ -161,6 +173,13 @@ export class StreamerMgmtController {
       if (error instanceof Error && error.message === 'Application not found') {
         return res.status(404).json({
           error: 'Not found',
+          message: error.message,
+        });
+      }
+
+      if (error instanceof Error && error.message === 'Only pending applications can be approved') {
+        return res.status(409).json({
+          error: 'Conflict',
           message: error.message,
         });
       }
@@ -202,6 +221,14 @@ export class StreamerMgmtController {
       // Call service
       const application = await StreamerMgmtService.rejectApplication(id, data.reason, adminId);
 
+      let emailSent = true;
+      try {
+        await StreamerMgmtService.sendApplicationDecisionEmail(id, 'REJECTED');
+      } catch (emailError) {
+        emailSent = false;
+        console.error('Application rejection email failed:', emailError);
+      }
+
       // Return response
       res.json({
         success: true,
@@ -211,6 +238,7 @@ export class StreamerMgmtController {
           status: application.status,
           reviewedAt: application.reviewedAt,
           rejectionReason: application.rejectionReason,
+          emailSent,
         },
       });
     } catch (error) {
@@ -228,10 +256,125 @@ export class StreamerMgmtController {
         });
       }
 
+      if (error instanceof Error && error.message === 'Only pending applications can be rejected') {
+        return res.status(409).json({
+          error: 'Conflict',
+          message: error.message,
+        });
+      }
+
       console.error('Error rejecting application:', error);
       res.status(500).json({
         error: 'Internal server error',
         message: 'Failed to reject application',
+      });
+    }
+  }
+
+  static async addApplicationNote(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          message: 'Application ID is required',
+        });
+      }
+
+      const data = addApplicationNoteSchema.parse(req.body);
+      const adminId = req.adminUser!.id;
+
+      await StreamerMgmtService.addApplicationNote(id, data.note, adminId);
+
+      return res.json({
+        success: true,
+        message: 'Application note added successfully',
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          details: error.issues,
+        });
+      }
+
+      if (error instanceof Error && error.message === 'Application not found') {
+        return res.status(404).json({
+          error: 'Not found',
+          message: error.message,
+        });
+      }
+
+      console.error('Error adding application note:', error);
+      return res.status(500).json({
+        error: 'Internal server error',
+        message: 'Failed to add application note',
+      });
+    }
+  }
+
+  static async sendApplicationEmail(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          message: 'Application ID is required',
+        });
+      }
+
+      const data = sendApplicationEmailSchema.parse(req.body);
+      const adminName = req.adminUser?.name;
+      const adminId = req.adminUser!.id;
+
+      const result = await StreamerMgmtService.sendApplicationCustomEmail(
+        id,
+        data.subject,
+        data.message,
+        adminName
+      );
+
+      let noteLogged = true;
+      try {
+        await StreamerMgmtService.addApplicationNote(
+          id,
+          `Email sent by ${adminName || 'admin'}: ${data.subject}`,
+          adminId
+        );
+      } catch (noteError) {
+        noteLogged = false;
+        console.error('Application email note logging failed:', noteError);
+      }
+
+      return res.json({
+        success: true,
+        message: 'Application email sent successfully',
+        data: {
+          to: result.to,
+          noteLogged,
+        },
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          details: error.issues,
+        });
+      }
+
+      if (error instanceof Error && error.message === 'Application not found') {
+        return res.status(404).json({
+          error: 'Not found',
+          message: error.message,
+        });
+      }
+
+      console.error('Error sending application email:', error);
+      return res.status(500).json({
+        error: 'Internal server error',
+        message: 'Failed to send application email',
       });
     }
   }

@@ -19,6 +19,7 @@ export class ComplianceController {
    * - adminId: string (optional)
    * - action: string (optional)
    * - targetType: string (optional)
+   * - targetId: string (optional)
    * - dateFrom: date (optional)
    * - dateTo: date (optional)
    *
@@ -43,6 +44,10 @@ export class ComplianceController {
 
       if (req.query.targetType) {
         filters.targetType = req.query.targetType as string;
+      }
+
+      if (req.query.targetId) {
+        filters.targetId = req.query.targetId as string;
       }
 
       if (req.query.dateFrom) {

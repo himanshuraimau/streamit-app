@@ -17,6 +17,7 @@ export const listApplicationsSchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 
   // Filters
+  search: z.preprocess((val) => (val === '' ? undefined : val), z.string().trim().min(1).max(120).optional()),
   status: z.nativeEnum(ApplicationStatus).optional(),
   submittedFrom: z.coerce.date().optional(),
   submittedTo: z.coerce.date().optional(),
@@ -50,6 +51,37 @@ export const rejectApplicationSchema = z.object({
 });
 
 export type RejectApplicationInput = z.infer<typeof rejectApplicationSchema>;
+
+/**
+ * Schema for adding an internal note to a creator application
+ */
+export const addApplicationNoteSchema = z.object({
+  note: z
+    .string()
+    .trim()
+    .min(5, 'Note must be at least 5 characters')
+    .max(2000, 'Note must not exceed 2000 characters'),
+});
+
+export type AddApplicationNoteInput = z.infer<typeof addApplicationNoteSchema>;
+
+/**
+ * Schema for sending a manual email to the application owner
+ */
+export const sendApplicationEmailSchema = z.object({
+  subject: z
+    .string()
+    .trim()
+    .min(3, 'Subject must be at least 3 characters')
+    .max(140, 'Subject must not exceed 140 characters'),
+  message: z
+    .string()
+    .trim()
+    .min(10, 'Message must be at least 10 characters')
+    .max(5000, 'Message must not exceed 5000 characters'),
+});
+
+export type SendApplicationEmailInput = z.infer<typeof sendApplicationEmailSchema>;
 
 /**
  * Schema for killing a live stream

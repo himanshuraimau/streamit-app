@@ -3,11 +3,17 @@ import type { Prisma, ApplicationStatus } from '@prisma/client';
 import { AuditLogService } from './audit-log.service';
 import type { PaginatedResponse } from './audit-log.service';
 import { RoomServiceClient } from 'livekit-server-sdk';
+import { EmailService } from '../../lib/email.service';
+import {
+  getApplicationCustomEmailTemplate,
+  getApplicationDecisionEmailTemplate,
+} from '../../lib/email-templates';
 
 /**
  * Filters for listing creator applications
  */
 export interface ApplicationFilters {
+  search?: string;
   status?: ApplicationStatus;
   submittedFrom?: Date;
   submittedTo?: Date;
@@ -31,10 +37,17 @@ export interface ApplicationListItem {
   userId: string;
   userName: string;
   userEmail: string;
+  userUsername: string;
   status: ApplicationStatus;
   submittedAt: Date | null;
   reviewedAt: Date | null;
   reviewedBy: string | null;
+}
+
+export interface ApplicationReviewer {
+  id: string;
+  name: string;
+  email: string;
 }
 
 /**
@@ -48,17 +61,25 @@ export interface ApplicationDetails {
     name: string;
     email: string;
     username: string;
+    isSuspended: boolean;
+    suspendedReason: string | null;
+    suspendedAt: Date | null;
+    suspensionExpiresAt: Date | null;
   };
   status: ApplicationStatus;
   submittedAt: Date | null;
   reviewedAt: Date | null;
   reviewedBy: string | null;
+  reviewedByAdmin: ApplicationReviewer | null;
   rejectionReason: string | null;
   identity: {
     idType: string;
     idDocumentUrl: string;
     selfiePhotoUrl: string;
     isVerified: boolean;
+    verifiedAt: Date | null;
+    verifiedBy: string | null;
+    verifiedByAdmin: ApplicationReviewer | null;
   } | null;
   financial: {
     accountHolderName: string;
@@ -66,6 +87,9 @@ export interface ApplicationDetails {
     ifscCode: string;
     panNumber: string;
     isVerified: boolean;
+    verifiedAt: Date | null;
+    verifiedBy: string | null;
+    verifiedByAdmin: ApplicationReviewer | null;
   } | null;
   profile: {
     profilePictureUrl: string;
@@ -139,6 +163,16 @@ export class StreamerMgmtService {
     // Build where clause
     const where: Prisma.CreatorApplicationWhereInput = {};
 
+    if (filters.search) {
+      where.user = {
+        OR: [
+          { name: { contains: filters.search, mode: 'insensitive' } },
+          { email: { contains: filters.search, mode: 'insensitive' } },
+          { username: { contains: filters.search, mode: 'insensitive' } },
+        ],
+      };
+    }
+
     // Filter by status
     if (filters.status) {
       where.status = filters.status;
@@ -174,6 +208,7 @@ export class StreamerMgmtService {
               id: true,
               name: true,
               email: true,
+              username: true,
             },
           },
         },
@@ -187,6 +222,7 @@ export class StreamerMgmtService {
       userId: app.userId,
       userName: app.user.name,
       userEmail: app.user.email,
+      userUsername: app.user.username,
       status: app.status,
       submittedAt: app.submittedAt,
       reviewedAt: app.reviewedAt,
@@ -229,6 +265,10 @@ export class StreamerMgmtService {
             name: true,
             email: true,
             username: true,
+            isSuspended: true,
+            suspendedReason: true,
+            suspendedAt: true,
+            suspensionExpiresAt: true,
           },
         },
         identity: true,
@@ -241,6 +281,50 @@ export class StreamerMgmtService {
       return null;
     }
 
+    const reviewerIds = Array.from(
+      new Set(
+        [
+          application.reviewedBy,
+          application.identity?.verifiedBy,
+          application.financial?.verifiedBy,
+        ].filter((value): value is string => Boolean(value))
+      )
+    );
+
+    const reviewers = reviewerIds.length
+      ? await prisma.user.findMany({
+          where: {
+            id: {
+              in: reviewerIds,
+            },
+          },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        })
+      : [];
+
+    const reviewerMap = new Map(reviewers.map((reviewer) => [reviewer.id, reviewer]));
+
+    const mapReviewer = (reviewerId?: string | null): ApplicationReviewer | null => {
+      if (!reviewerId) {
+        return null;
+      }
+
+      const reviewer = reviewerMap.get(reviewerId);
+      if (!reviewer) {
+        return null;
+      }
+
+      return {
+        id: reviewer.id,
+        name: reviewer.name,
+        email: reviewer.email,
+      };
+    };
+
     return {
       id: application.id,
       userId: application.userId,
@@ -249,6 +333,7 @@ export class StreamerMgmtService {
       submittedAt: application.submittedAt,
       reviewedAt: application.reviewedAt,
       reviewedBy: application.reviewedBy,
+      reviewedByAdmin: mapReviewer(application.reviewedBy),
       rejectionReason: application.rejectionReason,
       identity: application.identity
         ? {
@@ -256,6 +341,9 @@ export class StreamerMgmtService {
             idDocumentUrl: application.identity.idDocumentUrl,
             selfiePhotoUrl: application.identity.selfiePhotoUrl,
             isVerified: application.identity.isVerified,
+            verifiedAt: application.identity.verifiedAt,
+            verifiedBy: application.identity.verifiedBy,
+            verifiedByAdmin: mapReviewer(application.identity.verifiedBy),
           }
         : null,
       financial: application.financial
@@ -265,6 +353,9 @@ export class StreamerMgmtService {
             ifscCode: application.financial.ifscCode,
             panNumber: application.financial.panNumber,
             isVerified: application.financial.isVerified,
+            verifiedAt: application.financial.verifiedAt,
+            verifiedBy: application.financial.verifiedBy,
+            verifiedByAdmin: mapReviewer(application.financial.verifiedBy),
           }
         : null,
       profile: application.profile
@@ -300,6 +391,10 @@ export class StreamerMgmtService {
 
       if (!application) {
         throw new Error('Application not found');
+      }
+
+      if (application.status !== 'PENDING') {
+        throw new Error('Only pending applications can be approved');
       }
 
       // Update application status
@@ -355,6 +450,10 @@ export class StreamerMgmtService {
         throw new Error('Application not found');
       }
 
+      if (application.status !== 'PENDING') {
+        throw new Error('Only pending applications can be rejected');
+      }
+
       // Update application status
       const updatedApplication = await tx.creatorApplication.update({
         where: { id },
@@ -376,6 +475,90 @@ export class StreamerMgmtService {
 
       return updatedApplication;
     });
+  }
+
+  static async addApplicationNote(id: string, note: string, adminId: string) {
+    const application = await prisma.creatorApplication.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        userId: true,
+        status: true,
+      },
+    });
+
+    if (!application) {
+      throw new Error('Application not found');
+    }
+
+    await AuditLogService.createLog(adminId, 'application_note', 'application', id, {
+      userId: application.userId,
+      status: application.status,
+      note,
+    });
+
+    return { success: true };
+  }
+
+  private static async getApplicationRecipient(id: string) {
+    const application = await prisma.creatorApplication.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        status: true,
+        rejectionReason: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!application) {
+      throw new Error('Application not found');
+    }
+
+    return application;
+  }
+
+  static async sendApplicationDecisionEmail(id: string, status: 'APPROVED' | 'REJECTED') {
+    const application = await this.getApplicationRecipient(id);
+
+    await EmailService.sendEmail({
+      to: application.user.email,
+      subject:
+        status === 'APPROVED'
+          ? 'Your VoltStream creator application is approved'
+          : 'Update on your VoltStream creator application',
+      html: getApplicationDecisionEmailTemplate(
+        application.user.name,
+        status,
+        status === 'REJECTED' ? application.rejectionReason || undefined : undefined
+      ),
+    });
+  }
+
+  static async sendApplicationCustomEmail(
+    id: string,
+    subject: string,
+    message: string,
+    reviewerName?: string
+  ) {
+    const application = await this.getApplicationRecipient(id);
+
+    await EmailService.sendEmail({
+      to: application.user.email,
+      subject,
+      html: getApplicationCustomEmailTemplate(application.user.name, subject, message, reviewerName),
+    });
+
+    return {
+      to: application.user.email,
+      userId: application.user.id,
+    };
   }
 
   /**

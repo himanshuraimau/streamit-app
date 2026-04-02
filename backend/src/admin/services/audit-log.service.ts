@@ -20,6 +20,7 @@ export type AuditAction =
   | 'withdrawal_reject'
   | 'application_approve'
   | 'application_reject'
+  | 'application_note'
   | 'role_change'
   | 'settings_update'
   | 'geo_block_create'
@@ -48,6 +49,7 @@ export interface AuditLogFilters {
   adminId?: string;
   action?: AuditAction;
   targetType?: TargetType;
+  targetId?: string;
   dateFrom?: Date;
   dateTo?: Date;
 }
@@ -174,6 +176,10 @@ export class AuditLogService {
 
     if (filters.targetType) {
       where.targetType = filters.targetType;
+    }
+
+    if (filters.targetId) {
+      where.targetId = filters.targetId;
     }
 
     if (filters.dateFrom || filters.dateTo) {

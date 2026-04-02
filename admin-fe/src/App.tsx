@@ -14,6 +14,7 @@ const UnauthorizedPage = lazy(() => import('@/pages/UnauthorizedPage'));
 const UsersPage = lazy(() => import('@/pages/users/UsersPage'));
 const UserDetailPage = lazy(() => import('@/pages/users/UserDetailPage'));
 const ApplicationsPage = lazy(() => import('@/pages/streamers/ApplicationsPage'));
+const ApplicationDetailPage = lazy(() => import('@/pages/streamers/ApplicationDetailPage'));
 const LiveMonitorPage = lazy(() => import('@/pages/streamers/LiveMonitorPage'));
 const ModerationQueuePage = lazy(() => import('@/pages/moderation/ModerationQueuePage'));
 const ReportsPage = lazy(() => import('@/pages/reports/ReportsPage'));
@@ -130,6 +131,14 @@ export function App() {
               element={
                 <PermissionRoute allowedRoles={['super_admin', 'moderator', 'support_admin']}>
                   <ApplicationsPage />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="streamers/applications/:id"
+              element={
+                <PermissionRoute allowedRoles={['super_admin', 'moderator', 'support_admin']}>
+                  <ApplicationDetailPage />
                 </PermissionRoute>
               }
             />
